@@ -1,0 +1,37 @@
+# Build output
+bin/
+obj/
+.vs/
+*.user
+*.suo
+
+# Runtime tools are downloaded/bundled by release tooling, not committed
+Tools/*.exe
+Tools/*.dll
+Tools/*.zip
+
+# User/session data
+cookies.txt
+*_cookies.txt
+*.cookies
+.env
+secrets/
+user-data/
+logs/
+downloads/
+
+# Temporary media
+*.part
+*.ytdl
+*.temp
+*.tmp
+
+# OS/editor
+Thumbs.db
+.DS_Store
+.vscode/*.log
+
+# One-click local build/bootstrap output
+.build/
+dist/
+Logs/

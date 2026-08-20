@@ -1,0 +1,82 @@
+<Window x:Class="MediaDownloader.DiagnosticsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Media Downloader Diagnostics"
+        Width="820"
+        Height="620"
+        MinWidth="680"
+        MinHeight="500"
+        WindowStartupLocation="CenterOwner"
+        Background="#09111E"
+        Foreground="#F7FAFE"
+        FontFamily="Segoe UI">
+    <Window.Resources>
+        <Style TargetType="Button">
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="Background" Value="#1B2940" />
+            <Setter Property="BorderBrush" Value="#344A6B" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Padding" Value="12,7" />
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Grid Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <StackPanel>
+                <TextBlock Text="Diagnostics" FontSize="24" FontWeight="SemiBold" />
+                <TextBlock Margin="0,4,0,0" Text="Tool health and detailed downloader logs" Foreground="#8FA0B8" />
+            </StackPanel>
+            <Button Grid.Column="1" Command="{Binding RefreshHealthCommand}" Content="Refresh" />
+        </Grid>
+
+        <ItemsControl Grid.Row="1" Margin="0,18,0,14" ItemsSource="{Binding ToolHealth}">
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <WrapPanel />
+                </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                    <Border Width="180" Margin="0,0,10,10" Padding="12" Background="#0E192A" BorderBrush="#233650" BorderThickness="1" CornerRadius="9">
+                        <StackPanel>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                                <TextBlock Grid.Column="1" Text="{Binding Status}" Foreground="#64D99B" FontSize="11" />
+                            </Grid>
+                            <TextBlock Margin="0,6,0,0" Text="{Binding Version}" Foreground="#B7C4D7" FontSize="11" />
+                            <TextBlock Margin="0,3,0,0" Text="{Binding Message}" Foreground="#71849F" FontSize="10" TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Border>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
+        <Border Grid.Row="2" Background="#07101D" BorderBrush="#21314A" BorderThickness="1" CornerRadius="10" Padding="10">
+            <TextBox Text="{Binding Diagnostics, Mode=OneWay}"
+                     Background="Transparent"
+                     Foreground="#C8D4E5"
+                     BorderThickness="0"
+                     FontFamily="Consolas"
+                     FontSize="11"
+                     IsReadOnly="True"
+                     AcceptsReturn="True"
+                     TextWrapping="NoWrap"
+                     HorizontalScrollBarVisibility="Auto"
+                     VerticalScrollBarVisibility="Auto" />
+        </Border>
+    </Grid>
+</Window>
