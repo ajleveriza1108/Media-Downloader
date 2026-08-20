@@ -4,6 +4,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Threading;
+using MediaDownloader.Core.Models;
 using MediaDownloader.ViewModels;
 
 namespace MediaDownloader;
@@ -245,6 +246,29 @@ public partial class MainWindow : Window
             {
                 throw new InvalidOperationException(
                     $"Medium layout left an invalid gap after Media at 958x852. Gap={gap:0.0}.");
+            }
+
+            // Materialize one real queue card. This specifically guards the
+            // read-only DownloadQueueItem binding crash reported on 2026-08-20.
+            _viewModel.DownloadQueue.Insert(
+                0,
+                new DownloadQueueItem(
+                    "Queue binding smoke",
+                    "YouTube",
+                    "1080p30 · 1920×1080",
+                    "MP4",
+                    string.Empty)
+                {
+                    ProgressPercent = 12,
+                    Status = "Downloading",
+                    SpeedText = "1.0 MiB/s"
+                });
+
+            UpdateLayout();
+
+            if (_viewModel.DownloadQueue.Count != 1)
+            {
+                throw new InvalidOperationException("Queue binding smoke item was not retained.");
             }
 
             Application.Current.Shutdown(0);

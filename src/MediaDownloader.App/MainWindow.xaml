@@ -1,4 +1,4 @@
-﻿<Window x:Class="MediaDownloader.MainWindow"
+<Window x:Class="MediaDownloader.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
@@ -495,7 +495,7 @@
 
                             <Border x:Name="MediaThumbnailHost" Grid.Column="0" Height="138" Background="#09111F" CornerRadius="10" ClipToBounds="True">
                                 <Grid>
-                                    <Image Source="{Binding ThumbnailUrl}" Stretch="UniformToFill" />
+                                    <Image Source="{Binding ThumbnailUrl, Mode=OneWay}" Stretch="UniformToFill" />
                                     <Border Width="46" Height="46" CornerRadius="23"
                                             Background="#AA15203A" BorderBrush="#7A91B8" BorderThickness="1"
                                             HorizontalAlignment="Center" VerticalAlignment="Center">
@@ -787,7 +787,7 @@
                                     <Style TargetType="TextBlock">
                                         <Setter Property="Visibility" Value="Collapsed" />
                                         <Style.Triggers>
-                                            <DataTrigger Binding="{Binding DownloadQueue.Count}" Value="0">
+                                            <DataTrigger Binding="{Binding DownloadQueue.Count, Mode=OneWay}" Value="0">
                                                 <Setter Property="Visibility" Value="Visible" />
                                             </DataTrigger>
                                         </Style.Triggers>
@@ -796,7 +796,7 @@
                             </TextBlock>
 
                             <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                                <ItemsControl ItemsSource="{Binding DownloadQueue}">
+                                <ItemsControl ItemsSource="{Binding DownloadQueue, Mode=OneWay}">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
                                             <Border Background="#0E1828" CornerRadius="9" Padding="9" Margin="0,0,0,8">
@@ -814,27 +814,27 @@
                                                     </Grid.ColumnDefinitions>
 
                                                     <Border Grid.RowSpan="4" Grid.Column="0" Width="56" Height="42" Background="#101C2F" CornerRadius="6" ClipToBounds="True">
-                                                        <Image Source="{Binding ThumbnailUrl}" Stretch="UniformToFill" />
+                                                        <Image Source="{Binding ThumbnailUrl, Mode=OneWay}" Stretch="UniformToFill" />
                                                     </Border>
-                                                    <TextBlock Grid.Column="2" Text="{Binding Title}" FontWeight="SemiBold" FontSize="10" TextTrimming="CharacterEllipsis" />
+                                                    <TextBlock Grid.Column="2" Text="{Binding Title, Mode=OneWay}" FontWeight="SemiBold" FontSize="10" TextTrimming="CharacterEllipsis" />
                                                     <TextBlock Grid.Row="1" Grid.Column="2" Margin="0,3,0,0" Foreground="#76879F" FontSize="8.5" TextTrimming="CharacterEllipsis">
-                                                        <Run Text="{Binding Quality}" /><Run Text=" · " /><Run Text="{Binding Format}" />
+                                                        <Run Text="{Binding Quality, Mode=OneWay}" /><Run Text=" · " /><Run Text="{Binding Format, Mode=OneWay}" />
                                                     </TextBlock>
                                                     <Grid Grid.Row="2" Grid.Column="2" Margin="0,7,0,0">
                                                         <Grid.ColumnDefinitions>
                                                             <ColumnDefinition Width="*" />
                                                             <ColumnDefinition Width="Auto" />
                                                         </Grid.ColumnDefinitions>
-                                                        <ProgressBar Style="{StaticResource QueueProgressBar}" Maximum="100" Value="{Binding ProgressPercent}" VerticalAlignment="Center" />
-                                                        <TextBlock Grid.Column="1" Margin="8,0,0,0" Text="{Binding ProgressPercent, StringFormat={}{0:0}%}" Foreground="#DDE5F1" FontSize="8.5" />
+                                                        <ProgressBar Style="{StaticResource QueueProgressBar}" Maximum="100" Value="{Binding ProgressPercent, Mode=OneWay}" VerticalAlignment="Center" />
+                                                        <TextBlock Grid.Column="1" Margin="8,0,0,0" Text="{Binding ProgressPercent, Mode=OneWay, StringFormat={}{0:0}%}" Foreground="#DDE5F1" FontSize="8.5" />
                                                     </Grid>
                                                     <Grid Grid.Row="3" Grid.Column="2" Margin="0,5,0,0">
                                                         <Grid.ColumnDefinitions>
                                                             <ColumnDefinition Width="*" />
                                                             <ColumnDefinition Width="Auto" />
                                                         </Grid.ColumnDefinitions>
-                                                        <TextBlock Text="{Binding Status}" Foreground="#7E91AD" FontSize="8.5" TextTrimming="CharacterEllipsis" />
-                                                        <TextBlock Grid.Column="1" Text="{Binding SpeedText}" Foreground="#5CAEFF" FontSize="8.5" />
+                                                        <TextBlock Text="{Binding Status, Mode=OneWay}" Foreground="#7E91AD" FontSize="8.5" TextTrimming="CharacterEllipsis" />
+                                                        <TextBlock Grid.Column="1" Text="{Binding SpeedText, Mode=OneWay}" Foreground="#5CAEFF" FontSize="8.5" />
                                                     </Grid>
                                                 </Grid>
                                             </Border>
