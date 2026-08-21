@@ -4,24 +4,22 @@ Windows desktop video/audio downloader and converter built with .NET 10 and WPF.
 
 ## Current development track
 
-**R1.6.19 — Dual-Mode Updater + Trial Build Candidate**
+R1.6.19 - Installer-Only Release Updater
 
-The unlicensed edition remains exactly **5 successful Video + 5 successful MP3 outputs**.
+MediaDock uses one customer Windows package: the per-user installer.
 
-Customers may purchase MediaDock or enter/activate their license key at any
-time during the trial; trial exhaustion is not required before licensing.
+When unlicensed, the installed app provides the strict 5 successful Video + 5 successful MP3 trial. Customers may open licensing, buy, or activate a key before the allowance is exhausted.
 
-R1.6.19 adds dual update behavior:
+## Updates
 
-- installed MediaDock uses the verified installer EXE;
-- portable MediaDock uses a verified portable ZIP and updates its current portable folder;
-- both update paths consume only the stable manifest from ajleveriza1108/MediaDock-Release;
-- development metadata cannot trigger customer updates;
-- both artifacts are SHA-256 verified;
-- portable updates preserve the external hardened trial state.
+Installed MediaDock checks only the stable manifest in ajleveriza1108/MediaDock-Release.
 
-The stable pointer remains inactive until the Windows installed and portable update cycle is verified.
+A future installer is accepted only after the fail-closed stable manifest, official GitHub Releases URL, newer-version check, and SHA-256 verification all pass.
 
-## Public repository policy
+Development metadata cannot trigger an automatic customer update.
 
-Current commercial trial/licensing/updater implementation remains private. This repository contains sanitized public project/status material only.
+## Public-repository policy
+
+This repository contains public project/status material and historical source only. Current commercial trial/licensing/updater enforcement source is intentionally withheld.
+
+Do not commit private licensing source, reset tools, keys, secrets, customer/device records, downloaded tools, build output, logs, cookies, local state, or caches.
