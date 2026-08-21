@@ -2,7 +2,7 @@
 
 Status: Windows installer candidate build verified; installed update-cycle and stable release activation remain pending.
 
-Current development package: R1.6.19 - Installer-Only Release Updater.
+Current development package: R1.6.19 - Clean License Client + Installer-Only Updater.
 
 ## Customer distribution
 
@@ -17,7 +17,7 @@ The installed application starts in trial mode when no valid license is active:
 - Stream unavailable while unlicensed;
 - Convert unavailable while unlicensed.
 
-The existing Buy/Payhip license action remains usable before trial exhaustion. R1.6.19 also provides a dedicated Enter Serial action that is visible before the 5+5 trial is exhausted, so a customer can paste the serial/license key received from Payhip at any time.
+Buy MediaDock License and Enter Serial remain available before trial exhaustion. The private Windows build contains a direct license client for Admin/customer activation, validation, and device release.
 
 ## Stable updater contract v3
 
@@ -38,10 +38,13 @@ latest-development.json never triggers customer updates.
 - self-contained win-x64 publish: PASS
 - engine + installer-updater contract test: PASS
 - GUI startup smoke: PASS
-- always-available Payhip serial-entry runtime contract: PASS
+- live private licensing backend verification: PASS
+- direct clean LicenseService source contract: PASS
+- centered Enter Serial + Release This Device UI contract: PASS
+- strict unlicensed 5+5 entitlement bridge contract: PASS
 - Inno Setup trial installer compile: PASS
-- staged EXE SHA-256: bb512b3e24975a9142b08429cdec4990cff964f91fe7c619e6d97d8027758157
-- installer SHA-256: c6a64a24ab48cf1b01b21ce869605bf949bb92232f6a62794253c1b929b27d2d
+- staged EXE SHA-256: 348ab5fb166e6b9af705d416c458784bc7c4547b248b941084628327ad503488
+- installer SHA-256: 712a7fadae80e28c366a1ce5ce5d22bda21caede5104677721ffd56b2f862939
 
 ## Publication boundary
 

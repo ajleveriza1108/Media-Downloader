@@ -4,11 +4,11 @@ Windows desktop video/audio downloader and converter built with .NET 10 and WPF.
 
 ## Current development track
 
-R1.6.19 - Installer-Only Release Updater
+R1.6.19 - Clean License Client + Installer-Only Updater
 
 MediaDock uses one customer Windows package: the per-user installer.
 
-When unlicensed, the installed app provides the strict 5 successful Video + 5 successful MP3 trial. Buy on Payhip and Enter Serial remain available before the allowance is exhausted.
+When unlicensed, the installed app provides the strict 5 successful Video + 5 successful MP3 trial. Buy MediaDock License and Enter Serial remain available before the allowance is exhausted.
 
 ## Updates
 
