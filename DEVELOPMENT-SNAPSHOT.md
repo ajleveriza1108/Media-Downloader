@@ -17,7 +17,7 @@ The installed application starts in trial mode when no valid license is active:
 - Stream unavailable while unlicensed;
 - Convert unavailable while unlicensed.
 
-The existing License access entry remains usable before trial exhaustion, so a customer can buy or activate at any time.
+The existing Buy/Payhip license action remains usable before trial exhaustion. R1.6.19 also provides a dedicated Enter Serial action that is visible before the 5+5 trial is exhausted, so a customer can paste the serial/license key received from Payhip at any time.
 
 ## Stable updater contract v3
 
@@ -38,9 +38,10 @@ latest-development.json never triggers customer updates.
 - self-contained win-x64 publish: PASS
 - engine + installer-updater contract test: PASS
 - GUI startup smoke: PASS
+- always-available Payhip serial-entry runtime contract: PASS
 - Inno Setup trial installer compile: PASS
-- staged EXE SHA-256: fd610f7eb075f7074b47f771be640b702d9afaee046ea8366360c4d4fa9fb98d
-- installer SHA-256: 0b729e8101e2f9720cfb1b90bb97b32333c086c8c793c654bcb8bd345c07e033
+- staged EXE SHA-256: bb512b3e24975a9142b08429cdec4990cff964f91fe7c619e6d97d8027758157
+- installer SHA-256: c6a64a24ab48cf1b01b21ce869605bf949bb92232f6a62794253c1b929b27d2d
 
 ## Publication boundary
 

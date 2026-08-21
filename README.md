@@ -8,7 +8,7 @@ R1.6.19 - Installer-Only Release Updater
 
 MediaDock uses one customer Windows package: the per-user installer.
 
-When unlicensed, the installed app provides the strict 5 successful Video + 5 successful MP3 trial. Customers may open licensing, buy, or activate a key before the allowance is exhausted.
+When unlicensed, the installed app provides the strict 5 successful Video + 5 successful MP3 trial. Buy on Payhip and Enter Serial remain available before the allowance is exhausted.
 
 ## Updates
 
