@@ -1,43 +1,65 @@
-# MediaDock R1.6.17 development snapshot
+# MediaDock R1.6.18 development snapshot
 
-Status: **development / installer-runtime verification pending**.
+Status: **Windows build/staged smoke verified; install/update-cycle verification pending**.
 
-Current development package: **R1.6.17 — Trial Queue Workflow Repair**.
+Current development package: **R1.6.18 — Release-Repo Updater + Trial Build Candidate**.
 
-## Cumulative behavior
+## Trial contract
 
-R1.6.17 retains the existing downloader/converter foundation and adds the current queue/trial workflow:
+The unlicensed trial remains exactly:
 
-- trial remains exactly 5 successful video outputs + 5 successful MP3 outputs;
-- Stream and Convert are disabled while unlicensed;
-- playlist paste automatically loads accepted entries directly into Download Queue;
-- trial-mode playlist admission is limited by the remaining allowance for the selected MP4/MP3 format;
-- playlist-limit messaging explains accepted/skipped items;
-- playlist and queue thumbnail discovery is repaired;
-- queue pagination is removed in favor of full-height scrolling;
-- Select All, Clear Selection, Download All, Download Selected and Remove Selected are available;
-- strict local trial persistence/hardening from R1.6.16 remains cumulative;
-- Payhip purchase URL and **Release This Device** terminology remain cumulative.
+- 5 successful Video outputs;
+- 5 successful MP3 outputs;
+- Stream unavailable while unlicensed;
+- Convert unavailable while unlicensed.
 
-## Generated package verification
+R1.6.18 does not embed a license or developer bypass in the customer build.
 
-- R1.6.17 static checks: **45/45**;
-- exact R1.6.16.3 predecessor manifest: **48/48**;
-- R1.6.17 managed source/assets manifest: **48/48**;
-- R1.6.17 release manifest: **157/157**;
-- package SHA-256: `f406b510f3f0b104ba96b58cc82e649094d5e77f3faac0e708fd70d08a52a40b`.
+## Updater contract
+
+The commercial R1.6.18 client checks only:
+
+$StableManifestUrl
+
+The updater accepts only:
+
+- schema version 1;
+- product MediaDock;
+- channel stable;
+- stable=true;
+- Windows runtime verified;
+- installer published;
+- updater published;
+- a newer version than the installed build;
+- an HTTPS installer URL under jleveriza1108/MediaDock-Release/releases/download/;
+- a valid 64-character SHA-256.
+
+The installer is downloaded to Local AppData, SHA-256 verified locally, and only then can it launch after user consent.
+
+Development metadata never triggers customer updates.
+
+## Windows candidate verification
+
+- .NET restore: PASS
+- .NET Release build: PASS
+- self-contained win-x64 publish: PASS
+- engine + updater contract test: PASS
+- GUI startup smoke: PASS
+- Inno Setup trial installer compile: PASS
+- staged EXE SHA-256: $exeSha
+- candidate installer SHA-256: $installerSha
+- portable ZIP SHA-256: $portableSha
 
 ## Publication boundary
 
-This publication updates public development/status documentation only.
+This public repository still does **not** publish:
 
-It does **not** publish:
 - current commercial source;
-- installer binaries;
+- TrialStateService/licensing enforcement internals;
 - developer trial-reset utilities;
 - license-key inventories;
-- Google Apps Script or Payhip secrets;
+- backend / Payhip / Google Apps Script secrets;
 - customer/device activation data;
-- logs, cookies, runtime state, caches, or downloaded tools.
+- logs, cookies, runtime state, build caches, or downloaded tools.
 
-R1.6.17 must not be called stable until the guarded Windows installer build/install/runtime tests pass on the target Windows machine.
+R1.6.18 is not stable until the installed trial/update cycle is verified and the exact installer is published to the release repository.
