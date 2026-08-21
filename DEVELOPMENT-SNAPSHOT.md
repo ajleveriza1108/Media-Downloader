@@ -1,35 +1,43 @@
-# MediaDock R1.6.15 development snapshot
+# MediaDock R1.6.17 development snapshot
 
-Status: **Windows runtime verification pending**.
+Status: **development / installer-runtime verification pending**.
 
-Current development package: **R1.6.15 — Internal Media Capture Streaming + Resolution + Full Screen + MP4/MP3**.
+Current development package: **R1.6.17 — Trial Queue Workflow Repair**.
 
 ## Cumulative behavior
 
-- internal WebView2 Stream media-capture surface;
-- detection of direct media, HLS and DASH network candidates;
-- JavaScript-created `<video>` isolation where supported;
-- Auto internal detector plus direct combined-resolution choices;
-- Stream Full Screen with Esc restore;
-- MP4 and MP3 actions routed through the normal persistent queue;
-- whole-window dragged-link acceptance;
-- TXT/CSV batch URL import;
-- strict 5-video + 5-MP3 unlicensed trial model.
+R1.6.17 retains the existing downloader/converter foundation and adds the current queue/trial workflow:
 
-The rejected R1.6.13.2 LibVLC branch is not part of the active lineage.
+- trial remains exactly 5 successful video outputs + 5 successful MP3 outputs;
+- Stream and Convert are disabled while unlicensed;
+- playlist paste automatically loads accepted entries directly into Download Queue;
+- trial-mode playlist admission is limited by the remaining allowance for the selected MP4/MP3 format;
+- playlist-limit messaging explains accepted/skipped items;
+- playlist and queue thumbnail discovery is repaired;
+- queue pagination is removed in favor of full-height scrolling;
+- Select All, Clear Selection, Download All, Download Selected and Remove Selected are available;
+- strict local trial persistence/hardening from R1.6.16 remains cumulative;
+- Payhip purchase URL and **Release This Device** terminology remain cumulative.
 
-## Package verification already completed
+## Generated package verification
 
-- static validation: 62/62;
-- exact R1.6.14 predecessor: 43/43;
-- R1.6.15 managed source/assets: 47/47;
-- release manifest: 142/142;
-- package SHA-256: `926786d101c900f4d1cea2bd7cddb4643ee3493a7e7c1c9fae5c9a34f47c5f01`.
+- R1.6.17 static checks: **45/45**;
+- exact R1.6.16.3 predecessor manifest: **48/48**;
+- R1.6.17 managed source/assets manifest: **48/48**;
+- R1.6.17 release manifest: **157/157**;
+- package SHA-256: `f406b510f3f0b104ba96b58cc82e649094d5e77f3faac0e708fd70d08a52a40b`.
 
 ## Publication boundary
 
-The current commercial source is intentionally withheld from this public repository while MediaDock licensing is being implemented.
+This publication updates public development/status documentation only.
 
-Do not publish license-key inventories, backend secrets, Payhip credentials, customer records, activation/device records, runtime state, logs, cookies, or build caches here.
+It does **not** publish:
+- current commercial source;
+- installer binaries;
+- developer trial-reset utilities;
+- license-key inventories;
+- Google Apps Script or Payhip secrets;
+- customer/device activation data;
+- logs, cookies, runtime state, caches, or downloaded tools.
 
-R1.6.15 must not be called stable until the guarded Windows PowerShell 5.1 installer/build/runtime gates and live Stream/Download interactions pass on the target Windows machine.
+R1.6.17 must not be called stable until the guarded Windows installer build/install/runtime tests pass on the target Windows machine.
