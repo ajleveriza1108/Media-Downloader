@@ -1,19 +1,35 @@
-# R1.5.9.8.2 development snapshot
+# MediaDock R1.6.15 development snapshot
 
-Status: Windows runtime verification pending.
+Status: **Windows runtime verification pending**.
 
-R1.5.9.8.1 compiled successfully on the target Windows machine and was published as the initial source snapshot. A real single-video download then produced a WPF `XamlParseException` while the first queue card was being materialized.
+Current development package: **R1.6.15 — Internal Media Capture Streaming + Resolution + Full Screen + MP4/MP3**.
 
-The captured crash identified the exact source defect: `DownloadQueueItem.Quality` and `DownloadQueueItem.Format` are intentionally read-only display properties, but the queue template used bindings that allowed WPF to infer a write-capable mode.
+## Cumulative behavior
 
-R1.5.9.8.2:
+- internal WebView2 Stream media-capture surface;
+- detection of direct media, HLS and DASH network candidates;
+- JavaScript-created `<video>` isolation where supported;
+- Auto internal detector plus direct combined-resolution choices;
+- Stream Full Screen with Esc restore;
+- MP4 and MP3 actions routed through the normal persistent queue;
+- whole-window dragged-link acceptance;
+- TXT/CSV batch URL import;
+- strict 5-video + 5-MP3 unlicensed trial model.
 
-- makes queue display bindings explicit `Mode=OneWay`;
-- keeps `Quality` and `Format` immutable in the model;
-- hardens queue title, thumbnail, progress, status, speed, collection, and count display bindings;
-- extends the startup smoke path to insert and render a real queue item;
-- preserves the R1.5.9.8.1 default-quality and download-runtime stability work.
+The rejected R1.6.13.2 LibVLC branch is not part of the active lineage.
 
-This GitHub publication contains source and documentation only. It does not publish downloaded runtime tools, build output, installer ZIPs, logs, backups, cookies, crash evidence, or local state.
+## Package verification already completed
 
-Do not mark R1.5.9.8.2 stable until the guarded Windows installer/runtime smoke and a real single-video download pass on the target machine.
+- static validation: 62/62;
+- exact R1.6.14 predecessor: 43/43;
+- R1.6.15 managed source/assets: 47/47;
+- release manifest: 142/142;
+- package SHA-256: `926786d101c900f4d1cea2bd7cddb4643ee3493a7e7c1c9fae5c9a34f47c5f01`.
+
+## Publication boundary
+
+The current commercial source is intentionally withheld from this public repository while MediaDock licensing is being implemented.
+
+Do not publish license-key inventories, backend secrets, Payhip credentials, customer records, activation/device records, runtime state, logs, cookies, or build caches here.
+
+R1.6.15 must not be called stable until the guarded Windows PowerShell 5.1 installer/build/runtime gates and live Stream/Download interactions pass on the target Windows machine.
