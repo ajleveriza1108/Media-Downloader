@@ -17,7 +17,7 @@ The installed application starts in trial mode when no valid license is active:
 - Stream unavailable while unlicensed;
 - Convert unavailable while unlicensed.
 
-Buy MediaDock License and Enter Serial remain available before trial exhaustion. The private Windows build contains a direct license client for Admin/customer activation, validation, and device release.
+Buy MediaDock License and Enter Serial remain available before trial exhaustion. The private Windows build contains a direct license client for Admin/customer activation, validation, protected local persistence, and device release.
 
 ## Stable updater contract v3
 
@@ -39,12 +39,12 @@ latest-development.json never triggers customer updates.
 - engine + installer-updater contract test: PASS
 - GUI startup smoke: PASS
 - live private licensing backend verification: PASS
-- direct clean LicenseService source contract: PASS
+- direct clean LicenseService + protected persistence source contract: PASS
 - centered Enter Serial + Release This Device UI contract: PASS
 - strict unlicensed 5+5 entitlement bridge contract: PASS
 - Inno Setup trial installer compile: PASS
-- staged EXE SHA-256: 348ab5fb166e6b9af705d416c458784bc7c4547b248b941084628327ad503488
-- installer SHA-256: 712a7fadae80e28c366a1ce5ce5d22bda21caede5104677721ffd56b2f862939
+- staged EXE SHA-256: c18931ebb0d86c23f83b104c47ba5a7ebd9211ff7d69fd837724a368d02ca301
+- installer SHA-256: 72076ad83aedfc55dc126c9c1dd98e018389e1fb934af40a30ae42490099ed89
 
 ## Publication boundary
 
