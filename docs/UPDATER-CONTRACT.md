@@ -1,21 +1,28 @@
-# MediaDock Stable Updater Contract v1
+# MediaDock Stable Updater Contract v2
 
 Stable manifest:
 
-$StableManifestUrl
+https://raw.githubusercontent.com/ajleveriza1108/MediaDock-Release/main/latest-stable.json
 
-The installed application accepts a release only when all of these are true:
+A stable release is accepted only when:
 
-1. schemaVersion is 1.
-2. product is MediaDock.
-3. channel is stable.
-4. stable, windowsRuntimeVerified, installerPublished, and updaterPublished are all 	rue.
-5. ersion is newer than the installed version.
-6. installerUrl is HTTPS and starts with:
-   https://github.com/ajleveriza1108/MediaDock-Release/releases/download/
-7. installerSha256 is a valid SHA-256.
-8. The downloaded installer independently hashes to that exact SHA-256.
+1. schemaVersion is 2;
+2. product is MediaDock;
+3. channel is stable;
+4. stable=true;
+5. windowsRuntimeVerified=true;
+6. installerPublished=true;
+7. portablePublished=true;
+8. updaterPublished=true;
+9. version is newer than the installed build;
+10. installerUrl is an HTTPS .exe under:
+    https://github.com/ajleveriza1108/MediaDock-Release/releases/download/;
+11. portableUrl is an HTTPS .zip under the same release path;
+12. both SHA-256 values are valid and independently verified.
 
-The stable pointer is moved **last**, after the installer artifact and checksum are verified.
+Installed mode selects the installer artifact.
+Portable mode selects the portable artifact.
 
 latest-development.json never triggers automatic customer updates.
+
+The stable pointer is moved last.

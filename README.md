@@ -4,24 +4,24 @@ Windows desktop video/audio downloader and converter built with .NET 10 and WPF.
 
 ## Current development track
 
-**R1.6.18 — Release-Repo Updater + Trial Build Candidate**
+**R1.6.19 — Dual-Mode Updater + Trial Build Candidate**
 
-The unlicensed build remains a strict **5 successful Video + 5 successful MP3** trial. Stream and Convert remain unavailable while unlicensed.
+The unlicensed edition remains exactly **5 successful Video + 5 successful MP3 outputs**.
 
-R1.6.18 adds the customer-safe updater contract. Commercial builds check only the stable pointer in jleveriza1108/MediaDock-Release. Development metadata cannot trigger customer updates.
+Customers may purchase MediaDock or enter/activate their license key at any
+time during the trial; trial exhaustion is not required before licensing.
 
-Downloaded installers must come from the MediaDock-Release GitHub Releases path and must pass the SHA-256 in the stable manifest before launch.
+R1.6.19 adds dual update behavior:
 
-## Verification status
+- installed MediaDock uses the verified installer EXE;
+- portable MediaDock uses a verified portable ZIP and updates its current portable folder;
+- both update paths consume only the stable manifest from ajleveriza1108/MediaDock-Release;
+- development metadata cannot trigger customer updates;
+- both artifacts are SHA-256 verified;
+- portable updates preserve the external hardened trial state.
 
-The R1.6.18 Windows candidate has passed restore/build/publish, engine/updater self-test, GUI startup smoke, and Inno Setup compilation. Installed trial/update-cycle verification and stable artifact publication remain gated.
+The stable pointer remains inactive until the Windows installed and portable update cycle is verified.
 
-## Public-repository policy
+## Public repository policy
 
-This repository contains public project/status material and historical source only. Current commercial trial/licensing enforcement source is intentionally withheld.
-
-Do not commit private licensing source, trial reset tools, keys, secrets, customer/device records, downloaded tools, build output, logs, cookies, local state, or caches.
-
-## Media access boundary
-
-MediaDock is intended for public or otherwise authorized media. It does not bypass DRM, paywalls, authentication, subscriptions, or protected/private access.
+Current commercial trial/licensing/updater implementation remains private. This repository contains sanitized public project/status material only.
