@@ -1,29 +1,29 @@
-# MediaDock R1.6.23 development snapshot
+# MediaDock R1.6.24 development snapshot
 
-Status: R1.6.23 Windows updater-detection repair built, runtime-smoke-tested, published, and activated on the stable updater channel.
+Status: R1.6.24 Windows license-persistence repair built, runtime-smoke-tested, published, and activated on the stable updater channel.
 
-Current commercial release: R1.6.23 - Updater Detection + Build Identity Repair.
+Current commercial release: R1.6.24 - License Activation Persistence Repair.
 
 ## Customer distribution
 
-- MediaDock-Setup-R1.6.23.exe
-- SHA-256: 9617daaabd71bf6b88380a1424446bfcd1e4d07731bb8e8b6a413a7b284aca34
+- MediaDock-Setup-R1.6.24.exe
+- SHA-256: e0a610e01924bab8a846b516d3ae6e517446322b3c879a596518327d3cd5d0ee
 - Stable manifest: https://raw.githubusercontent.com/ajleveriza1108/MediaDock-Release/main/latest-stable.json
 
-## R1.6.23 acceptance gates
+## R1.6.24 acceptance gates
 
 - strict .NET build: PASS, 0 warnings, 0 errors
 - self-contained win-x64 publish: PASS
 - engine/updater contract test: PASS
 - Settings construction smoke: PASS
 - main-window plus Settings layout smoke: PASS
-- licensed UI + trial-unlock smoke: PASS
-- stable manifest cache-busting URI: PASS
-- Cache-Control no-cache/no-store request: PASS
-- informational-version-first current version resolution: PASS
-- updater decision diagnostics: PASS
-- future R1.6.24 receiving self-test: PASS
-- existing R1.6.22 Settings/license/trial features preserved: PASS
+- visible BuildIdentity smoke: PASS
+- isolated Credential Manager + DPAPI persistence round-trip: PASS
+- licensed UI + Trial-binding rebound smoke: PASS
+- startup validation / activation / release serialization source gate: PASS
+- protected production-store write/read-back verification preserved: PASS
+- future R1.6.25 updater receiving self-test: PASS
+- existing R1.6.23 updater freshness/no-cache contract preserved: PASS
 - same Inno AppId and per-user MediaDock install path: PASS
 - exact GitHub Release installer download-back SHA verification: PASS
 
