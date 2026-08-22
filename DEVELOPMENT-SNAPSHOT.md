@@ -1,20 +1,28 @@
-# MediaDock R1.6.26 development snapshot
+# MediaDock R1.6.27 development snapshot
 
-Status: verified stable functional primary-navigation repair.
+Status: verified stable compact fixed-window GUI polish.
 
 Customer release:
-- MediaDock-Setup-R1.6.26.exe
-- SHA-256: 14c09e2413f5c52da334e9235f6ea11e0e60c1f62fb08e4fe1c44b71d48306f0
+- MediaDock-Setup-R1.6.27.exe
+- SHA-256: 989ea6a152c272a3d1c0c51e1d5a222db4e2d1987ae8d7bd8acfe532fec847c7
 
 Acceptance gates:
 - strict .NET build: 0 warnings / 0 errors
-- Download/Stream/Convert real Button.ClickEvent smoke: PASS
-- expected primary view visibility after every click: PASS
-- Stream primary view wired-action source gate: PASS
-- Convert primary view wired-action source gate: PASS
-- licensed Stream/Convert enablement: PASS
-- Settings/layout/build-identity/license-persistence smokes: PASS
-- future R1.6.27 updater receiving self-test: PASS
+- fixed 1240x700 main viewport: PASS
+- UTF-8 source round-trip + targeted mojibake repair fixtures: PASS
+- UI source mojibake scan: PASS
+- Download visible-button no-crop/no-overlap geometry: PASS
+- Stream real Click + visible-button geometry: PASS
+- Convert real Click + visible-button geometry: PASS
+- Settings fixed 700x540 cleanup: PASS
+- Support & Diagnostics removed: PASS
+- Open Diagnostics removed: PASS
+- obsolete Always open maximized removed: PASS
+- duplicate lower Settings X removed: PASS
+- license buttons compact/contextual: PASS
+- Settings visible-button no-crop/no-overlap geometry: PASS
+- license persistence / licensed UI / build identity smokes: PASS
+- future R1.6.28 updater receiving self-test: PASS
 - exact GitHub Release installer download-back SHA: PASS
 
 Commercial implementation remains private/local.
