@@ -1,35 +1,34 @@
-# MediaDock R1.6.22 development snapshot
+# MediaDock R1.6.23 development snapshot
 
-Status: R1.6.22 Windows installer built, Settings runtime smoke-tested, published, and activated on the stable updater channel.
+Status: R1.6.23 Windows updater-detection repair built, runtime-smoke-tested, published, and activated on the stable updater channel.
 
-Current commercial release: R1.6.22 - Settings Crash + Remaining Mojibake Repair.
+Current commercial release: R1.6.23 - Updater Detection + Build Identity Repair.
 
 ## Customer distribution
 
-- MediaDock-Setup-R1.6.22.exe
-- SHA-256: e3e306afef103058313ea41df021744bb78d8d6519fafcb5753e5bcd85b739e4
+- MediaDock-Setup-R1.6.23.exe
+- SHA-256: 9617daaabd71bf6b88380a1424446bfcd1e4d07731bb8e8b6a413a7b284aca34
 - Stable manifest: https://raw.githubusercontent.com/ajleveriza1108/MediaDock-Release/main/latest-stable.json
 
-## R1.6.22 acceptance gates
+## R1.6.23 acceptance gates
 
 - strict .NET build: PASS, 0 warnings, 0 errors
 - self-contained win-x64 publish: PASS
 - engine/updater contract test: PASS
-- main-window startup smoke: PASS
 - Settings construction smoke: PASS
-- Settings click exception containment/logging: PASS
-- Settings InitializeComponent logging: PASS
-- crash log path LocalAppData\AJCoder\MediaDock\Logs: PASS
-- risky R1.6.21 Settings scrollbar template removed: PASS
-- visible Settings controls normalized to ASCII: PASS
-- rendered Trial footer normalized as exact ASCII ' | ' without replacing its WPF binding: PASS
-- licensed entitlement bypasses 5+5 enforcement: PASS
+- main-window plus Settings layout smoke: PASS
+- licensed UI + trial-unlock smoke: PASS
+- stable manifest cache-busting URI: PASS
+- Cache-Control no-cache/no-store request: PASS
+- informational-version-first current version resolution: PASS
+- updater decision diagnostics: PASS
+- future R1.6.24 receiving self-test: PASS
+- existing R1.6.22 Settings/license/trial features preserved: PASS
 - same Inno AppId and per-user MediaDock install path: PASS
-- future R1.6.23 update self-test: PASS
 - exact GitHub Release installer download-back SHA verification: PASS
 
 ## Publication boundary
 
-The commercial Settings, licensing, strict-trial, and updater implementation remains private/local and is not published in this public source repository.
+The commercial Settings, licensing, strict-trial, downloader, and updater implementation remains private/local and is not published in this public source repository.
 
 The public repository records the verified development/release snapshot only.
