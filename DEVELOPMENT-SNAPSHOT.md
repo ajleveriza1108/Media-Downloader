@@ -7,7 +7,7 @@ Current commercial release: R1.6.24 - License Activation Persistence Repair.
 ## Customer distribution
 
 - MediaDock-Setup-R1.6.24.exe
-- SHA-256: e0a610e01924bab8a846b516d3ae6e517446322b3c879a596518327d3cd5d0ee
+- SHA-256: acbd2032a6a1219c303b14ff914ad1c3fe899d4d80f59277ae391f0dcebe7e14
 - Stable manifest: https://raw.githubusercontent.com/ajleveriza1108/MediaDock-Release/main/latest-stable.json
 
 ## R1.6.24 acceptance gates
