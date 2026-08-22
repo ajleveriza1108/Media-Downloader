@@ -1,53 +1,34 @@
-# MediaDock R1.6.19 development snapshot
+# MediaDock R1.6.22 development snapshot
 
-Status: Windows installer candidate build verified; installed update-cycle and stable release activation remain pending.
+Status: R1.6.22 Windows installer built, Settings runtime smoke-tested, published, and activated on the stable updater channel.
 
-Current development package: R1.6.19 - Clean License Client + Installer-Only Updater.
+Current commercial release: R1.6.22 - Settings Crash + Remaining Mojibake Repair.
 
 ## Customer distribution
 
-MediaDock now has one Windows customer distribution format:
+- MediaDock-Setup-R1.6.22.exe
+- SHA-256: 3e52ac2cf15751b2aee038f893c2513a67850545f5e378622ea6add221c8a726
+- Stable manifest: https://raw.githubusercontent.com/ajleveriza1108/MediaDock-Release/main/latest-stable.json
 
-- MediaDock-Setup-R1.6.19-Trial.exe
+## R1.6.22 acceptance gates
 
-The installed application starts in trial mode when no valid license is active:
-
-- 5 successful Video outputs;
-- 5 successful MP3 outputs;
-- Stream unavailable while unlicensed;
-- Convert unavailable while unlicensed.
-
-Buy MediaDock License and Enter Serial remain available before trial exhaustion. The private Windows build contains a direct license client for Admin/customer activation, validation, protected local persistence, and device release.
-
-## Stable updater contract v3
-
-The installed commercial application reads only:
-
-https://raw.githubusercontent.com/ajleveriza1108/MediaDock-Release/main/latest-stable.json
-
-It accepts an update only when the manifest is schema version 3, identifies MediaDock/stable, is newer than the installed version, has stable/runtime/installer/updater gates enabled, points to an HTTPS installer under the official MediaDock-Release GitHub Releases path, and supplies a valid SHA-256.
-
-The downloaded installer is independently hashed before it can launch.
-
-latest-development.json never triggers customer updates.
-
-## Windows candidate verification
-
-- .NET restore: PASS
-- .NET Release build: PASS
+- strict .NET build: PASS, 0 warnings, 0 errors
 - self-contained win-x64 publish: PASS
-- engine + installer-updater contract test: PASS
-- GUI startup smoke: PASS
-- live private licensing backend verification: PASS
-- direct clean LicenseService + protected persistence source contract: PASS
-- centered Enter Serial + Release This Device UI contract: PASS
-- strict unlicensed 5+5 entitlement bridge contract: PASS
-- Inno Setup trial installer compile: PASS
-- staged EXE SHA-256: 48f34536718847fd28d1b27e32a62019bd8974f5ce4e6bf7e4759e7b1c6e587b
-- installer SHA-256: 6502a3e7947de6e5510e4762afcc968bedae0aacf0151bee504196648b0378d5
+- engine/updater contract test: PASS
+- main-window startup smoke: PASS
+- Settings construction smoke: PASS
+- Settings click exception containment/logging: PASS
+- Settings InitializeComponent logging: PASS
+- crash log path LocalAppData\AJCoder\MediaDock\Logs: PASS
+- risky R1.6.21 Settings scrollbar template removed: PASS
+- visible Settings controls normalized to ASCII: PASS
+- visible trial separator normalized to ASCII: PASS
+- same Inno AppId and per-user MediaDock install path: PASS
+- future R1.6.23 update self-test: PASS
+- exact GitHub Release installer download-back SHA verification: PASS
 
 ## Publication boundary
 
-Current commercial trial/licensing/updater source is not published in this repository.
+The commercial Settings, licensing, strict-trial, and updater implementation remains private/local and is not published in this public source repository.
 
-The stable pointer remains inactive until the exact installer passes installed update-cycle verification and is hosted as a MediaDock-Release GitHub Release asset.
+The public repository records the verified development/release snapshot only.
