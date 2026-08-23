@@ -1,899 +1,1735 @@
-<Window x:Class="MediaDownloader.MainWindow"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
-        Title="Media Downloader"
-        Width="1280"
-        Height="720"
-        MinWidth="620"
-        MinHeight="340"
-        WindowStartupLocation="CenterScreen"
-        WindowStyle="None"
-        ResizeMode="CanResize"
-        Background="#070D18"
-        Foreground="#F8FAFC"
-        FontFamily="Segoe UI"
-        UseLayoutRounding="True"
-        SnapsToDevicePixels="True"
-        SizeChanged="Window_SizeChanged">
-
-    <shell:WindowChrome.WindowChrome>
-        <shell:WindowChrome CaptionHeight="0"
-                            ResizeBorderThickness="7"
-                            CornerRadius="0"
-                            GlassFrameThickness="0"
-                            UseAeroCaptionButtons="False" />
-    </shell:WindowChrome.WindowChrome>
-
-    <Window.Resources>
-        <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
-
-        <LinearGradientBrush x:Key="AccentGradient" StartPoint="0,0.5" EndPoint="1,0.5">
-            <GradientStop Color="#2396FF" Offset="0" />
-            <GradientStop Color="#445CFF" Offset="0.52" />
-            <GradientStop Color="#8B2CFF" Offset="1" />
-        </LinearGradientBrush>
-
-        <LinearGradientBrush x:Key="AccentBorderGradient" StartPoint="0,0.5" EndPoint="1,0.5">
-            <GradientStop Color="#37B6FF" Offset="0" />
-            <GradientStop Color="#5D73FF" Offset="0.55" />
-            <GradientStop Color="#A43BFF" Offset="1" />
-        </LinearGradientBrush>
-
-        <Style x:Key="NeonPrimaryButton" TargetType="Button">
-            <Setter Property="Foreground" Value="White" />
-            <Setter Property="FontSize" Value="15" />
-            <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="Cursor" Value="Hand" />
-            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-            <Setter Property="Background" Value="{StaticResource AccentGradient}" />
-            <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Padding" Value="20,11" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="ButtonBorder"
-                                Background="{TemplateBinding Background}"
-                                CornerRadius="10"
-                                Padding="{TemplateBinding Padding}">
-                            <Border.Effect>
-                                <DropShadowEffect BlurRadius="18" ShadowDepth="0" Color="#5B48FF" Opacity="0.32" />
-                            </Border.Effect>
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="ButtonBorder" Property="Opacity" Value="0.92" />
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="ButtonBorder" Property="Opacity" Value="0.8" />
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter TargetName="ButtonBorder" Property="Background" Value="#152033" />
-                                <Setter TargetName="ButtonBorder" Property="Opacity" Value="1" />
-                                <Setter TargetName="ButtonBorder" Property="Effect" Value="{x:Null}" />
-                                <Setter Property="Foreground" Value="#718199" />
-                                <Setter Property="Cursor" Value="Arrow" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <Style x:Key="GhostButton" TargetType="Button">
-            <Setter Property="Foreground" Value="#E7EEF9" />
-            <Setter Property="Background" Value="#111A2A" />
-            <Setter Property="BorderBrush" Value="#2A3850" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="Padding" Value="12,8" />
-            <Setter Property="Cursor" Value="Hand" />
-            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="GhostBorder"
-                                Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="8"
-                                Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="GhostBorder" Property="BorderBrush" Value="#4A7BFF" />
-                                <Setter TargetName="GhostBorder" Property="Background" Value="#162239" />
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter TargetName="GhostBorder" Property="Opacity" Value="0.4" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <Style x:Key="TitleBarButton" TargetType="Button" BasedOn="{StaticResource GhostButton}">
-            <Setter Property="Width" Value="42" />
-            <Setter Property="Height" Value="34" />
-            <Setter Property="Padding" Value="0" />
-            <Setter Property="Background" Value="Transparent" />
-            <Setter Property="BorderBrush" Value="Transparent" />
-            <Setter Property="FontSize" Value="16" />
-        </Style>
-
-        <Style x:Key="DarkTextBox" TargetType="TextBox">
-            <Setter Property="Foreground" Value="#EAF1FB" />
-            <Setter Property="Background" Value="#0D1625" />
-            <Setter Property="BorderBrush" Value="#263650" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="CaretBrush" Value="#6E8CFF" />
-            <Setter Property="Padding" Value="12,8" />
-            <Setter Property="FontSize" Value="14" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="TextBox">
-                        <Border Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="8">
-                            <ScrollViewer x:Name="PART_ContentHost" Margin="{TemplateBinding Padding}" />
-                        </Border>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <!-- URL input uses the native WPF TextBox template. The previous custom
+<Window x:Class="MediaDownloader.MainWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework" xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf" Title="MediaDock - Downloader &amp; Converter" Icon="Assets/MediaDock.ico" Width="1240" Height="700" MinWidth="1240" MinHeight="700" WindowStartupLocation="CenterScreen" WindowStyle="None" ResizeMode="NoResize" Background="{DynamicResource ThemeWindowBackgroundBrush}" Foreground="{DynamicResource ThemePrimaryTextBrush}" FontFamily="Segoe UI" UseLayoutRounding="True" SnapsToDevicePixels="True" AllowDrop="True" PreviewDragEnter="Window_PreviewDragEnter" PreviewDragOver="Window_PreviewDragOver" PreviewDragLeave="Window_PreviewDragLeave" PreviewDrop="Window_PreviewDrop" PreviewKeyDown="Window_PreviewKeyDown" SizeChanged="Window_SizeChanged" MaxWidth="1240" MaxHeight="700">
+  <shell:WindowChrome.WindowChrome>
+    <shell:WindowChrome CaptionHeight="0" ResizeBorderThickness="7" CornerRadius="0" GlassFrameThickness="0" UseAeroCaptionButtons="False" />
+  </shell:WindowChrome.WindowChrome>
+  <Window.Resources>
+    <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
+    <LinearGradientBrush x:Key="AccentGradient" StartPoint="0,0.5" EndPoint="1,0.5">
+      <GradientStop Color="#2396FF" Offset="0" />
+      <GradientStop Color="#445CFF" Offset="0.52" />
+      <GradientStop Color="#8B2CFF" Offset="1" />
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="AccentBorderGradient" StartPoint="0,0.5" EndPoint="1,0.5">
+      <GradientStop Color="#37B6FF" Offset="0" />
+      <GradientStop Color="#5D73FF" Offset="0.55" />
+      <GradientStop Color="#A43BFF" Offset="1" />
+    </LinearGradientBrush>
+    <Style x:Key="NeonPrimaryButton" TargetType="Button">
+      <Setter Property="Foreground" Value="White" />
+      <Setter Property="FontSize" Value="15" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Cursor" Value="Hand" />
+      <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+      <Setter Property="Background" Value="{StaticResource AccentGradient}" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Padding" Value="20,11" />
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="Button">
+            <Border x:Name="ButtonBorder" Background="{TemplateBinding Background}" CornerRadius="10" Padding="{TemplateBinding Padding}">
+              <Border.Effect>
+                <DropShadowEffect BlurRadius="18" ShadowDepth="0" Color="#5B48FF" Opacity="0.32" />
+              </Border.Effect>
+              <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+            </Border>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="ButtonBorder" Property="Opacity" Value="0.92" />
+              </Trigger>
+              <Trigger Property="IsPressed" Value="True">
+                <Setter TargetName="ButtonBorder" Property="Opacity" Value="0.8" />
+              </Trigger>
+              <Trigger Property="IsEnabled" Value="False">
+                <Setter TargetName="ButtonBorder" Property="Background" Value="{DynamicResource ThemeHoverBrush}" />
+                <Setter TargetName="ButtonBorder" Property="Opacity" Value="1" />
+                <Setter TargetName="ButtonBorder" Property="Effect" Value="{x:Null}" />
+                <Setter Property="Foreground" Value="{DynamicResource ThemeMutedTextBrush}" />
+                <Setter Property="Cursor" Value="Arrow" />
+              </Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+    <Style x:Key="GhostButton" TargetType="Button">
+      <Setter Property="Foreground" Value="{DynamicResource ThemePrimaryTextBrush}" />
+      <Setter Property="Background" Value="{DynamicResource ThemeSurfaceBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ThemeBorderBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="Padding" Value="12,8" />
+      <Setter Property="Cursor" Value="Hand" />
+      <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="Button">
+            <Border x:Name="GhostBorder" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="8" Padding="{TemplateBinding Padding}">
+              <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+            </Border>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="GhostBorder" Property="BorderBrush" Value="{DynamicResource ThemeAccentBrush}" />
+                <Setter TargetName="GhostBorder" Property="Background" Value="{DynamicResource ThemeHoverBrush}" />
+              </Trigger>
+              <Trigger Property="IsEnabled" Value="False">
+                <Setter TargetName="GhostBorder" Property="Opacity" Value="0.4" />
+              </Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+    <Style x:Key="TitleBarButton" TargetType="Button" BasedOn="{StaticResource GhostButton}">
+      <Setter Property="Width" Value="42" />
+      <Setter Property="Height" Value="34" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderBrush" Value="Transparent" />
+      <Setter Property="FontSize" Value="16" />
+    </Style>
+    <Style x:Key="TitleBarCloseButton" TargetType="Button">
+      <Setter Property="Width" Value="42" />
+      <Setter Property="Height" Value="34" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="Foreground" Value="{DynamicResource ThemeSecondaryTextBrush}" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="FontSize" Value="16" />
+      <Setter Property="Cursor" Value="Hand" />
+      <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="Button">
+            <Border x:Name="CloseSurface" Background="{TemplateBinding Background}">
+              <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+            </Border>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="CloseSurface" Property="Background" Value="#C42B1C" />
+                <Setter Property="Foreground" Value="#FFFFFF" />
+              </Trigger>
+              <Trigger Property="IsPressed" Value="True">
+                <Setter TargetName="CloseSurface" Property="Background" Value="#A51D14" />
+                <Setter Property="Foreground" Value="#FFFFFF" />
+              </Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+    <Style x:Key="DarkTextBox" TargetType="TextBox">
+      <Setter Property="Foreground" Value="{DynamicResource ThemePrimaryTextBrush}" />
+      <Setter Property="Background" Value="{DynamicResource ThemeInputBackgroundBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ThemeBorderBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CaretBrush" Value="{DynamicResource ThemeAccentBrush}" />
+      <Setter Property="Padding" Value="12,8" />
+      <Setter Property="FontSize" Value="14" />
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="TextBox">
+            <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="8">
+              <ScrollViewer x:Name="PART_ContentHost" Margin="{TemplateBinding Padding}" />
+            </Border>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+    <!-- URL input uses the native WPF TextBox template. The previous custom
              PART_ContentHost margin could clip glyph ascenders at some DPI/text
              scaling combinations. The outer URL strip owns all chrome. -->
-        <Style x:Key="UrlTextBox" TargetType="TextBox">
-            <Setter Property="Foreground" Value="#EAF1FB" />
-            <Setter Property="Background" Value="Transparent" />
-            <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="CaretBrush" Value="#6E8CFF" />
-            <Setter Property="FontSize" Value="16" />
-            <Setter Property="Padding" Value="12,0,8,0" />
-            <Setter Property="VerticalContentAlignment" Value="Center" />
-            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-            <Setter Property="MinHeight" Value="40" />
-            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-            <Setter Property="TextWrapping" Value="NoWrap" />
-            <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Hidden" />
-            <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Disabled" />
-        </Style>
-
-        <Style x:Key="DarkComboBoxItem" TargetType="ComboBoxItem">
-            <Setter Property="Foreground" Value="#E9EFF8" />
-            <Setter Property="Background" Value="Transparent" />
-            <Setter Property="Padding" Value="10,8" />
-            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-            <Style.Triggers>
-                <Trigger Property="IsHighlighted" Value="True">
-                    <Setter Property="Background" Value="#1C2940" />
-                </Trigger>
-                <Trigger Property="IsSelected" Value="True">
-                    <Setter Property="Background" Value="#273653" />
-                </Trigger>
-            </Style.Triggers>
-        </Style>
-
-        <Style x:Key="DarkComboBox" TargetType="ComboBox">
-            <Setter Property="Foreground" Value="#F4F7FB" />
-            <Setter Property="Background" Value="#10192A" />
-            <Setter Property="BorderBrush" Value="#28364F" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="Padding" Value="11,7" />
-            <Setter Property="MinHeight" Value="42" />
-            <Setter Property="ItemContainerStyle" Value="{StaticResource DarkComboBoxItem}" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="ComboBox">
-                        <Grid>
-                            <Border x:Name="ComboBorder"
-                                    Background="{TemplateBinding Background}"
-                                    BorderBrush="{TemplateBinding BorderBrush}"
-                                    BorderThickness="{TemplateBinding BorderThickness}"
-                                    CornerRadius="8" />
-                            <Grid Margin="{TemplateBinding Padding}">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="20" />
-                                </Grid.ColumnDefinitions>
-                                <ContentPresenter Grid.Column="0"
-                                                  VerticalAlignment="Center"
-                                                  Content="{TemplateBinding SelectionBoxItem}"
-                                                  ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
-                                                  ContentStringFormat="{TemplateBinding SelectionBoxItemStringFormat}" />
-                                <Path Grid.Column="1"
-                                      Width="8"
-                                      Height="5"
-                                      HorizontalAlignment="Center"
-                                      VerticalAlignment="Center"
-                                      Fill="#9AA9BD"
-                                      Data="M 0 0 L 4 4 L 8 0 Z" />
-                            </Grid>
-                            <ToggleButton Background="Transparent"
-                                          BorderThickness="0"
-                                          Focusable="False"
-                                          IsChecked="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}">
-                                <ToggleButton.Template>
-                                    <ControlTemplate TargetType="ToggleButton">
-                                        <Border Background="Transparent" />
-                                    </ControlTemplate>
-                                </ToggleButton.Template>
-                            </ToggleButton>
-                            <Popup x:Name="PART_Popup"
-                                   Placement="Bottom"
-                                   AllowsTransparency="True"
-                                   Focusable="False"
-                                   IsOpen="{TemplateBinding IsDropDownOpen}"
-                                   PopupAnimation="Fade">
-                                <Border Margin="0,4,0,0"
-                                        MinWidth="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}"
-                                        MaxHeight="260"
-                                        Background="#0F1828"
-                                        BorderBrush="#30405C"
-                                        BorderThickness="1"
-                                        CornerRadius="8">
-                                    <ScrollViewer Margin="4" SnapsToDevicePixels="True">
-                                        <ItemsPresenter />
-                                    </ScrollViewer>
-                                </Border>
-                            </Popup>
-                        </Grid>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsKeyboardFocusWithin" Value="True">
-                                <Setter TargetName="ComboBorder" Property="BorderBrush" Value="#5977FF" />
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter TargetName="ComboBorder" Property="Opacity" Value="0.68" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <Style x:Key="SegmentedListBox" TargetType="ListBox">
-            <Setter Property="MinHeight" Value="40" />
-            <Setter Property="VerticalAlignment" Value="Top" />
-            <Setter Property="Background" Value="Transparent" />
-            <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
-            <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Disabled" />
-            <Setter Property="ItemsPanel">
-                <Setter.Value>
-                    <ItemsPanelTemplate>
-                        <UniformGrid Rows="1" />
-                    </ItemsPanelTemplate>
-                </Setter.Value>
-            </Setter>
-            <Setter Property="ItemContainerStyle">
-                <Setter.Value>
-                    <Style TargetType="ListBoxItem">
-                        <Setter Property="Foreground" Value="#DCE5F2" />
-                        <Setter Property="MinHeight" Value="40" />
-                        <Setter Property="Padding" Value="8,6" />
-                        <Setter Property="Margin" Value="0,0,4,0" />
-                        <Setter Property="FontSize" Value="12" />
-                        <Setter Property="Cursor" Value="Hand" />
-                        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-                        <Setter Property="Template">
-                            <Setter.Value>
-                                <ControlTemplate TargetType="ListBoxItem">
-                                    <Border x:Name="Segment"
-                                            Background="#111A2A"
-                                            BorderBrush="#293850"
-                                            BorderThickness="1"
-                                            CornerRadius="7"
-                                            Padding="{TemplateBinding Padding}">
-                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
-                                    </Border>
-                                    <ControlTemplate.Triggers>
-                                        <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter TargetName="Segment" Property="BorderBrush" Value="#4C66C9" />
-                                        </Trigger>
-                                        <Trigger Property="IsSelected" Value="True">
-                                            <Setter TargetName="Segment" Property="Background" Value="#22234B" />
-                                            <Setter TargetName="Segment" Property="BorderBrush" Value="#765BFF" />
-                                            <Setter Property="Foreground" Value="#FFFFFF" />
-                                        </Trigger>
-                                    </ControlTemplate.Triggers>
-                                </ControlTemplate>
-                            </Setter.Value>
-                        </Setter>
-                    </Style>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <Style x:Key="QueueProgressBar" TargetType="ProgressBar">
-            <Setter Property="Height" Value="5" />
-            <Setter Property="Background" Value="#0A1020" />
-            <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="ProgressBar">
-                        <Grid x:Name="PART_Track" ClipToBounds="True">
-                            <Border Background="{TemplateBinding Background}" CornerRadius="3" />
-                            <Border x:Name="PART_Indicator"
-                                    HorizontalAlignment="Left"
-                                    Background="{StaticResource AccentGradient}"
-                                    CornerRadius="3" />
-                        </Grid>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <Style x:Key="LabelText" TargetType="TextBlock">
-            <Setter Property="Foreground" Value="#C8D3E2" />
-            <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="FontSize" Value="13" />
-        </Style>
-    </Window.Resources>
-
-    <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="54" />
-            <RowDefinition Height="*" />
-        </Grid.RowDefinitions>
-
-        <!-- Custom title bar -->
-        <Grid Grid.Row="0"
-              Background="#080E19"
-              MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
-
-            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="22,0,0,0">
-                <Grid Width="34" Height="34">
-                    <Path Data="M4,3 L33,19 L4,35 Z"
-                          Fill="{StaticResource AccentGradient}"
-                          Stretch="Uniform"
-                          Margin="2">
-                        <Path.Effect>
-                            <DropShadowEffect BlurRadius="16" ShadowDepth="0" Color="#2FA9FF" Opacity="0.48" />
-                        </Path.Effect>
-                    </Path>
-                    <Path Data="M10,10 L26,19 L10,28 Z" Fill="#0A1220" Stretch="Uniform" Margin="6" />
-                    <Path Data="M13,13 L24,19 L13,25 Z" Fill="#C9E7FF" Stretch="Uniform" Margin="9" />
-                </Grid>
-                <TextBlock Margin="12,0,0,0"
-                           VerticalAlignment="Center"
-                           Text="Media Downloader"
-                           FontSize="19"
-                           FontWeight="SemiBold" />
-            </StackPanel>
-
-            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,10,0">
-                <Button Style="{StaticResource TitleBarButton}" Click="OpenDiagnostics_Click" ToolTip="Diagnostics and engine status" Content="⚙" />
-                <Button Style="{StaticResource TitleBarButton}" Click="Minimize_Click" Content="—" />
-                <Button Style="{StaticResource TitleBarButton}" Click="MaximizeRestore_Click" Content="□" />
-                <Button Style="{StaticResource TitleBarButton}" Click="Close_Click" Content="×" />
-            </StackPanel>
-        </Grid>
-
-        <Grid x:Name="MainContentRoot" Grid.Row="1" Margin="16,12,16,14">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="56" />
-                <RowDefinition Height="8" />
-                <RowDefinition Height="*" />
-            </Grid.RowDefinitions>
-
-            <!-- URL strip: paste automatically triggers analysis -->
-            <Border Grid.Row="0"
-                    BorderBrush="{StaticResource AccentBorderGradient}"
-                    BorderThickness="1.5"
-                    CornerRadius="12"
-                    Padding="1">
-                <Border Background="#0C1524" CornerRadius="11">
-                    <Grid Margin="14,0,10,0">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="32" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="44" />
-                        </Grid.ColumnDefinitions>
-
-                        <Path Grid.Column="0"
-                              Width="18" Height="18"
-                              VerticalAlignment="Center"
-                              HorizontalAlignment="Center"
-                              Fill="#93A4BB"
-                              Stretch="Uniform"
-                              Data="M3.9,12 C3.9,10.84 4.84,9.9 6,9.9 L10,9.9 L10,8 L6,8 C3.79,8 2,9.79 2,12 C2,14.21 3.79,16 6,16 L10,16 L10,14.1 L6,14.1 C4.84,14.1 3.9,13.16 3.9,12 M8,13 L16,13 L16,11 L8,11 M18,8 L14,8 L14,9.9 L18,9.9 C19.16,9.9 20.1,10.84 20.1,12 C20.1,13.16 19.16,14.1 18,14.1 L14,14.1 L14,16 L18,16 C20.21,16 22,14.21 22,12 C22,9.79 20.21,8 18,8 Z" />
-
-                        <Grid Grid.Column="1">
-                            <TextBox x:Name="UrlInputTextBox"
-                                     Style="{StaticResource UrlTextBox}"
-                                     Text="{Binding Url, UpdateSourceTrigger=PropertyChanged}" />
-                            <TextBlock Margin="12,0,8,0"
-                                       VerticalAlignment="Center"
-                                       Foreground="#738095"
-                                       FontSize="16"
-                                       IsHitTestVisible="False"
-                                       Text="Paste video or playlist URL here...">
-                                <TextBlock.Style>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="Visibility" Value="Collapsed" />
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding Url}" Value="">
-                                                <Setter Property="Visibility" Value="Visible" />
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </TextBlock.Style>
-                            </TextBlock>
-                        </Grid>
-
-                        <TextBlock x:Name="UrlStatusText" Grid.Column="2"
-                                   Margin="10,0,8,0"
-                                   VerticalAlignment="Center"
-                                   Foreground="#7388A8"
-                                   FontSize="10"
-                                   Text="{Binding Status}"
-                                   TextTrimming="CharacterEllipsis"
-                                   MaxWidth="230" />
-
-                        <Button Grid.Column="3"
-                                Width="38" Height="38"
-                                VerticalAlignment="Center"
-                                Style="{StaticResource GhostButton}"
-                                Padding="0"
-                                Command="{Binding PasteUrlCommand}"
-                                ToolTip="Paste URL from clipboard">
-                            <Path Width="16" Height="16" Fill="#DCE6F4" Stretch="Uniform"
-                                  Data="M19,3 L14.82,3 C14.4,1.84 13.3,1 12,1 C10.7,1 9.6,1.84 9.18,3 L5,3 C3.9,3 3,3.9 3,5 L3,19 C3,20.1 3.9,21 5,21 L19,21 C20.1,21 21,20.1 21,19 L21,5 C21,3.9 20.1,3 19,3 M12,3 C12.55,3 13,3.45 13,4 C13,4.55 12.55,5 12,5 C11.45,5 11,4.55 11,4 C11,3.45 11.45,3 12,3 M19,19 L5,19 L5,5 L7,5 L7,8 L17,8 L17,5 L19,5 Z" />
-                        </Button>
-                    </Grid>
+    <Style x:Key="UrlTextBox" TargetType="TextBox">
+      <Setter Property="Foreground" Value="{DynamicResource ThemePrimaryTextBrush}" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="CaretBrush" Value="{DynamicResource ThemeAccentBrush}" />
+      <Setter Property="FontSize" Value="16" />
+      <Setter Property="Padding" Value="12,0,8,0" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+      <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+      <Setter Property="MinHeight" Value="40" />
+      <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+      <Setter Property="TextWrapping" Value="NoWrap" />
+      <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Hidden" />
+      <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Disabled" />
+    </Style>
+    <Style x:Key="DarkComboBoxItem" TargetType="ComboBoxItem">
+      <Setter Property="Foreground" Value="{DynamicResource ThemePrimaryTextBrush}" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="Padding" Value="10,8" />
+      <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+      <Style.Triggers>
+        <Trigger Property="IsHighlighted" Value="True">
+          <Setter Property="Background" Value="{DynamicResource ThemeHoverBrush}" />
+        </Trigger>
+        <Trigger Property="IsSelected" Value="True">
+          <Setter Property="Background" Value="{DynamicResource ThemeAccentPanelBrush}" />
+        </Trigger>
+      </Style.Triggers>
+    </Style>
+    <Style x:Key="DarkComboBox" TargetType="ComboBox">
+      <Setter Property="Foreground" Value="{DynamicResource ThemePrimaryTextBrush}" />
+      <Setter Property="Background" Value="{DynamicResource ThemeInputBackgroundBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ThemeBorderBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="Padding" Value="11,7" />
+      <Setter Property="MinHeight" Value="42" />
+      <Setter Property="ItemContainerStyle" Value="{StaticResource DarkComboBoxItem}" />
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="ComboBox">
+            <Grid>
+              <Border x:Name="ComboBorder" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="8" />
+              <Grid Margin="{TemplateBinding Padding}">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="*" />
+                  <ColumnDefinition Width="20" />
+                </Grid.ColumnDefinitions>
+                <ContentPresenter Grid.Column="0" VerticalAlignment="Center" Content="{TemplateBinding SelectionBoxItem}" ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}" ContentStringFormat="{TemplateBinding SelectionBoxItemStringFormat}" />
+                <Path Grid.Column="1" Width="8" Height="5" HorizontalAlignment="Center" VerticalAlignment="Center" Fill="{DynamicResource ThemeMutedTextBrush}" Data="M 0 0 L 4 4 L 8 0 Z" />
+              </Grid>
+              <ToggleButton Background="Transparent" BorderThickness="0" Focusable="False" IsChecked="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}">
+                <ToggleButton.Template>
+                  <ControlTemplate TargetType="ToggleButton">
+                    <Border Background="Transparent" />
+                  </ControlTemplate>
+                </ToggleButton.Template>
+              </ToggleButton>
+              <Popup x:Name="PART_Popup" Placement="Bottom" AllowsTransparency="True" Focusable="False" IsOpen="{TemplateBinding IsDropDownOpen}" PopupAnimation="Fade">
+                <Border Margin="0,4,0,0" MinWidth="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}" MaxHeight="260" Background="{DynamicResource ThemePanelBackgroundBrush}" BorderBrush="{DynamicResource ThemeBorderBrush}" BorderThickness="1" CornerRadius="8">
+                  <ScrollViewer Margin="4" SnapsToDevicePixels="True">
+                    <ItemsPresenter />
+                  </ScrollViewer>
                 </Border>
+              </Popup>
+            </Grid>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                <Setter TargetName="ComboBorder" Property="BorderBrush" Value="{DynamicResource ThemeAccentBrush}" />
+              </Trigger>
+              <Trigger Property="IsEnabled" Value="False">
+                <Setter TargetName="ComboBorder" Property="Opacity" Value="0.68" />
+              </Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+    <!-- Stream resolution selectors must use MediaDock theme resources.
+             This compact derivative keeps the existing Stream 28-30 px layout
+             instead of inheriting the 42 px general-input minimum height. -->
+    <Style x:Key="StreamDarkComboBox" TargetType="ComboBox" BasedOn="{StaticResource DarkComboBox}">
+      <Setter Property="MinHeight" Value="28" />
+      <Setter Property="Padding" Value="9,4" />
+      <Setter Property="FontSize" Value="9.5" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+    <Style x:Key="SegmentedListBox" TargetType="ListBox">
+      <Setter Property="MinHeight" Value="40" />
+      <Setter Property="VerticalAlignment" Value="Top" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
+      <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Disabled" />
+      <Setter Property="ItemsPanel">
+        <Setter.Value>
+          <ItemsPanelTemplate>
+            <UniformGrid Rows="1" />
+          </ItemsPanelTemplate>
+        </Setter.Value>
+      </Setter>
+      <Setter Property="ItemContainerStyle">
+        <Setter.Value>
+          <Style TargetType="ListBoxItem">
+            <Setter Property="Foreground" Value="{DynamicResource ThemePrimaryTextBrush}" />
+            <Setter Property="MinHeight" Value="40" />
+            <Setter Property="Padding" Value="8,6" />
+            <Setter Property="Margin" Value="0,0,4,0" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Template">
+              <Setter.Value>
+                <ControlTemplate TargetType="ListBoxItem">
+                  <Border x:Name="Segment" Background="{DynamicResource ThemeSurfaceBrush}" BorderBrush="{DynamicResource ThemeBorderBrush}" BorderThickness="1" CornerRadius="7" Padding="{TemplateBinding Padding}">
+                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                  </Border>
+                  <ControlTemplate.Triggers>
+                    <Trigger Property="IsMouseOver" Value="True">
+                      <Setter TargetName="Segment" Property="BorderBrush" Value="{DynamicResource ThemeAccentBrush}" />
+                    </Trigger>
+                    <Trigger Property="IsSelected" Value="True">
+                      <Setter TargetName="Segment" Property="Background" Value="{DynamicResource ThemeAccentPanelBrush}" />
+                      <Setter TargetName="Segment" Property="BorderBrush" Value="{DynamicResource ThemeAccentBrush}" />
+                      <Setter Property="Foreground" Value="{DynamicResource ThemePrimaryTextBrush}" />
+                    </Trigger>
+                  </ControlTemplate.Triggers>
+                </ControlTemplate>
+              </Setter.Value>
+            </Setter>
+          </Style>
+        </Setter.Value>
+      </Setter>
+    </Style>
+    <Style x:Key="QueueProgressBar" TargetType="ProgressBar">
+      <Setter Property="Height" Value="5" />
+      <Setter Property="Background" Value="{DynamicResource ThemeInputBackgroundBrush}" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="ProgressBar">
+            <Grid x:Name="PART_Track" ClipToBounds="True">
+              <Border Background="{TemplateBinding Background}" CornerRadius="3" />
+              <Border x:Name="PART_Indicator" HorizontalAlignment="Left" Background="{StaticResource AccentGradient}" CornerRadius="3" />
+            </Grid>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+    <Style x:Key="LabelText" TargetType="TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource ThemePrimaryTextBrush}" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="FontSize" Value="13" />
+    </Style>
+    <!-- MediaDock focused downloader/converter shell styles. -->
+    <Style x:Key="CreatorCard" TargetType="Border">
+      <Setter Property="Background" Value="{DynamicResource ThemeSurfaceBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ThemeBorderBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="10" />
+      <Setter Property="Padding" Value="12" />
+    </Style>
+    <Style x:Key="SidebarButton" TargetType="Button" BasedOn="{StaticResource GhostButton}">
+      <Setter Property="HorizontalContentAlignment" Value="Left" />
+      <Setter Property="Height" Value="38" />
+      <Setter Property="Margin" Value="0,0,0,4" />
+      <Setter Property="Padding" Value="12,0" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderBrush" Value="Transparent" />
+      <Setter Property="FontSize" Value="12" />
+    </Style>
+    <Style x:Key="SidebarButtonSelected" TargetType="Button" BasedOn="{StaticResource SidebarButton}">
+      <Setter Property="Background" Value="{DynamicResource ThemeAccentPanelBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ThemeAccentBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource ThemeAccentBrush}" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style x:Key="WorkspaceTileButton" TargetType="Button" BasedOn="{StaticResource GhostButton}">
+      <Setter Property="Width" Value="152" />
+      <Setter Property="Height" Value="88" />
+      <Setter Property="Margin" Value="0,0,8,0" />
+      <Setter Property="Padding" Value="10" />
+      <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+      <Setter Property="VerticalContentAlignment" Value="Stretch" />
+    </Style>
+    <Style x:Key="SectionHeaderText" TargetType="TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource ThemeAccentBrush}" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="FontSize" Value="11" />
+    </Style>
+    <!-- R1.6.2 reference-GUI vector icon and dense desktop styles. -->
+    <Style x:Key="QueueTitleTextBox" TargetType="TextBox">
+      <Setter Property="Foreground" Value="{DynamicResource ThemePrimaryTextBrush}" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderBrush" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="FontSize" Value="10.5" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Padding" Value="3,1" />
+      <Setter Property="MinHeight" Value="23" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+      <Setter Property="TextWrapping" Value="NoWrap" />
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="TextBox">
+            <Border x:Name="QueueTitleBorder" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="4" Padding="{TemplateBinding Padding}">
+              <ScrollViewer x:Name="PART_ContentHost" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled" />
             </Border>
-
-            <!-- Responsive panels: wide = 3 columns; medium = Media over Queue/Convert; narrow = stacked. -->
-            <ScrollViewer x:Name="PanelsScrollViewer"
-                          Grid.Row="2"
-                          VerticalScrollBarVisibility="Auto"
-                          HorizontalScrollBarVisibility="Disabled"
-                          CanContentScroll="False"
-                          PanningMode="VerticalOnly"
-                          VerticalContentAlignment="Top"
-                          Padding="0,0,4,0">
-            <Grid x:Name="PanelsGrid" VerticalAlignment="Top">
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsKeyboardFocused" Value="True">
+                <Setter TargetName="QueueTitleBorder" Property="Background" Value="{DynamicResource ThemeAccentPanelBrush}" />
+                <Setter TargetName="QueueTitleBorder" Property="BorderBrush" Value="{DynamicResource ThemeAccentBrush}" />
+              </Trigger>
+              <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="QueueTitleBorder" Property="BorderBrush" Value="{DynamicResource ThemeStrongBorderBrush}" />
+              </Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+    <Geometry x:Key="IconBrand">M4,3 L20,3 L20,21 L4,21 Z M12,6 L12,14 M8,10 L12,14 L16,10 M7,18 L17,18</Geometry>
+    <Geometry x:Key="IconDownload">M12,3 L12,15 M7,10 L12,15 L17,10 M4,19 L20,19</Geometry>
+    <Geometry x:Key="IconLink">M10,8 L8,8 A4,4 0 0 0 8,16 L11,16 M14,8 L17,8 A4,4 0 0 1 17,16 L14,16 M9,12 L15,12</Geometry>
+    <Geometry x:Key="IconTrash">M7,7 L17,7 M9,7 L9,19 L15,19 L15,7 M10,4 L14,4 L15,7 L9,7 Z</Geometry>
+    <Geometry x:Key="IconOpenFile">M5,3 L14,3 L19,8 L19,21 L5,21 Z M14,3 L14,8 L19,8 M10,16 L17,9 M13,9 L17,9 L17,13</Geometry>
+    <Geometry x:Key="IconFolderOpen">M3,7 L10,7 L12,10 L21,10 L18,20 L4,20 Z M3,7 L3,5 L10,5 L12,8 L19,8 L19,10</Geometry>
+    <Geometry x:Key="IconConvert">M5,7 L16,7 M13,4 L16,7 L13,10 M19,17 L8,17 M11,14 L8,17 L11,20</Geometry>
+    <Geometry x:Key="IconStream">M8,5 L19,12 L8,19 Z M4,5 A10,10 0 0 0 4,19 M21,5 A10,10 0 0 1 21,19</Geometry>
+    <Geometry x:Key="IconStop">M7,7 L17,7 L17,17 L7,17 Z</Geometry>
+    <Geometry x:Key="IconFullscreen">M4,10 L4,4 L10,4 M14,4 L20,4 L20,10 M20,14 L20,20 L14,20 M10,20 L4,20 L4,14</Geometry>
+    <Geometry x:Key="IconLibrary">M4,5 L20,5 L20,20 L4,20 Z M7,8 L17,8 M7,12 L17,12 M7,16 L14,16</Geometry>
+    <Geometry x:Key="IconEditor">M5,5 L19,19 M19,5 L5,19 M4,4 A2,2 0 1 0 4.1,4 M20,4 A2,2 0 1 0 20.1,4</Geometry>
+    <Geometry x:Key="IconAudio">M4,13 L6,13 L6,9 L8,9 L8,17 L10,17 L10,6 L12,6 L12,20 L14,20 L14,4 L16,4 L16,17 L18,17 L18,9 L20,9 L20,13</Geometry>
+    <Geometry x:Key="IconPhone">M7,3 L17,3 L17,21 L7,21 Z M10,18 L14,18</Geometry>
+    <Geometry x:Key="IconSearch">M10,4 A6,6 0 1 0 10,16 A6,6 0 1 0 10,4 M14.5,14.5 L21,21</Geometry>
+    <Geometry x:Key="IconExport">M12,3 L12,16 M7,8 L12,3 L17,8 M5,14 L5,21 L19,21 L19,14</Geometry>
+    <Geometry x:Key="IconTools">M6,18 L18,6 M15,4 L20,4 L20,9 M4,15 L4,20 L9,20</Geometry>
+    <Geometry x:Key="IconPaste">M7,5 L17,5 L17,21 L7,21 Z M9,3 L15,3 L15,7 L9,7 Z</Geometry>
+    <Geometry x:Key="IconAddMedia">M4,6 L20,6 L20,18 L4,18 Z M12,9 L12,15 M9,12 L15,12</Geometry>
+    <Geometry x:Key="IconScreen">M3,5 L21,5 L21,17 L3,17 Z M9,21 L15,21 M12,17 L12,21</Geometry>
+    <Geometry x:Key="IconMic">M9,4 A3,3 0 0 1 15,4 L15,12 A3,3 0 0 1 9,12 Z M6,11 A6,6 0 0 0 18,11 M12,17 L12,21 M8,21 L16,21</Geometry>
+    <Geometry x:Key="IconFolder">M3,7 L9,7 L11,9 L21,9 L21,19 L3,19 Z</Geometry>
+    <Geometry x:Key="IconSpark">M12,2 L13.7,8.3 L20,10 L13.7,11.7 L12,18 L10.3,11.7 L4,10 L10.3,8.3 Z</Geometry>
+    <Geometry x:Key="IconGear">M12,4 A8,8 0 1 0 12,20 A8,8 0 1 0 12,4 M12,9 A3,3 0 1 0 12,15 A3,3 0 1 0 12,9</Geometry>
+    <Geometry x:Key="IconMoon">M17,4 A8,8 0 1 0 20,17 A7,7 0 0 1 17,4</Geometry>
+    <Geometry x:Key="IconInfo">M12,7 L12,7.1 M12,10 L12,17</Geometry>
+    <Geometry x:Key="IconLock">M7,10 L7,7 A5,5 0 0 1 17,7 L17,10 M5,10 L19,10 L19,21 L5,21 Z M12,14 L12,17</Geometry>
+    <!-- Payhip mark from Simple Icons (CC0 1.0); Payhip is a trademark of its owner. -->
+    <Geometry x:Key="IconPayhip">M3.695 0A3.696 3.696 0 0 0 0 3.695v12.92A7.384 7.384 0 0 0 7.385 24h12.92A3.696 3.696 0 0 0 24 20.305V0H3.695zm11.653 5.604a3.88 3.88 0 0 1 .166 0 3.88 3.88 0 0 1 2.677 1.132 3.88 3.88 0 0 1 0 5.48l-.36.356c-1.826-1.825-3.648-3.656-5.476-5.482l.358-.354a3.88 3.88 0 0 1 2.635-1.132zm-6.627.125a3.88 3.88 0 0 1 2.566 1c2.068 2.062 4.127 4.133 6.192 6.199l-5.481 5.482-6.19-6.203C3.549 9.7 5.346 5.702 8.722 5.729zm-1.744 1.71a.464.464 0 0 0-.465.465v1.817c0 .256.208.463.465.463h1.816a.464.464 0 0 0 .463-.463l.008-1.817A.464.464 0 0 0 8.8 7.44H6.977z</Geometry>
+    <Geometry x:Key="IconChevronDown">M7,9 L12,14 L17,9</Geometry>
+    <Geometry x:Key="IconBack">M14,6 L8,12 L14,18</Geometry>
+    <Geometry x:Key="IconPlay">M7,5 L19,12 L7,19 Z</Geometry>
+    <Geometry x:Key="IconPause">M8,5 L11,5 L11,19 L8,19 Z M14,5 L17,5 L17,19 L14,19 Z</Geometry>
+    <Geometry x:Key="IconCancel">M6,6 L18,18 M18,6 L6,18</Geometry>
+    <Style x:Key="ReferenceCard" TargetType="Border">
+      <Setter Property="Background" Value="{DynamicResource ThemeSurfaceBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ThemeBorderBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="8" />
+      <Setter Property="Padding" Value="12" />
+    </Style>
+    <Style x:Key="StepBadge" TargetType="Border">
+      <Setter Property="Width" Value="25" />
+      <Setter Property="Height" Value="25" />
+      <Setter Property="CornerRadius" Value="5" />
+      <Setter Property="Background" Value="{DynamicResource ThemeAccentSoftBrush}" />
+    </Style>
+    <Style x:Key="DenseGhostButton" TargetType="Button" BasedOn="{StaticResource GhostButton}">
+      <Setter Property="Padding" Value="10,6" />
+      <Setter Property="MinHeight" Value="31" />
+      <Setter Property="FontSize" Value="11" />
+    </Style>
+    <Style x:Key="InspectorLabel" TargetType="TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource ThemeMutedTextBrush}" />
+      <Setter Property="FontSize" Value="9.5" />
+    </Style>
+    <Style x:Key="InspectorValue" TargetType="TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource ThemePrimaryTextBrush}" />
+      <Setter Property="FontSize" Value="9.5" />
+      <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+    </Style>
+    <Style x:Key="FooterSupportButton" TargetType="Button">
+      <Setter Property="Width" Value="24" />
+      <Setter Property="Height" Value="22" />
+      <Setter Property="Padding" Value="3" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Cursor" Value="Hand" />
+      <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="Button">
+            <Border x:Name="SupportSurface" Background="{TemplateBinding Background}" CornerRadius="5" Padding="{TemplateBinding Padding}">
+              <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+            </Border>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="SupportSurface" Property="Background" Value="{DynamicResource ThemeHoverBrush}" />
+              </Trigger>
+              <Trigger Property="IsPressed" Value="True">
+                <Setter TargetName="SupportSurface" Property="Background" Value="{DynamicResource ThemeAccentSoftBrush}" />
+              </Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+  </Window.Resources>
+  <Grid x:Name="WindowRoot">
+    <Grid.RowDefinitions>
+      <RowDefinition x:Name="HeaderRow" Height="52" />
+      <RowDefinition x:Name="ContentRow" Height="*" />
+      <RowDefinition x:Name="FooterRow" Height="26" />
+    </Grid.RowDefinitions>
+    <!-- Header -->
+    <Grid Grid.Row="0" Background="{DynamicResource ThemeTitleBarBackgroundBrush}" MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="Auto" />
+        <ColumnDefinition Width="*" />
+        <ColumnDefinition Width="Auto" />
+      </Grid.ColumnDefinitions>
+      <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0,0,0">
+        <Border Width="36" Height="36" CornerRadius="9" Background="{DynamicResource ThemeAccentPanelBrush}" BorderBrush="{DynamicResource ThemeStrongBorderBrush}" BorderThickness="1" ClipToBounds="True">
+          <Image Source="Assets/MediaDock-icon.png" Width="34" Height="34" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality" />
+        </Border>
+        <StackPanel Margin="9,0,0,0" VerticalAlignment="Center">
+          <TextBlock Text="MediaDock" FontWeight="SemiBold" FontSize="16" />
+          <TextBlock x:Name="ProductSubtitleText" Text="Video &amp; Audio Downloader / Converter / Streamer" Foreground="{DynamicResource ThemeMutedTextBrush}" FontSize="9" />
+        </StackPanel>
+      </StackPanel>
+      <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+        <Button x:Name="DownloadViewButton" Style="{StaticResource DenseGhostButton}" Padding="14,7" Click="ShowDownloadR1626_Click">
+          <StackPanel Orientation="Horizontal">
+            <Viewbox Width="14" Height="14" Margin="0,0,6,0">
+              <Path Data="{StaticResource IconDownload}" Stroke="{DynamicResource ThemeAccentBrush}" StrokeThickness="1.6" Fill="Transparent" />
+            </Viewbox>
+            <TextBlock Text="Download" FontWeight="SemiBold" />
+          </StackPanel>
+        </Button>
+        <Button x:Name="StreamViewButton" Margin="7,0,0,0" Style="{StaticResource DenseGhostButton}" Padding="14,7" Click="ShowStreamR1626_Click" IsEnabled="False" ToolTip="Stream is available after MediaDock license activation. Disabled during trial.">
+          <StackPanel Orientation="Horizontal">
+            <Viewbox Width="14" Height="14" Margin="0,0,6,0">
+              <Path Data="{StaticResource IconStream}" Stroke="{DynamicResource ThemeAccentBrush}" StrokeThickness="1.6" Fill="Transparent" />
+            </Viewbox>
+            <TextBlock Text="Stream" FontWeight="SemiBold" />
+          </StackPanel>
+        </Button>
+        <Button x:Name="ConvertViewButton" Margin="7,0,0,0" Style="{StaticResource DenseGhostButton}" Padding="14,7" Click="ShowConvertR1626_Click" IsEnabled="False" ToolTip="Convert is available after MediaDock license activation. Disabled during trial.">
+          <StackPanel Orientation="Horizontal">
+            <Viewbox Width="14" Height="14" Margin="0,0,6,0">
+              <Path Data="{StaticResource IconConvert}" Stroke="{DynamicResource ThemeAccentBrush}" StrokeThickness="1.6" Fill="Transparent" />
+            </Viewbox>
+            <TextBlock Text="Convert" FontWeight="SemiBold" />
+          </StackPanel>
+        </Button>
+        <Button x:Name="SettingsButton" Margin="7,0,0,0" Style="{StaticResource DenseGhostButton}" Padding="14,7" Click="OpenSettings_Click">
+          <StackPanel Orientation="Horizontal">
+            <Viewbox Width="14" Height="14" Margin="0,0,6,0">
+              <Path Data="{StaticResource IconGear}" Stroke="{DynamicResource ThemePrimaryTextBrush}" StrokeThickness="1.6" Fill="Transparent" />
+            </Viewbox>
+            <TextBlock Text="Settings" FontWeight="SemiBold" />
+          </StackPanel>
+        </Button>
+      </StackPanel>
+      <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,8,0">
+        <Button Style="{StaticResource TitleBarButton}" Click="Minimize_Click">
+          <Path Width="16" Height="16" Stretch="Uniform" Stroke="{DynamicResource ThemePrimaryTextBrush}" StrokeThickness="1.5" Data="M 2,8 L 14,8" />
+        </Button>
+        <Button Style="{StaticResource TitleBarButton}" Click="MaximizeRestore_Click" Visibility="Collapsed">
+          <Path Width="16" Height="16" Stretch="Uniform" Stroke="{DynamicResource ThemePrimaryTextBrush}" StrokeThickness="1.5" Data="M 2,2 L 14,2 L 14,14 L 2,14 Z" />
+        </Button>
+        <Button Style="{StaticResource TitleBarCloseButton}" Click="Close_Click" ToolTip="Close MediaDock">
+          <Path Width="16" Height="16" Stretch="Uniform" Stroke="{DynamicResource ThemePrimaryTextBrush}" StrokeThickness="1.5" Data="M 3,3 L 13,13 M 13,3 L 3,13" />
+        </Button>
+      </StackPanel>
+    </Grid>
+    <Grid x:Name="MainContentRoot" Grid.Row="1" Margin="12,10,12,10">
+      <!-- =======================================================
+                 DOWNLOAD: LEFT = workflow, RIGHT = queue
+                 ======================================================= -->
+      <Grid x:Name="DownloadWorkspace">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="0.44*" />
+          <ColumnDefinition Width="10" />
+          <ColumnDefinition Width="0.56*" />
+        </Grid.ColumnDefinitions>
+        <!-- LEFT PANEL -->
+        <Grid x:Name="DownloadLeftPanel" Grid.Column="0">
+          <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="8" />
+            <RowDefinition Height="0.92*" />
+            <RowDefinition Height="8" />
+            <RowDefinition Height="1.08*" />
+          </Grid.RowDefinitions>
+          <!-- SOURCE -->
+          <Border x:Name="SourceCard" Grid.Row="0" Style="{StaticResource ReferenceCard}">
+            <Grid>
+              <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="8" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="0" />
+                <RowDefinition Height="0" />
+              </Grid.RowDefinitions>
+              <StackPanel Orientation="Horizontal">
+                <Border Style="{StaticResource StepBadge}">
+                  <TextBlock Text="1" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="SemiBold" />
+                </Border>
+                <TextBlock Margin="8,0,0,0" VerticalAlignment="Center" Text="SOURCE" FontWeight="SemiBold" FontSize="11" />
+              </StackPanel>
+              <Border Grid.Row="2" Background="{DynamicResource ThemePanelBackgroundBrush}" BorderBrush="{StaticResource AccentBorderGradient}" BorderThickness="1" CornerRadius="7" Padding="4" Visibility="Collapsed" Height="0">
+                <Grid>
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                  </Grid.ColumnDefinitions>
+                </Grid>
+              </Border>
+              <Grid Grid.Row="4" Visibility="Collapsed" Height="0">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition x:Name="SourceThumbnailColumn" Width="138" />
+                  <ColumnDefinition Width="10" />
+                  <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Border x:Name="SourceThumbnail" Width="138" Height="78" VerticalAlignment="Top" Background="{DynamicResource ThemeSurfaceBrush}" BorderBrush="{DynamicResource ThemeBorderBrush}" BorderThickness="1" CornerRadius="6" ClipToBounds="True">
+                  <Image Source="{Binding ThumbnailUrl, Mode=OneWay}" Stretch="UniformToFill" />
+                </Border>
+                <StackPanel Grid.Column="2">
+                  <TextBlock x:Name="SourceTitleText" Text="{Binding Title, Mode=OneWay}" FontWeight="SemiBold" FontSize="12.5" TextWrapping="Wrap" MaxHeight="32" />
+                  <TextBlock x:Name="SourcePlatformText" Margin="0,5,0,0" Text="{Binding Platform, Mode=OneWay}" Foreground="{DynamicResource ThemeAccentBrush}" FontSize="10.5" />
+                  <TextBlock x:Name="SourceUploaderText" Margin="0,4,0,0" Text="{Binding Uploader, Mode=OneWay}" Foreground="{DynamicResource ThemeSecondaryTextBrush}" FontSize="9.5" TextTrimming="CharacterEllipsis" />
+                  <StackPanel x:Name="SourceDetailsBlock" Orientation="Horizontal" Margin="0,5,0,0">
+                    <TextBlock Text="{Binding DurationText, Mode=OneWay}" Foreground="{DynamicResource ThemeSecondaryTextBrush}" FontSize="9.5" />
+                    <TextBlock Margin="9,0,0,0" Text="{Binding MediaQualityText, Mode=OneWay}" Foreground="{DynamicResource ThemeSecondaryTextBrush}" FontSize="9.5" />
+                  </StackPanel>
+                </StackPanel>
+              </Grid>
+              <Grid x:Name="SourceInputRowR1621" Grid.Row="2" Margin="0">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="*" />
+                  <ColumnDefinition Width="Auto" />
+                  <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBox x:Name="UrlInputTextBox" Style="{StaticResource UrlTextBox}" Text="{Binding Url, UpdateSourceTrigger=PropertyChanged}" Padding="7,0" Grid.Column="0" Margin="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" MinWidth="0" Visibility="Visible" />
+                <Button Margin="8,0,0,0" Style="{StaticResource DenseGhostButton}" Padding="14,7" Command="{Binding PasteUrlCommand}" x:Name="PasteSourceButtonR1620" Content="Paste" Grid.Column="1" MinWidth="68" Visibility="Visible"></Button>
+                <Button Margin="8,0,0,0" Style="{StaticResource DenseGhostButton}" Padding="14,7" Command="{Binding ImportLinksCommand}" ToolTip="Import media links from TXT or CSV" x:Name="ImportSourceButtonR1620" Content="Import" Grid.Column="2" MinWidth="68" Visibility="Visible"></Button>
+              </Grid>
+            </Grid>
+          </Border>
+          <!-- FORMAT -->
+          <Border x:Name="FormatCard" Grid.Row="2" Style="{StaticResource ReferenceCard}">
+            <Grid>
+              <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="9" />
+                <RowDefinition Height="*" />
+              </Grid.RowDefinitions>
+              <StackPanel Orientation="Horizontal">
+                <Border Style="{StaticResource StepBadge}" Background="{DynamicResource ThemeAccentSoftBrush}">
+                  <TextBlock Text="2" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="SemiBold" />
+                </Border>
+                <TextBlock Margin="8,0,0,0" VerticalAlignment="Center" Text="FORMAT &amp; QUALITY" FontWeight="SemiBold" FontSize="11" />
+              </StackPanel>
+              <Grid Grid.Row="2">
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
+                  <RowDefinition Height="Auto" />
+                  <RowDefinition Height="8" />
+                  <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="2.05*" />
-                    <ColumnDefinition Width="12" />
-                    <ColumnDefinition Width="1.15*" />
-                    <ColumnDefinition Width="12" />
-                    <ColumnDefinition Width="0.78*" />
+                  <ColumnDefinition Width="*" />
+                  <ColumnDefinition Width="8" />
+                  <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
-
-                <!-- Panel 1: Video/media details + download choices -->
-                <Border x:Name="MediaPanel" Grid.Row="0" Grid.Column="0" VerticalAlignment="Top" ClipToBounds="False" Background="#0D1625" BorderBrush="#22314A" BorderThickness="1" CornerRadius="14" Padding="14">
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="8" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="8" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
-
-                        <Grid x:Name="MediaSummaryGrid" Grid.Row="0">
+                <StackPanel>
+                  <TextBlock Text="Format" Foreground="{DynamicResource ThemePrimaryTextBrush}" FontSize="9" />
+                  <ComboBox Margin="0,3,0,0" Style="{StaticResource DarkComboBox}" ItemsSource="{Binding DownloadFormats}" SelectedItem="{Binding SelectedDownloadFormat}" />
+                </StackPanel>
+                <StackPanel Grid.Column="2">
+                  <TextBlock Text="Quality" Foreground="{DynamicResource ThemePrimaryTextBrush}" FontSize="9" />
+                  <ComboBox Margin="0,3,0,0" Style="{StaticResource DarkComboBox}" ItemsSource="{Binding QualityChoices}" SelectedItem="{Binding SelectedQuality}" IsEnabled="{Binding CanChooseQuality}" />
+                </StackPanel>
+                <StackPanel Grid.Row="2">
+                  <TextBlock Text="Audio" Foreground="{DynamicResource ThemePrimaryTextBrush}" FontSize="9" />
+                  <ComboBox Margin="0,3,0,0" Style="{StaticResource DarkComboBox}" ItemsSource="{Binding AudioChoices}" SelectedItem="{Binding SelectedAudioChoice}" />
+                </StackPanel>
+                <StackPanel Grid.Row="2" Grid.Column="2">
+                  <TextBlock Text="MP3 Bitrate" Foreground="{DynamicResource ThemePrimaryTextBrush}" FontSize="9" />
+                  <ComboBox Margin="0,3,0,0" ItemsSource="{Binding Mp3Bitrates}" SelectedItem="{Binding SelectedMp3Bitrate}">
+                    <ComboBox.Style>
+                      <Style TargetType="ComboBox" BasedOn="{StaticResource DarkComboBox}">
+                        <Setter Property="IsEnabled" Value="False" />
+                        <Style.Triggers>
+                          <DataTrigger Binding="{Binding IsMp3Download}" Value="True">
+                            <Setter Property="IsEnabled" Value="True" />
+                          </DataTrigger>
+                        </Style.Triggers>
+                      </Style>
+                    </ComboBox.Style>
+                  </ComboBox>
+                </StackPanel>
+              </Grid>
+            </Grid>
+          </Border>
+          <!-- OUTPUT -->
+          <Border x:Name="OutputCard" Grid.Row="4" Style="{StaticResource ReferenceCard}">
+            <Grid>
+              <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="8" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+              </Grid.RowDefinitions>
+              <StackPanel Orientation="Horizontal">
+                <Border Style="{StaticResource StepBadge}">
+                  <TextBlock Text="3" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="SemiBold" />
+                </Border>
+                <TextBlock Margin="8,0,0,0" VerticalAlignment="Center" Text="OUTPUT &amp; START" FontWeight="SemiBold" FontSize="11" />
+              </StackPanel>
+              <StackPanel Grid.Row="2">
+                <TextBlock Text="Output folder" Foreground="{DynamicResource ThemePrimaryTextBrush}" FontSize="9" />
+                <Grid Margin="0,3,0,0">
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="34" />
+                    <ColumnDefinition Width="34" />
+                  </Grid.ColumnDefinitions>
+                  <Border Background="{DynamicResource ThemePanelBackgroundBrush}" BorderBrush="{DynamicResource ThemeBorderBrush}" BorderThickness="1" CornerRadius="6" Padding="8,7">
+                    <TextBlock Text="{Binding OutputDirectory, Mode=OneWay}" FontSize="8.5" TextTrimming="CharacterEllipsis" />
+                  </Border>
+                  <Button Grid.Column="1" Margin="4,0,0,0" Style="{StaticResource DenseGhostButton}" Padding="0" Command="{Binding BrowseOutputDirectoryCommand}">
+                    <Viewbox Width="15" Height="15">
+                      <Path Data="{StaticResource IconFolder}" Stroke="{DynamicResource ThemePrimaryTextBrush}" StrokeThickness="1.5" Fill="Transparent" />
+                    </Viewbox>
+                  </Button>
+                  <Button Grid.Column="2" Margin="4,0,0,0" Style="{StaticResource DenseGhostButton}" Padding="0" Command="{Binding OpenDownloadsCommand}" ToolTip="Open output folder">
+                    <Viewbox Width="15" Height="15">
+                      <Path Data="{StaticResource IconFolderOpen}" Stroke="{DynamicResource ThemeAccentBrush}" StrokeThickness="1.5" Fill="Transparent" />
+                    </Viewbox>
+                  </Button>
+                </Grid>
+                <WrapPanel Margin="0,10,0,0">
+                  <Border Margin="0,0,7,0" BorderBrush="{DynamicResource ThemeStrongBorderBrush}" BorderThickness="1" CornerRadius="6" Padding="10,5">
+                    <Border.Style>
+                      <Style TargetType="Border">
+                        <Setter Property="Background" Value="{DynamicResource ThemeAccentPanelBrush}" />
+                        <Setter Property="Opacity" Value="0.55" />
+                        <Style.Triggers>
+                          <DataTrigger Binding="{Binding AudioFadeInOut3Seconds}" Value="True">
+                            <Setter Property="Background" Value="{DynamicResource ThemeAccentSoftBrush}" />
+                            <Setter Property="Opacity" Value="1" />
+                          </DataTrigger>
+                        </Style.Triggers>
+                      </Style>
+                    </Border.Style>
+                    <TextBlock FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource ThemeAccentBrush}">
+                      <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                          <Setter Property="Text" Value="3s Fade OFF" />
+                          <Style.Triggers>
+                            <DataTrigger Binding="{Binding AudioFadeInOut3Seconds}" Value="True">
+                              <Setter Property="Text" Value="3s Fade ON" />
+                            </DataTrigger>
+                          </Style.Triggers>
+                        </Style>
+                      </TextBlock.Style>
+                    </TextBlock>
+                  </Border>
+                  <Border Margin="0,0,7,0" BorderBrush="{DynamicResource ThemeStrongBorderBrush}" BorderThickness="1" CornerRadius="6" Padding="10,5">
+                    <Border.Style>
+                      <Style TargetType="Border">
+                        <Setter Property="Background" Value="{DynamicResource ThemeAccentPanelBrush}" />
+                        <Setter Property="Opacity" Value="0.55" />
+                        <Style.Triggers>
+                          <DataTrigger Binding="{Binding TrimBoundarySilence}" Value="True">
+                            <Setter Property="Background" Value="{DynamicResource ThemeAccentSoftBrush}" />
+                            <Setter Property="Opacity" Value="1" />
+                          </DataTrigger>
+                        </Style.Triggers>
+                      </Style>
+                    </Border.Style>
+                    <TextBlock FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource ThemeAccentBrush}">
+                      <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                          <Setter Property="Text" Value="Trim Silence OFF" />
+                          <Style.Triggers>
+                            <DataTrigger Binding="{Binding TrimBoundarySilence}" Value="True">
+                              <Setter Property="Text" Value="Trim Silence ON" />
+                            </DataTrigger>
+                          </Style.Triggers>
+                        </Style>
+                      </TextBlock.Style>
+                    </TextBlock>
+                  </Border>
+                </WrapPanel>
+              </StackPanel>
+              <TextBlock Grid.Row="3" VerticalAlignment="Center" Text="{Binding LastDownloadedFile, Mode=OneWay}" Foreground="{DynamicResource ThemeMutedTextBrush}" FontSize="8.5" TextTrimming="CharacterEllipsis" />
+              <Button x:Name="DownloadButton" Grid.Row="4" Style="{StaticResource NeonPrimaryButton}" Command="{Binding DownloadCommand}" Padding="14,9">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                  <Viewbox Width="15" Height="15" Margin="0,0,7,0">
+                    <Path Data="{StaticResource IconDownload}" Stroke="White" StrokeThickness="1.6" Fill="Transparent" />
+                  </Viewbox>
+                  <TextBlock Text="{Binding DownloadButtonText, Mode=OneWay}" FontWeight="SemiBold" />
+                </StackPanel>
+              </Button>
+            </Grid>
+          </Border>
+        </Grid>
+        <!-- RIGHT PANEL: PLAYLIST + DOWNLOAD QUEUE -->
+        <Grid x:Name="DownloadRightPanel" Grid.Column="2">
+          <Grid.RowDefinitions>
+            <RowDefinition Height="0" />
+            <RowDefinition Height="0" />
+            <RowDefinition Height="*" />
+          </Grid.RowDefinitions>
+          <Border x:Name="PlaylistSelectionCard" Grid.Row="0" Background="{DynamicResource ThemeSurfaceBrush}" BorderBrush="{DynamicResource ThemeStrongBorderBrush}" BorderThickness="1" CornerRadius="8" Padding="8" Visibility="Collapsed">
+            <Grid Height="138">
+              <Grid.RowDefinitions>
+                <RowDefinition Height="28" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="26" />
+              </Grid.RowDefinitions>
+              <Grid>
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="Auto" />
+                  <ColumnDefinition Width="*" />
+                  <ColumnDefinition Width="Auto" />
+                  <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock VerticalAlignment="Center" Text="PLAYLIST VIDEOS" Foreground="{DynamicResource ThemeAccentBrush}" FontWeight="SemiBold" FontSize="10" />
+                <TextBlock Grid.Column="1" Margin="10,0,0,0" VerticalAlignment="Center" Text="{Binding PlaylistSelectionSummary, Mode=OneWay}" Foreground="{DynamicResource ThemeSecondaryTextBrush}" FontSize="9" />
+                <Button Grid.Column="2" Style="{StaticResource DenseGhostButton}" Padding="8,3" Command="{Binding SelectAllPlaylistCommand}" Content="Select All" />
+                <Button Grid.Column="3" Margin="5,0,0,0" Style="{StaticResource DenseGhostButton}" Padding="8,3" Command="{Binding ClearPlaylistSelectionCommand}" Content="Clear All" />
+              </Grid>
+              <ItemsControl Grid.Row="1" ItemsSource="{Binding PlaylistPageEntries, Mode=OneWay}">
+                <ItemsControl.ItemsPanel>
+                  <ItemsPanelTemplate>
+                    <UniformGrid Rows="2" Columns="2" />
+                  </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate>
+                    <Border Margin="2" Background="{DynamicResource ThemeSurfaceBrush}" BorderBrush="{DynamicResource ThemeBorderBrush}" BorderThickness="1" CornerRadius="5" Padding="7,4">
+                      <Grid>
+                        <Grid.ColumnDefinitions>
+                          <ColumnDefinition Width="22" />
+                          <ColumnDefinition Width="*" />
+                          <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <CheckBox VerticalAlignment="Center" IsChecked="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                        <TextBlock Grid.Column="1" VerticalAlignment="Center" Text="{Binding Title, Mode=OneWay}" FontSize="8.5" TextTrimming="CharacterEllipsis" />
+                        <TextBlock Grid.Column="2" Margin="8,0,0,0" VerticalAlignment="Center" Text="{Binding Index, Mode=OneWay, StringFormat=No. {0}}" Foreground="{DynamicResource ThemeMutedTextBrush}" FontSize="8" />
+                      </Grid>
+                    </Border>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+              <Grid Grid.Row="2">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="Auto" />
+                  <ColumnDefinition Width="*" />
+                  <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <Button Style="{StaticResource DenseGhostButton}" Padding="8,3" Command="{Binding PreviousPlaylistPageCommand}" Content="Previous" />
+                <TextBlock Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center" Text="{Binding PlaylistPageSummary, Mode=OneWay}" Foreground="{DynamicResource ThemeSecondaryTextBrush}" FontSize="8.5" />
+                <Button Grid.Column="2" Style="{StaticResource DenseGhostButton}" Padding="8,3" Command="{Binding NextPlaylistPageCommand}" Content="Next" />
+              </Grid>
+            </Grid>
+          </Border>
+          <Border x:Name="QueuePanel" Grid.Row="2" Style="{StaticResource ReferenceCard}" Padding="0">
+            <Grid>
+              <Grid.RowDefinitions>
+                <RowDefinition Height="64" />
+                <RowDefinition Height="26" />
+                <RowDefinition Height="*" />
+              </Grid.RowDefinitions>
+              <Grid Grid.Row="0" Margin="10,5,10,4">
+                <Grid.RowDefinitions>
+                  <RowDefinition Height="24" />
+                  <RowDefinition Height="30" />
+                </Grid.RowDefinitions>
+                <Grid>
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                  </Grid.ColumnDefinitions>
+                  <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="DOWNLOAD QUEUE" Foreground="{DynamicResource ThemeAccentBrush}" FontWeight="SemiBold" FontSize="12" />
+                    <TextBlock Margin="7,0,0,0" Text="{Binding DownloadQueue.Count, Mode=OneWay, StringFormat=({0})}" Foreground="{DynamicResource ThemeSecondaryTextBrush}" FontSize="10" />
+                  </StackPanel>
+                  <TextBlock Grid.Column="2" VerticalAlignment="Center" Text="{Binding QueueSelectionSummary, Mode=OneWay}" Foreground="{DynamicResource ThemeMutedTextBrush}" FontSize="8.8" />
+                </Grid>
+                <WrapPanel Grid.Row="1" VerticalAlignment="Center">
+                  <Button Style="{StaticResource DenseGhostButton}" Padding="8,4" Command="{Binding SelectAllQueueCommand}" Content="Select All" />
+                  <Button Margin="5,0,0,0" Style="{StaticResource DenseGhostButton}" Padding="8,4" Command="{Binding ClearQueueSelectionCommand}" Content="Clear Selection" />
+                  <Button Margin="10,0,0,0" Style="{StaticResource DenseGhostButton}" Padding="8,4" Command="{Binding DownloadAllQueueCommand}" Content="Download All" />
+                  <Button Margin="5,0,0,0" Style="{StaticResource DenseGhostButton}" Padding="8,4" Command="{Binding DownloadSelectedQueueCommand}" Content="Download Selected" />
+                  <Button Margin="5,0,0,0" Style="{StaticResource DenseGhostButton}" Padding="8,4" Command="{Binding RemoveSelectedQueueCommand}" Content="Remove Selected" />
+                  <Button Margin="5,0,0,0" Style="{StaticResource DenseGhostButton}" Padding="8,4" Command="{Binding ClearCompletedCommand}" Content="Delete Completed" />
+                </WrapPanel>
+              </Grid>
+              <Grid Grid.Row="1" Background="{DynamicResource ThemePanelBackgroundBrush}">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="1.90*" />
+                  <ColumnDefinition Width="0.72*" />
+                  <ColumnDefinition Width="0.45*" />
+                  <ColumnDefinition Width="0.72*" />
+                  <ColumnDefinition Width="0.65*" />
+                  <ColumnDefinition Width="1.55*" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Margin="9,0" VerticalAlignment="Center" Text="Title" Foreground="{DynamicResource ThemeSecondaryTextBrush}" FontSize="9" />
+                <TextBlock Grid.Column="1" VerticalAlignment="Center" Text="Quality" Foreground="{DynamicResource ThemeSecondaryTextBrush}" FontSize="9" />
+                <TextBlock Grid.Column="2" VerticalAlignment="Center" Text="Format" Foreground="{DynamicResource ThemeSecondaryTextBrush}" FontSize="9" />
+                <TextBlock Grid.Column="3" VerticalAlignment="Center" Text="Progress" Foreground="{DynamicResource ThemeSecondaryTextBrush}" FontSize="9" />
+                <TextBlock Grid.Column="4" VerticalAlignment="Center" Text="Status" Foreground="{DynamicResource ThemeSecondaryTextBrush}" FontSize="9" />
+                <TextBlock Grid.Column="5" VerticalAlignment="Center" Text="Actions" Foreground="{DynamicResource ThemeSecondaryTextBrush}" FontSize="9" />
+              </Grid>
+              <Grid Grid.Row="2">
+                <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" Text="No downloads yet. Paste a media link or playlist to begin." Foreground="{DynamicResource ThemeMutedTextBrush}" FontSize="10">
+                  <TextBlock.Style>
+                    <Style TargetType="TextBlock">
+                      <Setter Property="Visibility" Value="Collapsed" />
+                      <Style.Triggers>
+                        <DataTrigger Binding="{Binding DownloadQueue.Count, Mode=OneWay}" Value="0">
+                          <Setter Property="Visibility" Value="Visible" />
+                        </DataTrigger>
+                      </Style.Triggers>
+                    </Style>
+                  </TextBlock.Style>
+                </TextBlock>
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" CanContentScroll="True">
+                  <ItemsControl ItemsSource="{Binding QueuePageEntries, Mode=OneWay}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate>
+                        <Grid Height="68" Margin="0,0,0,1" Background="{DynamicResource ThemePanelBackgroundBrush}">
+                          <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="1.90*" />
+                            <ColumnDefinition Width="0.72*" />
+                            <ColumnDefinition Width="0.45*" />
+                            <ColumnDefinition Width="0.72*" />
+                            <ColumnDefinition Width="0.65*" />
+                            <ColumnDefinition Width="1.55*" />
+                          </Grid.ColumnDefinitions>
+                          <Grid Margin="7,5,6,5">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition x:Name="MediaThumbnailColumn" Width="150" />
-                                <ColumnDefinition x:Name="MediaThumbnailSpacerColumn" Width="14" />
-                                <ColumnDefinition Width="*" />
+                              <ColumnDefinition Width="22" />
+                              <ColumnDefinition Width="72" />
+                              <ColumnDefinition Width="7" />
+                              <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
-
-                            <Border x:Name="MediaThumbnailHost" Grid.Column="0" Height="138" Background="#09111F" CornerRadius="10" ClipToBounds="True">
-                                <Grid>
-                                    <Image Source="{Binding ThumbnailUrl, Mode=OneWay}" Stretch="UniformToFill" />
-                                    <Border Width="46" Height="46" CornerRadius="23"
-                                            Background="#AA15203A" BorderBrush="#7A91B8" BorderThickness="1"
-                                            HorizontalAlignment="Center" VerticalAlignment="Center">
-                                        <Path Data="M 0 0 L 0 18 L 15 9 Z" Fill="White" Width="15" Height="18" Stretch="Fill" Margin="20,17,17,17" />
-                                    </Border>
-                                    <Border Background="#D8080E18"
-                                            Visibility="{Binding IsMediaReady, Converter={StaticResource BoolToVisibility}}"
-                                            CornerRadius="5" Padding="7,4"
-                                            HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,8,8">
-                                        <TextBlock Text="{Binding DurationText}" FontSize="10" FontWeight="SemiBold" />
-                                    </Border>
-                                </Grid>
+                            <CheckBox VerticalAlignment="Center" IsChecked="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" ToolTip="Select this queue item" />
+                            <Border Grid.Column="1" Width="72" Height="46" VerticalAlignment="Center" Background="{DynamicResource ThemeSurfaceBrush}" BorderBrush="{DynamicResource ThemeBorderBrush}" BorderThickness="1" CornerRadius="4" ClipToBounds="True">
+                              <Grid>
+                                <Viewbox Width="17" Height="17" HorizontalAlignment="Center" VerticalAlignment="Center" Opacity="0.45">
+                                  <Path Data="{StaticResource IconDownload}" Stroke="{DynamicResource ThemeMutedTextBrush}" StrokeThickness="1.4" Fill="Transparent" />
+                                </Viewbox>
+                                <Image Source="{Binding ThumbnailUrl, Mode=OneWay}" Stretch="UniformToFill" />
+                              </Grid>
                             </Border>
-
-                            <Grid x:Name="MediaDetailsGrid" Grid.Column="2" VerticalAlignment="Center">
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
-                                </Grid.RowDefinitions>
-
-                                <TextBlock x:Name="MediaTitleText"
-                                           Grid.Row="0"
-                                           Text="{Binding Title}"
-                                           FontSize="18"
-                                           FontWeight="SemiBold"
-                                           TextWrapping="Wrap"
-                                           TextTrimming="None" />
-                                <Grid x:Name="MediaPlatformRow" Grid.Row="1" Margin="0,6,0,0">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="10" />
-                                        <ColumnDefinition Width="*" />
-                                    </Grid.ColumnDefinitions>
-                                    <Border Grid.Column="0" Background="#17243A" CornerRadius="5" Padding="8,4" VerticalAlignment="Top">
-                                        <TextBlock Text="{Binding Platform}"
-                                                   FontSize="10"
-                                                   FontWeight="SemiBold"
-                                                   Foreground="#DDE9F8" />
-                                    </Border>
-                                    <TextBlock x:Name="MediaUploaderText"
-                                               Grid.Column="2"
-                                               VerticalAlignment="Center"
-                                               Text="{Binding Uploader}"
-                                               Foreground="#AFC0D5"
-                                               FontSize="12"
-                                               TextWrapping="Wrap"
-                                               TextTrimming="None" />
-                                </Grid>
-                                <TextBlock x:Name="MediaFormatsText" Grid.Row="2" Margin="0,8,0,0" Text="{Binding AvailableFormatsSummary}" Foreground="#61AFFF" FontSize="12" TextWrapping="Wrap" />
-                                <WrapPanel x:Name="MediaAvailabilityRow"
-                                           Grid.Row="3"
-                                           Margin="0,10,0,0"
-                                           Visibility="{Binding IsMediaReady, Converter={StaticResource BoolToVisibility}}">
-                                    <Border Background="#0B3C31"
-                                            BorderBrush="#15936D"
-                                            BorderThickness="1"
-                                            CornerRadius="6"
-                                            Padding="9,5"
-                                            Margin="0,0,8,6">
-                                        <TextBlock Text="Available"
-                                                   Foreground="#63F3B8"
-                                                   FontSize="10"
-                                                   FontWeight="SemiBold" />
-                                    </Border>
-                                    <Border Background="#292052"
-                                            BorderBrush="#765BFF"
-                                            BorderThickness="1"
-                                            CornerRadius="6"
-                                            Padding="9,5"
-                                            Margin="0,0,0,6">
-                                        <TextBlock Text="{Binding MediaCapabilityText}"
-                                                   Foreground="#CDAEFF"
-                                                   FontSize="10"
-                                                   FontWeight="SemiBold"
-                                                   TextWrapping="Wrap" />
-                                    </Border>
-                                </WrapPanel>
-                                <StackPanel Grid.Row="4" Margin="0,10,0,0" Visibility="{Binding HasAnalysisError, Converter={StaticResource BoolToVisibility}}">
-                                    <TextBlock Text="{Binding AnalysisErrorText}" Foreground="#E4A5A5" FontSize="10" TextWrapping="Wrap" />
-                                    <Button Margin="0,7,0,0" Width="120" HorizontalAlignment="Left" Style="{StaticResource GhostButton}" Click="OpenDiagnostics_Click" Content="View Details" />
-                                </StackPanel>
-                            </Grid>
+                            <StackPanel Grid.Column="3" VerticalAlignment="Center">
+                              <TextBox Style="{StaticResource QueueTitleTextBox}" Text="{Binding Title, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" ToolTip="Click to edit the download title" />
+                              <TextBlock Margin="3,2,0,0" Text="{Binding Source, Mode=OneWay}" FontSize="8.8" Foreground="{DynamicResource ThemeSecondaryTextBrush}" TextTrimming="CharacterEllipsis" />
+                            </StackPanel>
+                          </Grid>
+                          <TextBlock Grid.Column="1" VerticalAlignment="Center" Text="{Binding Quality, Mode=OneWay}" FontSize="9.2" Foreground="{DynamicResource ThemePrimaryTextBrush}" TextTrimming="CharacterEllipsis" />
+                          <TextBlock Grid.Column="2" VerticalAlignment="Center" Text="{Binding Format, Mode=OneWay}" FontSize="9.2" Foreground="{DynamicResource ThemePrimaryTextBrush}" />
+                          <Grid Grid.Column="3" Margin="4,0">
+                            <ProgressBar Style="{StaticResource QueueProgressBar}" Maximum="100" Value="{Binding ProgressPercent, Mode=OneWay}" Height="13" />
+                            <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" Text="{Binding ProgressPercent, Mode=OneWay, StringFormat={}{0:0}%}" FontSize="8" />
+                          </Grid>
+                          <StackPanel Grid.Column="4" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding Status, Mode=OneWay}" FontSize="9.2" FontWeight="SemiBold" Foreground="{DynamicResource ThemeSuccessBrush}" TextTrimming="CharacterEllipsis" />
+                            <TextBlock Margin="0,3,0,0" Text="{Binding SpeedText, Mode=OneWay}" FontSize="8.3" Foreground="{DynamicResource ThemeAccentBrush}" TextTrimming="CharacterEllipsis" />
+                          </StackPanel>
+                          <WrapPanel Grid.Column="5" VerticalAlignment="Center">
+                            <Button Tag="QueueDownloadAction" Width="29" Height="29" Margin="0,0,4,0" Style="{StaticResource DenseGhostButton}" Padding="6" ToolTip="Download this queued item" Click="QueueStart_Click" Visibility="{Binding CanStart, Converter={StaticResource BoolToVisibility}}">
+                              <Viewbox Width="14" Height="14">
+                                <Path Data="{StaticResource IconDownload}" Stroke="{DynamicResource ThemeAccentBrush}" StrokeThickness="1.7" Fill="Transparent" />
+                              </Viewbox>
+                            </Button>
+                            <Button Tag="QueueLinkAction" Width="29" Height="29" Margin="0,0,4,0" Style="{StaticResource DenseGhostButton}" Padding="6" ToolTip="Copy source link" Click="QueueCopyLink_Click">
+                              <Viewbox Width="14" Height="14">
+                                <Path Data="{StaticResource IconLink}" Stroke="{DynamicResource ThemeSecondaryTextBrush}" StrokeThickness="1.7" Fill="Transparent" />
+                              </Viewbox>
+                            </Button>
+                            <Button Tag="QueueMp3Action" Margin="0,0,4,0" Style="{StaticResource DenseGhostButton}" Padding="6,4" FontSize="8.5" FontWeight="SemiBold" Content="MP3" ToolTip="Local conversion is disabled during trial" IsEnabled="{Binding DataContext.PremiumWorkspacesEnabled, RelativeSource={RelativeSource AncestorType=Window}}" Click="QueueConvertToMp3_Click" Visibility="{Binding CanConvertToMp3, Converter={StaticResource BoolToVisibility}}" />
+                            <Button Tag="QueueMp4Action" Style="{StaticResource DenseGhostButton}" Padding="6,4" FontSize="8.5" FontWeight="SemiBold" Content="MP4" ToolTip="Download as MP4 (hidden when MP4 already exists)" Click="QueueRedownloadMp4_Click" Visibility="{Binding CanRedownloadAsMp4, Converter={StaticResource BoolToVisibility}}" />
+                            <Button Tag="QueueOpenFileAction" Width="29" Height="29" Margin="4,0,0,0" Style="{StaticResource DenseGhostButton}" Padding="6" ToolTip="Open downloaded file" Click="QueueOpenFile_Click" Visibility="{Binding CanOpenFile, Converter={StaticResource BoolToVisibility}}">
+                              <Viewbox Width="14" Height="14">
+                                <Path Data="{StaticResource IconOpenFile}" Stroke="{DynamicResource ThemeSuccessBrush}" StrokeThickness="1.6" Fill="Transparent" />
+                              </Viewbox>
+                            </Button>
+                            <Button Tag="QueueDeleteAction" Width="29" Height="29" Margin="4,0,0,0" Style="{StaticResource DenseGhostButton}" Padding="6" ToolTip="Delete this item from the queue" Click="QueueDelete_Click">
+                              <Viewbox Width="14" Height="14">
+                                <Path Data="{StaticResource IconTrash}" Stroke="{DynamicResource ThemeDangerBrush}" StrokeThickness="1.6" Fill="Transparent" />
+                              </Viewbox>
+                            </Button>
+                          </WrapPanel>
                         </Grid>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </ScrollViewer>
+              </Grid>
+            </Grid>
+          </Border>
+        </Grid>
 
-                        <!-- Adaptive download options: show only controls relevant to the selected format -->
-                        <Border x:Name="DownloadOptionsCard" Grid.Row="2" Background="#0A1322" BorderBrush="#1F2E46" BorderThickness="1" CornerRadius="10" Padding="9">
-                            <Grid>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="8" />
-                                    <RowDefinition Height="Auto" />
-                                </Grid.RowDefinitions>
+            <!-- MEDIADOCK_QUEUE_WORKSPACE_R1629 -->
+            <Grid x:Name="QueueWorkspaceR1629"
+                  Grid.Row="0"
+                  Grid.RowSpan="20"
+                  Grid.Column="0"
+                  Grid.ColumnSpan="20"
+                  Panel.ZIndex="100"
+                  Background="{DynamicResource ThemeWindowBackgroundBrush}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="8"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="12"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="8"/>
+                    <RowDefinition Height="34"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="10"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
 
-                                <Grid Grid.Row="0">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="12" />
-                                        <ColumnDefinition Width="*" />
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Grid.Column="0" Style="{StaticResource LabelText}" Text="Format" VerticalAlignment="Center" />
-                                    <ListBox Grid.Column="2"
-                                             Style="{StaticResource SegmentedListBox}"
-                                             ItemsSource="{Binding DownloadFormats}"
-                                             SelectedItem="{Binding SelectedDownloadFormat}" />
-                                </Grid>
+                <TextBlock Grid.Row="0"
+                           Text="SOURCE"
+                           Foreground="{DynamicResource ThemeAccentBrush}"
+                           FontWeight="SemiBold"
+                           FontSize="12"/>
 
-                                <Grid x:Name="DownloadChoiceGrid" Grid.Row="2">
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="Auto" />
-                                        <RowDefinition Height="0" />
-                                        <RowDefinition Height="Auto" />
-                                        <RowDefinition Height="0" />
-                                        <RowDefinition Height="Auto" />
-                                    </Grid.RowDefinitions>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="10" />
-                                        <ColumnDefinition Width="*" />
-                                    </Grid.ColumnDefinitions>
-
-                                    <StackPanel x:Name="QualityChoicePanel" Grid.Row="0" Grid.Column="0">
-                                        <StackPanel.Style>
-                                            <Style TargetType="StackPanel">
-                                                <Setter Property="Visibility" Value="Visible" />
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding IsMp3Download}" Value="True">
-                                                        <Setter Property="Visibility" Value="Collapsed" />
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </StackPanel.Style>
-                                        <TextBlock Style="{StaticResource LabelText}" Text="Quality" />
-                                        <ComboBox Margin="0,4,0,0"
-                                                  Style="{StaticResource DarkComboBox}"
-                                                  ItemsSource="{Binding QualityChoices}"
-                                                  SelectedItem="{Binding SelectedQuality}"
-                                                  IsEnabled="{Binding CanChooseQuality}" />
-                                    </StackPanel>
-
-                                    <StackPanel x:Name="AudioChoicePanel" Grid.Row="0">
-                                        <StackPanel.Style>
-                                            <Style TargetType="StackPanel">
-                                                <Setter Property="Grid.Column" Value="2" />
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding IsMp3Download}" Value="True">
-                                                        <Setter Property="Grid.Column" Value="0" />
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </StackPanel.Style>
-                                        <TextBlock Style="{StaticResource LabelText}" Text="Audio" />
-                                        <ComboBox Margin="0,4,0,0"
-                                                  Style="{StaticResource DarkComboBox}"
-                                                  ItemsSource="{Binding AudioChoices}"
-                                                  SelectedItem="{Binding SelectedAudioChoice}"
-                                                  IsEnabled="{Binding IsMediaReady}" />
-                                    </StackPanel>
-
-                                    <StackPanel x:Name="Mp3BitratePanel"
-                                                Grid.Row="0"
-                                                Grid.Column="2"
-                                                Visibility="{Binding IsMp3Download, Converter={StaticResource BoolToVisibility}}">
-                                        <TextBlock Style="{StaticResource LabelText}" Text="MP3 Bitrate" />
-                                        <ListBox Margin="0,4,0,0"
-                                                 Style="{StaticResource SegmentedListBox}"
-                                                 ItemsSource="{Binding Mp3Bitrates}"
-                                                 SelectedItem="{Binding SelectedMp3Bitrate}" />
-                                    </StackPanel>
-                                </Grid>
-                            </Grid>
-                        </Border>
-
-                        <Grid x:Name="DownloadFooterGrid" Grid.Row="4">
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="8" />
-                                <RowDefinition Height="Auto" />
-                            </Grid.RowDefinitions>
-
-                            <Border Grid.Row="0"
-                                    MinHeight="42"
-                                    Background="#0A1322"
-                                    BorderBrush="#1F2E46"
-                                    BorderThickness="1"
-                                    CornerRadius="9"
-                                    Padding="10,7">
-                                <Grid VerticalAlignment="Center">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="16" />
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="*" />
-                                    </Grid.ColumnDefinitions>
-                                    <Path Grid.Column="0"
-                                          Width="15"
-                                          Height="12"
-                                          Fill="#B7C5D8"
-                                          Stretch="Uniform"
-                                          Data="M10,4 L2,4 C0.9,4 0,4.9 0,6 L0,18 C0,19.1 0.9,20 2,20 L22,20 C23.1,20 24,19.1 24,18 L24,8 C24,6.9 23.1,6 22,6 L12,6 Z" />
-                                    <TextBlock Grid.Column="1"
-                                               Margin="8,0,0,0"
-                                               Text="Save to"
-                                               FontSize="10"
-                                               FontWeight="SemiBold"
-                                               Foreground="#D9E2EF" />
-                                    <TextBlock Grid.Column="2"
-                                               Margin="12,0,5,0"
-                                               Text="{Binding OutputDirectory}"
-                                               Foreground="#AFC0D5"
-                                               FontSize="10"
-                                               TextWrapping="Wrap"
-                                               TextTrimming="None"
-                                               ToolTip="{Binding OutputDirectory}" />
-                                </Grid>
-                            </Border>
-
-                            <Grid x:Name="DownloadFooterActions" Grid.Row="2">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="8" />
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="8" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-
-                                <Button Grid.Column="1"
-                                        MinWidth="88"
-                                        MinHeight="42"
-                                        Style="{StaticResource GhostButton}"
-                                        Padding="12,8"
-                                        Command="{Binding BrowseOutputDirectoryCommand}"
-                                        Content="Browse" />
-
-                                <Button Grid.Column="3"
-                                        Width="42"
-                                        MinHeight="42"
-                                        Style="{StaticResource GhostButton}"
-                                        Padding="0"
-                                        Command="{Binding OpenDownloadsCommand}"
-                                        ToolTip="Open download folder">
-                                    <Path Width="15"
-                                          Height="12"
-                                          Fill="#DCE6F4"
-                                          Stretch="Uniform"
-                                          Data="M10,4 L2,4 C0.9,4 0,4.9 0,6 L0,18 C0,19.1 0.9,20 2,20 L22,20 C23.1,20 24,19.1 24,18 L24,8 C24,6.9 23.1,6 22,6 L12,6 Z" />
-                                </Button>
-
-                                <Button Grid.Column="5"
-                                        MinWidth="150"
-                                        MinHeight="42"
-                                        Style="{StaticResource NeonPrimaryButton}"
-                                        Command="{Binding DownloadCommand}"
-                                        Content="Download"
-                                        ToolTipService.ShowOnDisabled="True"
-                                        ToolTip="Download the analyzed media with the selected options. Paste a media URL first if this button is disabled." />
-                            </Grid>
+                <Border Grid.Row="2"
+                        Background="{DynamicResource ThemeInputBackgroundBrush}"
+                        BorderBrush="{DynamicResource ThemeStrongBorderBrush}"
+                        BorderThickness="1"
+                        CornerRadius="8"
+                        Padding="5">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid>
+                            <TextBox x:Name="QueueWorkspaceSourceInputR1629"
+                                     Style="{StaticResource UrlTextBox}"
+                                     Text="{Binding Url, UpdateSourceTrigger=PropertyChanged}"
+                                     ToolTip="URL / media link"
+                                     Padding="9,0"/>
+                            <TextBlock Margin="12,0,0,0"
+                                       VerticalAlignment="Center"
+                                       Text="URL / media link"
+                                       Foreground="{DynamicResource ThemeMutedTextBrush}"
+                                       IsHitTestVisible="False">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Url}" Value="">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
                         </Grid>
+                        <Button Grid.Column="1"
+                                Margin="6,0,0,0"
+                                Style="{StaticResource DenseGhostButton}"
+                                Padding="11,6"
+                                Command="{Binding PasteUrlCommand}"
+                                Content="Paste"/>
+                        <Button Grid.Column="2"
+                                Margin="6,0,0,0"
+                                Style="{StaticResource DenseGhostButton}"
+                                Padding="11,6"
+                                Click="QueueWorkspaceImportR1629_Click"
+                                Content="Import"/>
                     </Grid>
                 </Border>
 
-                <!-- Panel 2: Download Queue -->
-                <Border x:Name="QueuePanel" Grid.Row="0" Grid.Column="2" VerticalAlignment="Top" Background="#0B1422" BorderBrush="#1F2D44" BorderThickness="1" CornerRadius="14" Padding="12">
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="34" />
-                            <RowDefinition Height="*" />
-                        </Grid.RowDefinitions>
+                <Grid Grid.Row="4">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="DOWNLOAD QUEUE"
+                                   Foreground="{DynamicResource ThemeAccentBrush}"
+                                   FontWeight="SemiBold"
+                                   FontSize="12"/>
+                        <TextBlock Margin="7,0,0,0"
+                                   Text="{Binding DownloadQueue.Count, StringFormat=({0})}"
+                                   Foreground="{DynamicResource ThemeSecondaryTextBrush}"
+                                   FontSize="10"/>
+                                    <Button x:Name="QueueOpenOutputFolderR1630"
+                                            Margin="8,0,0,0"
+                                            Width="28"
+                                            Height="24"
+                                            Style="{StaticResource DenseGhostButton}"
+                                            Padding="5"
+                                            Command="{Binding OpenDownloadsCommand}"
+                                            ToolTip="Open output folder">
+                                        <Viewbox Width="14" Height="14">
+                                            <Path Data="{StaticResource IconFolderOpen}"
+                                                  Stroke="{DynamicResource ThemeAccentBrush}"
+                                                  StrokeThickness="1.5"
+                                                  Fill="Transparent"/>
+                                        </Viewbox>
+                                    </Button>
+                    </StackPanel>
+                    <WrapPanel x:Name="QueueWorkspaceBulkActionsR1629"
+                               Grid.Column="2"
+                               HorizontalAlignment="Right">
+                        <Button Style="{StaticResource DenseGhostButton}" Padding="9,5" Click="QueueWorkspaceDownloadSelectedR1629_Click" Content="Download Selected"/>
+                        <Button Margin="5,0,0,0" Style="{StaticResource DenseGhostButton}" Padding="9,5" Click="QueueWorkspaceDeleteSelectedR1629_Click" Content="Delete Selected"/>
+                        <Button Margin="5,0,0,0" Style="{StaticResource DenseGhostButton}" Padding="9,5" Click="QueueWorkspaceDeleteCompletedR1629_Click" Content="Delete Completed"/>
+                        <Button Margin="5,0,0,0" Style="{StaticResource DenseGhostButton}" Padding="9,5" Click="QueueWorkspaceDeleteAllR1629_Click" Content="Delete All"/>
+                    </WrapPanel>
+                </Grid>
 
-                        <Grid Grid.Row="0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <TextBlock VerticalAlignment="Center" Text="Download Queue" FontWeight="SemiBold" FontSize="13" />
-                            <Border Grid.Column="1" Margin="8,0,0,0" MinWidth="24" Height="24" Background="#202B3D" CornerRadius="12" Padding="7,0">
-                                <TextBlock VerticalAlignment="Center" HorizontalAlignment="Center" Text="{Binding DownloadQueue.Count}" FontSize="10" />
-                            </Border>
-                            <Button Grid.Column="3" Style="{StaticResource GhostButton}" Padding="8,5" Command="{Binding ClearCompletedCommand}" Content="Clear" />
-                        </Grid>
+                                <!-- MEDIADOCK_QUEUE_COMPACT_ICON_ACTIONS_R1631 -->
+                <Border Grid.Row="6"
+                        Background="{DynamicResource ThemePanelBackgroundBrush}"
+                        BorderBrush="{DynamicResource ThemeBorderBrush}"
+                        BorderThickness="1,1,1,0"
+                        CornerRadius="6,6,0,0">
+                    <Grid MinWidth="900">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="34"/>
+                            <ColumnDefinition Width="78"/>
+                            <ColumnDefinition Width="2.30*"/>
+                            <ColumnDefinition Width="0.92*"/>
+                            <ColumnDefinition Width="0.82*"/>
+                            <ColumnDefinition Width="1.05*"/>
+                            <ColumnDefinition Width="0.82*"/>
+                            <ColumnDefinition Width="162"/>
+                        </Grid.ColumnDefinitions>
+                        <CheckBox Margin="9,0,0,0"
+                                  VerticalAlignment="Center"
+                                  Click="QueueSelectAllR1629_Click"
+                                  ToolTip="Select all queue items"/>
+                        <TextBlock Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center" Text="Thumbnail" Foreground="{DynamicResource ThemeSecondaryTextBrush}" FontSize="9"/>
+                        <TextBlock Grid.Column="2" Margin="7,0" VerticalAlignment="Center" Text="Title / Video Source" Foreground="{DynamicResource ThemeSecondaryTextBrush}" FontSize="9"/>
+                        <TextBlock Grid.Column="3" VerticalAlignment="Center" Text="Download Format" Foreground="{DynamicResource ThemeSecondaryTextBrush}" FontSize="9"/>
+                        <TextBlock Grid.Column="4" VerticalAlignment="Center" Text="Quality" Foreground="{DynamicResource ThemeSecondaryTextBrush}" FontSize="9"/>
+                        <TextBlock Grid.Column="5" VerticalAlignment="Center" Text="Progress" Foreground="{DynamicResource ThemeSecondaryTextBrush}" FontSize="9"/>
+                        <TextBlock Grid.Column="6" VerticalAlignment="Center" Text="Status" Foreground="{DynamicResource ThemeSecondaryTextBrush}" FontSize="9"/>
+                        <TextBlock Grid.Column="7" HorizontalAlignment="Center" VerticalAlignment="Center" Text="Actions" Foreground="{DynamicResource ThemeSecondaryTextBrush}" FontSize="9"/>
+                    </Grid>
+                </Border>
 
-                        <Grid Grid.Row="1" Margin="0,8,0,0">
-                            <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#52647E" Text="No downloads yet." FontSize="12">
+                <Border x:Name="QueueWorkspaceListHostR1629"
+                        Grid.Row="7"
+                        Background="{DynamicResource ThemeSurfaceBrush}"
+                        BorderBrush="{DynamicResource ThemeBorderBrush}"
+                        BorderThickness="1"
+                        CornerRadius="0,0,6,6">
+                    <ScrollViewer HorizontalScrollBarVisibility="Auto"
+                                  VerticalScrollBarVisibility="Auto">
+                        <Grid MinWidth="650">
+                            <TextBlock HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       Text="No downloads yet. Paste or import a media link above."
+                                       Foreground="{DynamicResource ThemeMutedTextBrush}"
+                                       FontSize="10">
                                 <TextBlock.Style>
                                     <Style TargetType="TextBlock">
-                                        <Setter Property="Visibility" Value="Collapsed" />
+                                        <Setter Property="Visibility" Value="Collapsed"/>
                                         <Style.Triggers>
-                                            <DataTrigger Binding="{Binding DownloadQueue.Count, Mode=OneWay}" Value="0">
-                                                <Setter Property="Visibility" Value="Visible" />
+                                            <DataTrigger Binding="{Binding DownloadQueue.Count}" Value="0">
+                                                <Setter Property="Visibility" Value="Visible"/>
                                             </DataTrigger>
                                         </Style.Triggers>
                                     </Style>
                                 </TextBlock.Style>
                             </TextBlock>
 
-                            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                                <ItemsControl ItemsSource="{Binding DownloadQueue, Mode=OneWay}">
-                                    <ItemsControl.ItemTemplate>
-                                        <DataTemplate>
-                                            <Border Background="#0E1828" CornerRadius="9" Padding="9" Margin="0,0,0,8">
-                                                <Grid>
+                                                        <ItemsControl x:Name="QueueWorkspaceRowsR1629"
+                                          ItemsSource="{Binding DownloadQueue}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border BorderBrush="{DynamicResource ThemeBorderBrush}"
+                                                BorderThickness="0,0,0,1"
+                                                Background="{DynamicResource ThemePanelBackgroundBrush}"
+                                                MinHeight="64">
+                                            <Grid MinWidth="900">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="34"/>
+                                                    <ColumnDefinition Width="78"/>
+                                                    <ColumnDefinition Width="2.30*"/>
+                                                    <ColumnDefinition Width="0.92*"/>
+                                                    <ColumnDefinition Width="0.82*"/>
+                                                    <ColumnDefinition Width="1.05*"/>
+                                                    <ColumnDefinition Width="0.82*"/>
+                                                    <ColumnDefinition Width="162"/>
+                                                </Grid.ColumnDefinitions>
+
+                                                <CheckBox Margin="9,0,0,0"
+                                                          VerticalAlignment="Center"
+                                                          IsChecked="{Binding IsSelectedR1629, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+
+                                                <Border Grid.Column="1"
+                                                        Width="68"
+                                                        Height="40"
+                                                        HorizontalAlignment="Center"
+                                                        VerticalAlignment="Center"
+                                                        Background="{DynamicResource ThemeSurfaceBrush}"
+                                                        BorderBrush="{DynamicResource ThemeBorderBrush}"
+                                                        BorderThickness="1"
+                                                        CornerRadius="5"
+                                                        ClipToBounds="True">
+                                                    <Image Source="{Binding ThumbnailUrl}" Stretch="UniformToFill"/>
+                                                </Border>
+
+                                                <StackPanel Grid.Column="2" Margin="7,5,8,5" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding Title}"
+                                                               Foreground="{DynamicResource ThemePrimaryTextBrush}"
+                                                               FontSize="10"
+                                                               FontWeight="SemiBold"
+                                                               TextTrimming="CharacterEllipsis"
+                                                               ToolTip="{Binding Title}"/>
+                                                    <TextBlock Margin="0,3,0,0"
+                                                               Text="{Binding Source}"
+                                                               Foreground="{DynamicResource ThemeSecondaryTextBrush}"
+                                                               FontSize="8.5"
+                                                               TextTrimming="CharacterEllipsis"
+                                                               ToolTip="{Binding Source}"/>
+                                                </StackPanel>
+
+                                                <ComboBox Grid.Column="3"
+                                                          Margin="4,0,7,0"
+                                                          VerticalAlignment="Center"
+                                                          Style="{StaticResource DarkComboBox}"
+                                                          IsEnabled="{Binding CanStart}"
+                                                          MinHeight="32"
+                                                          Padding="7,4"
+                                                          SelectedValuePath="Content"
+                                                          SelectedValue="{Binding SelectedFormatR1629, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                                    <ComboBoxItem Content="MP4"/>
+                                                    <ComboBoxItem Content="MP3"/>
+                                                </ComboBox>
+
+                                                <ComboBox Grid.Column="4"
+                                                          Margin="0,0,7,0"
+                                                          VerticalAlignment="Center"
+                                                          MinHeight="32"
+                                                          Padding="7,4"
+                                                          SelectedValuePath="Content"
+                                                          SelectedValue="{Binding SelectedQualityR1629, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                                    <ComboBox.Style>
+                                                        <Style TargetType="ComboBox" BasedOn="{StaticResource DarkComboBox}">
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding CanStart}" Value="False">
+                                                                    <Setter Property="IsEnabled" Value="False"/>
+                                                                </DataTrigger>
+                                                                <DataTrigger Binding="{Binding SelectedFormatR1629}" Value="MP3">
+                                                                    <Setter Property="IsEnabled" Value="False"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </ComboBox.Style>
+                                                    <ComboBoxItem Content="Highest"/>
+                                                    <ComboBoxItem Content="2160p"/>
+                                                    <ComboBoxItem Content="1440p"/>
+                                                    <ComboBoxItem Content="1080p"/>
+                                                    <ComboBoxItem Content="720p"/>
+                                                    <ComboBoxItem Content="480p"/>
+                                                    <ComboBoxItem Content="360p"/>
+                                                </ComboBox>
+
+                                                <Grid Grid.Column="5" Margin="0,0,9,0" VerticalAlignment="Center">
                                                     <Grid.RowDefinitions>
-                                                        <RowDefinition Height="Auto" />
-                                                        <RowDefinition Height="Auto" />
-                                                        <RowDefinition Height="Auto" />
-                                                        <RowDefinition Height="Auto" />
+                                                        <RowDefinition Height="Auto"/>
+                                                        <RowDefinition Height="4"/>
+                                                        <RowDefinition Height="Auto"/>
                                                     </Grid.RowDefinitions>
-                                                    <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition Width="62" />
-                                                        <ColumnDefinition Width="10" />
-                                                        <ColumnDefinition Width="*" />
-                                                    </Grid.ColumnDefinitions>
-
-                                                    <Border Grid.RowSpan="4" Grid.Column="0" Width="56" Height="42" Background="#101C2F" CornerRadius="6" ClipToBounds="True">
-                                                        <Image Source="{Binding ThumbnailUrl, Mode=OneWay}" Stretch="UniformToFill" />
-                                                    </Border>
-                                                    <TextBlock Grid.Column="2" Text="{Binding Title, Mode=OneWay}" FontWeight="SemiBold" FontSize="10" TextTrimming="CharacterEllipsis" />
-                                                    <TextBlock Grid.Row="1" Grid.Column="2" Margin="0,3,0,0" Foreground="#76879F" FontSize="8.5" TextTrimming="CharacterEllipsis">
-                                                        <Run Text="{Binding Quality, Mode=OneWay}" /><Run Text=" · " /><Run Text="{Binding Format, Mode=OneWay}" />
-                                                    </TextBlock>
-                                                    <Grid Grid.Row="2" Grid.Column="2" Margin="0,7,0,0">
-                                                        <Grid.ColumnDefinitions>
-                                                            <ColumnDefinition Width="*" />
-                                                            <ColumnDefinition Width="Auto" />
-                                                        </Grid.ColumnDefinitions>
-                                                        <ProgressBar Style="{StaticResource QueueProgressBar}" Maximum="100" Value="{Binding ProgressPercent, Mode=OneWay}" VerticalAlignment="Center" />
-                                                        <TextBlock Grid.Column="1" Margin="8,0,0,0" Text="{Binding ProgressPercent, Mode=OneWay, StringFormat={}{0:0}%}" Foreground="#DDE5F1" FontSize="8.5" />
+                                                    <Grid>
+                                                        <ProgressBar Style="{StaticResource QueueProgressBar}" Maximum="100" Value="{Binding ProgressPercent}" Height="13"/>
+                                                        <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" Text="{Binding ProgressPercent, StringFormat={}{0:0}%}" FontSize="8"/>
                                                     </Grid>
-                                                    <Grid Grid.Row="3" Grid.Column="2" Margin="0,5,0,0">
-                                                        <Grid.ColumnDefinitions>
-                                                            <ColumnDefinition Width="*" />
-                                                            <ColumnDefinition Width="Auto" />
-                                                        </Grid.ColumnDefinitions>
-                                                        <TextBlock Text="{Binding Status, Mode=OneWay}" Foreground="#7E91AD" FontSize="8.5" TextTrimming="CharacterEllipsis" />
-                                                        <TextBlock Grid.Column="1" Text="{Binding SpeedText, Mode=OneWay}" Foreground="#5CAEFF" FontSize="8.5" />
-                                                    </Grid>
+                                                    <TextBlock Grid.Row="2"
+                                                               Text="{Binding ProgressText}"
+                                                               Foreground="{DynamicResource ThemeSecondaryTextBrush}"
+                                                               FontSize="8"
+                                                               TextTrimming="CharacterEllipsis"/>
                                                 </Grid>
-                                            </Border>
-                                        </DataTemplate>
-                                    </ItemsControl.ItemTemplate>
-                                </ItemsControl>
-                            </ScrollViewer>
+
+                                                <StackPanel Grid.Column="6" Margin="0,0,5,0" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding Status}"
+                                                               Foreground="{DynamicResource ThemePrimaryTextBrush}"
+                                                               FontWeight="SemiBold"
+                                                               FontSize="9"
+                                                               TextTrimming="CharacterEllipsis"/>
+                                                    <TextBlock Margin="0,3,0,0"
+                                                               Text="{Binding SpeedText}"
+                                                               Foreground="{DynamicResource ThemeAccentBrush}"
+                                                               FontSize="8"
+                                                               TextTrimming="CharacterEllipsis"/>
+                                                </StackPanel>
+
+                                                <StackPanel Grid.Column="7"
+                                                            Orientation="Horizontal"
+                                                            HorizontalAlignment="Center"
+                                                            VerticalAlignment="Center">
+                                                    <Button Width="23" Height="23" Margin="1"
+                                                            Style="{StaticResource DenseGhostButton}"
+                                                            Padding="3"
+                                                            IsEnabled="{Binding CanStart}"
+                                                            Click="QueueRowDownloadR1631_Click"
+                                                            ToolTip="Download"
+                                                            ToolTipService.ShowOnDisabled="True">
+                                                        <Viewbox Width="13" Height="13"><Path Data="{StaticResource IconDownload}" Stroke="{DynamicResource ThemeAccentBrush}" StrokeThickness="1.6" Fill="Transparent"/></Viewbox>
+                                                    </Button>
+                                                    <Button Width="23" Height="23" Margin="1"
+                                                            Style="{StaticResource DenseGhostButton}"
+                                                            Padding="3"
+                                                            Click="QueueRowSubtitlesR1631_Click"
+                                                            ToolTip="Download subtitles"
+                                                            ToolTipService.ShowOnDisabled="True">
+                                                        <Viewbox Width="13" Height="13"><Path Data="{StaticResource IconLibrary}" Stroke="{DynamicResource ThemePrimaryTextBrush}" StrokeThickness="1.5" Fill="Transparent"/></Viewbox>
+                                                    </Button>
+                                                    <Button Width="23" Height="23" Margin="1"
+                                                            Style="{StaticResource DenseGhostButton}"
+                                                            Padding="3"
+                                                            Click="QueueRowSourceLinkR1631_Click"
+                                                            ToolTip="Copy source link"
+                                                            ToolTipService.ShowOnDisabled="True">
+                                                        <Viewbox Width="13" Height="13"><Path Data="{StaticResource IconLink}" Stroke="{DynamicResource ThemePrimaryTextBrush}" StrokeThickness="1.5" Fill="Transparent"/></Viewbox>
+                                                    </Button>
+                                                    <Button Width="23" Height="23" Margin="1"
+                                                            Style="{StaticResource DenseGhostButton}"
+                                                            Padding="3"
+                                                            IsEnabled="{Binding CanConvertToMp3}"
+                                                            Click="QueueRowConvertMp3R1631_Click"
+                                                            ToolTip="Convert to MP3"
+                                                            ToolTipService.ShowOnDisabled="True">
+                                                        <Viewbox Width="13" Height="13"><Path Data="{StaticResource IconAudio}" Stroke="{DynamicResource ThemePrimaryTextBrush}" StrokeThickness="1.4" Fill="Transparent"/></Viewbox>
+                                                    </Button>
+                                                    <Button Width="23" Height="23" Margin="1"
+                                                            Style="{StaticResource DenseGhostButton}"
+                                                            Padding="3"
+                                                            IsEnabled="{Binding CanRedownloadAsMp4}"
+                                                            Click="QueueRowConvertMp4R1631_Click"
+                                                            ToolTip="Download as MP4"
+                                                            ToolTipService.ShowOnDisabled="True">
+                                                        <Viewbox Width="13" Height="13"><Path Data="{StaticResource IconScreen}" Stroke="{DynamicResource ThemePrimaryTextBrush}" StrokeThickness="1.5" Fill="Transparent"/></Viewbox>
+                                                    </Button>
+                                                    <Button Width="23" Height="23" Margin="1"
+                                                            Style="{StaticResource DenseGhostButton}"
+                                                            Padding="3"
+                                                            Click="QueueRowDeleteR1631_Click"
+                                                            ToolTip="Delete from queue"
+                                                            ToolTipService.ShowOnDisabled="True">
+                                                        <Viewbox Width="13" Height="13"><Path Data="{StaticResource IconTrash}" Stroke="{DynamicResource ThemePrimaryTextBrush}" StrokeThickness="1.5" Fill="Transparent"/></Viewbox>
+                                                    </Button>
+                                                </StackPanel>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
                         </Grid>
-                    </Grid>
+                    </ScrollViewer>
                 </Border>
 
-                <!-- Panel 3: Convert -->
-                <Border x:Name="ConvertPanel" Grid.Row="0" Grid.Column="4" VerticalAlignment="Top" Background="#0D1625" BorderBrush="#22314A" BorderThickness="1" CornerRadius="14" Padding="13">
+                                <Button x:Name="QueueWorkspaceDownloadReadyR1629"
+                        Grid.Row="9"
+                        HorizontalAlignment="Right"
+                        MinWidth="150"
+                        Padding="16,9"
+                        Click="QueueWorkspaceDownloadReadyR1629_Click"
+                        Content="Download Ready"
+                        ToolTip="Available when the queue has items and MediaDock is idle."
+                        ToolTipService.ShowOnDisabled="True">
+                    <Button.Style>
+                        <Style TargetType="Button" BasedOn="{StaticResource NeonPrimaryButton}">
+                            <Setter Property="IsEnabled" Value="True"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding DownloadQueue.Count}" Value="0">
+                                    <Setter Property="IsEnabled" Value="False"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Busy}" Value="True">
+                                    <Setter Property="IsEnabled" Value="False"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                </Button>
+            </Grid></Grid>
+      <!-- =======================================================
+                 STREAM: resolve media inside a page/link, then play the
+                 direct media URL without opening the source webpage.
+                 ======================================================= -->
+      <Grid x:Name="StreamWorkspace" Visibility="Collapsed">
+        <Grid.RowDefinitions>
+          <RowDefinition Height="Auto" />
+          <RowDefinition Height="10" />
+          <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <StackPanel Grid.Row="0" Orientation="Horizontal">
+          <Viewbox Width="17" Height="17" Margin="0,0,7,0">
+            <Path Data="{StaticResource IconStream}" Stroke="{DynamicResource ThemeAccentBrush}" StrokeThickness="1.7" Fill="Transparent" />
+          </Viewbox>
+          <TextBlock Text="DIRECT MEDIA STREAM" Foreground="{DynamicResource ThemeAccentBrush}" FontWeight="SemiBold" FontSize="11" />
+          <TextBlock Margin="12,0,0,0" Text="Auto mode watches webpage media traffic, isolates the video, and keeps playback inside MediaDock." Foreground="{DynamicResource ThemeMutedTextBrush}" FontSize="9" VerticalAlignment="Center" />
+        </StackPanel>
+        <Grid Grid.Row="2">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition x:Name="StreamSourceColumn" Width="0.34*" />
+            <ColumnDefinition x:Name="StreamGapColumn" Width="10" />
+            <ColumnDefinition x:Name="StreamPlayerColumn" Width="0.66*" />
+          </Grid.ColumnDefinitions>
+          <Border x:Name="StreamSourceCard" Grid.Column="0" Style="{StaticResource ReferenceCard}">
+            <Grid>
+              <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="8" />
+                <RowDefinition Height="44" />
+                <RowDefinition Height="10" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="10" />
+                <RowDefinition Height="Auto" />
+              </Grid.RowDefinitions>
+              <TextBlock Text="MEDIA LINK" Foreground="{DynamicResource ThemeAccentBrush}" FontWeight="SemiBold" FontSize="11" />
+              <Border Grid.Row="2" Background="{DynamicResource ThemePanelBackgroundBrush}" BorderBrush="{StaticResource AccentBorderGradient}" BorderThickness="1" CornerRadius="7" Padding="4">
+                <Grid>
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                  </Grid.ColumnDefinitions>
+                  <TextBox Style="{StaticResource UrlTextBox}" Text="{Binding StreamUrl, UpdateSourceTrigger=PropertyChanged}" Padding="7,0" />
+                  <Button Grid.Column="1" Margin="4,0,0,0" Style="{StaticResource DenseGhostButton}" Padding="9,5" Command="{Binding PasteStreamUrlCommand}">
+                    <StackPanel Orientation="Horizontal">
+                      <Viewbox Width="12" Height="12" Margin="0,0,5,0">
+                        <Path Data="{StaticResource IconPaste}" Stroke="{DynamicResource ThemePrimaryTextBrush}" StrokeThickness="1.5" Fill="Transparent" />
+                      </Viewbox>
+                      <TextBlock Text="Paste" />
+                    </StackPanel>
+                  </Button>
+                </Grid>
+              </Border>
+              <Border Grid.Row="4" Background="{DynamicResource ThemePanelBackgroundBrush}" BorderBrush="{DynamicResource ThemeBorderBrush}" BorderThickness="1" CornerRadius="8" Padding="10">
+                <Grid>
+                  <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="10" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="6" />
+                    <RowDefinition Height="Auto" />
+                  </Grid.RowDefinitions>
+                  <Grid>
+                    <Grid.ColumnDefinitions>
+                      <ColumnDefinition Width="116" />
+                      <ColumnDefinition Width="10" />
+                      <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Border Width="116" Height="72" Background="{DynamicResource ThemeHoverBrush}" BorderBrush="{DynamicResource ThemeBorderBrush}" BorderThickness="1" CornerRadius="7" ClipToBounds="True">
+                      <Grid>
+                        <Image Source="{Binding StreamThumbnailUrl, Mode=OneWay}" Stretch="UniformToFill" RenderOptions.BitmapScalingMode="HighQuality" />
+                        <Viewbox Width="26" Height="26" HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False">
+                          <Path Data="{StaticResource IconStream}" Stroke="{DynamicResource ThemeAccentBrush}" StrokeThickness="1.5" Fill="Transparent" />
+                        </Viewbox>
+                      </Grid>
+                    </Border>
+                    <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                      <TextBlock Text="{Binding StreamTitle, Mode=OneWay}" FontSize="12" FontWeight="SemiBold" TextWrapping="Wrap" MaxHeight="38" />
+                      <TextBlock Margin="0,5,0,0" Text="{Binding StreamPlatform, Mode=OneWay}" Foreground="{DynamicResource ThemeAccentBrush}" FontSize="9" />
+                      <TextBlock Margin="0,3,0,0" Text="{Binding StreamUploader, Mode=OneWay}" Foreground="{DynamicResource ThemeMutedTextBrush}" FontSize="9" TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                  </Grid>
+                  <Grid Grid.Row="2">
+                    <Grid.ColumnDefinitions>
+                      <ColumnDefinition Width="*" />
+                      <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="{Binding StreamKindText, Mode=OneWay}" Foreground="{DynamicResource ThemeSecondaryTextBrush}" FontSize="9.5" FontWeight="SemiBold" />
+                    <TextBlock Grid.Column="1" Text="{Binding StreamDurationText, Mode=OneWay}" Foreground="{DynamicResource ThemeMutedTextBrush}" FontSize="9" />
+                  </Grid>
+                  <Grid Grid.Row="4">
+                    <Grid.RowDefinitions>
+                      <RowDefinition Height="Auto" />
+                      <RowDefinition Height="6" />
+                      <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
                     <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="110" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="*" />
-                            <RowDefinition Height="48" />
-                        </Grid.RowDefinitions>
-
-                        <TextBlock Grid.Row="0" Text="Convert" FontSize="17" FontWeight="SemiBold" />
-                        <TextBlock Grid.Row="1" Margin="0,4,0,10" Text="Local video to MP3" Foreground="#9AA9BD" FontSize="10" />
-
-                        <Border Grid.Row="2" AllowDrop="True" DragOver="ConvertDropZone_DragOver" Drop="ConvertDropZone_Drop"
-                                Background="#0A1322" BorderBrush="#1A2740" BorderThickness="1" CornerRadius="10">
-                            <Grid>
-                                <Rectangle Margin="7" RadiusX="7" RadiusY="7" Stroke="#405473" StrokeThickness="1" StrokeDashArray="4,4" />
-                                <Button Margin="8" Style="{StaticResource GhostButton}" Background="Transparent" BorderBrush="Transparent" Command="{Binding BrowseConversionInputCommand}">
-                                    <StackPanel VerticalAlignment="Center">
-                                        <TextBlock Text="♪" FontSize="30" Foreground="#69B5FF" HorizontalAlignment="Center" />
-                                        <TextBlock Margin="0,7,0,0" Text="{Binding ConversionInputFileName}" HorizontalAlignment="Center" Foreground="#DCE5F1" FontSize="12" TextTrimming="CharacterEllipsis" MaxWidth="180" />
-                                        <TextBlock Margin="0,3,0,0" Text="or click to browse" HorizontalAlignment="Center" Foreground="#63A8FF" FontSize="10" />
-                                    </StackPanel>
-                                </Button>
-                            </Grid>
-                        </Border>
-
-                        <StackPanel Grid.Row="3" Margin="0,10,0,0">
-                            <TextBlock Text="Output Format" Foreground="#CBD6E5" FontSize="10" />
-                            <Border Margin="0,4,0,0" Background="#10192A" BorderBrush="#28364F" BorderThickness="1" CornerRadius="8" Padding="8,6">
-                                <TextBlock Text="MP3" HorizontalAlignment="Center" FontWeight="SemiBold" />
-                            </Border>
-                        </StackPanel>
-
-                        <StackPanel Grid.Row="4" Margin="0,10,0,0">
-                            <TextBlock Text="Bitrate" Foreground="#CBD6E5" FontSize="10" />
-                            <ComboBox Margin="0,4,0,0" Style="{StaticResource DarkComboBox}" ItemsSource="{Binding ConversionMp3Bitrates}" SelectedItem="{Binding SelectedConversionBitrate}" />
-                        </StackPanel>
-
-                        <TextBlock Grid.Row="5" Margin="0,10,0,0" Text="{Binding LastConvertedFile, Mode=OneWay}" Foreground="#6E819D" FontSize="10" TextTrimming="CharacterEllipsis" />
-                        <Button Grid.Row="6" Style="{StaticResource NeonPrimaryButton}" Command="{Binding ConvertLocalFileCommand}" Content="Convert Now" />
+                      <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="8" />
+                        <ColumnDefinition Width="*" />
+                      </Grid.ColumnDefinitions>
+                      <TextBlock Text="Resolution" VerticalAlignment="Center" Foreground="{DynamicResource ThemeMutedTextBrush}" FontSize="9" />
+                      <ComboBox Grid.Column="2" MinHeight="28" Style="{StaticResource StreamDarkComboBox}" ItemsSource="{Binding StreamQualityChoices}" SelectedItem="{Binding SelectedStreamQuality}" FontSize="9.5" />
                     </Grid>
-                </Border>
+                    <TextBlock Grid.Row="2" Text="{Binding StreamTechnicalText, Mode=OneWay}" Foreground="{DynamicResource ThemeMutedTextBrush}" FontSize="9" TextWrapping="Wrap" />
+                  </Grid>
+                </Grid>
+              </Border>
+              <Button Grid.Row="6" Height="42" Style="{StaticResource DenseGhostButton}" Click="StreamDetectPlay_Click">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                  <Viewbox Width="15" Height="15" Margin="0,0,7,0">
+                    <Path Data="{StaticResource IconStream}" Stroke="{DynamicResource ThemeAccentBrush}" StrokeThickness="1.6" Fill="Transparent" />
+                  </Viewbox>
+                  <TextBlock Text="Detect &amp; Play" FontWeight="SemiBold" />
+                </StackPanel>
+              </Button>
             </Grid>
-            </ScrollViewer>
+          </Border>
+          <Border x:Name="StreamPlayerCard" Grid.Column="2" Style="{StaticResource ReferenceCard}">
+            <Grid>
+              <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="8" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="8" />
+                <RowDefinition Height="76" />
+              </Grid.RowDefinitions>
+              <Grid>
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="*" />
+                  <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel Orientation="Horizontal">
+                  <TextBlock Text="PLAYER" Foreground="{DynamicResource ThemeAccentBrush}" FontWeight="SemiBold" FontSize="11" />
+                  <TextBlock Margin="10,0,0,0" Text="{Binding StreamStatus, Mode=OneWay}" Foreground="{DynamicResource ThemeSecondaryTextBrush}" FontSize="9.5" TextTrimming="CharacterEllipsis" MaxWidth="560" />
+                </StackPanel>
+                <TextBlock Grid.Column="1" Text="Web media capture" Foreground="{DynamicResource ThemeMutedTextBrush}" FontSize="9" />
+              </Grid>
+              <Border Grid.Row="2" x:Name="StreamVideoSurface" Background="#000000" BorderBrush="{DynamicResource ThemeBorderBrush}" BorderThickness="1" CornerRadius="8" ClipToBounds="True">
+                <Grid>
+                  <wv2:WebView2 x:Name="StreamWebView" />
+                  <Grid x:Name="StreamPlayerOverlay" Background="#E6000000" IsHitTestVisible="False">
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="500">
+                      <Viewbox Width="50" Height="50" HorizontalAlignment="Center">
+                        <Path Data="{StaticResource IconStream}" Stroke="{DynamicResource ThemeAccentBrush}" StrokeThickness="1.35" Fill="Transparent" />
+                      </Viewbox>
+                      <TextBlock Margin="0,12,0,0" Text="{Binding StreamStatus, Mode=OneWay}" Foreground="{DynamicResource ThemeSecondaryTextBrush}" FontSize="11" TextAlignment="Center" TextWrapping="Wrap" />
+                      <TextBlock Margin="0,7,0,0" Text="Auto can hide surrounding page UI after the video is found. Server-side/in-stream ads cannot be guaranteed to be removed." Foreground="{DynamicResource ThemeMutedTextBrush}" FontSize="8.5" TextAlignment="Center" TextWrapping="Wrap" />
+                    </StackPanel>
+                  </Grid>
+                </Grid>
+              </Border>
+              <Grid Grid.Row="4" x:Name="StreamControls">
+                <Grid.RowDefinitions>
+                  <RowDefinition Height="34" />
+                  <RowDefinition Height="8" />
+                  <RowDefinition Height="34" />
+                </Grid.RowDefinitions>
+                <Grid Grid.Row="0">
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="14" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="120" />
+                    <ColumnDefinition Width="*" />
+                  </Grid.ColumnDefinitions>
+                  <Button Width="38" Height="34" Style="{StaticResource DenseGhostButton}" ToolTip="Play" Click="StreamPlay_Click">
+                    <Viewbox Width="15" Height="15">
+                      <Path Data="{StaticResource IconPlay}" Fill="{DynamicResource ThemeAccentBrush}" />
+                    </Viewbox>
+                  </Button>
+                  <Button Grid.Column="1" Width="38" Height="34" Margin="6,0,0,0" Style="{StaticResource DenseGhostButton}" ToolTip="Pause" Click="StreamPause_Click">
+                    <Viewbox Width="15" Height="15">
+                      <Path Data="{StaticResource IconPause}" Fill="{DynamicResource ThemePrimaryTextBrush}" />
+                    </Viewbox>
+                  </Button>
+                  <Button Grid.Column="2" Width="38" Height="34" Margin="6,0,0,0" Style="{StaticResource DenseGhostButton}" ToolTip="Stop" Click="StreamStop_Click">
+                    <Viewbox Width="15" Height="15">
+                      <Path Data="{StaticResource IconStop}" Fill="{DynamicResource ThemePrimaryTextBrush}" />
+                    </Viewbox>
+                  </Button>
+                  <Button Grid.Column="3" Width="38" Height="34" Margin="6,0,0,0" Style="{StaticResource DenseGhostButton}" ToolTip="Full screen" Click="StreamFullscreen_Click">
+                    <Viewbox Width="15" Height="15">
+                      <Path Data="{StaticResource IconFullscreen}" Stroke="{DynamicResource ThemePrimaryTextBrush}" StrokeThickness="1.7" Fill="Transparent" />
+                    </Viewbox>
+                  </Button>
+                  <TextBlock Grid.Column="5" Text="Volume" VerticalAlignment="Center" Foreground="{DynamicResource ThemeMutedTextBrush}" FontSize="9" />
+                  <Slider Grid.Column="6" x:Name="StreamVolumeSlider" Minimum="0" Maximum="1" Value="0.85" VerticalAlignment="Center" ValueChanged="StreamVolumeSlider_ValueChanged" />
+                </Grid>
+                <Grid Grid.Row="2">
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="8" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="8" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="6" />
+                    <ColumnDefinition Width="Auto" />
+                  </Grid.ColumnDefinitions>
+                  <TextBlock Text="Resolution" VerticalAlignment="Center" Foreground="{DynamicResource ThemeMutedTextBrush}" FontSize="9" />
+                  <ComboBox Grid.Column="2" MinWidth="150" MaxWidth="240" Height="30" Style="{StaticResource StreamDarkComboBox}" ItemsSource="{Binding StreamQualityChoices}" SelectedItem="{Binding SelectedStreamQuality}" FontSize="9.5" />
+                  <Button Grid.Column="4" Height="30" Padding="10,4" Style="{StaticResource DenseGhostButton}" ToolTip="Download selected video as MP4" Click="StreamDownloadMp4_Click">
+                    <StackPanel Orientation="Horizontal">
+                      <Viewbox Width="13" Height="13" Margin="0,0,5,0">
+                        <Path Data="{StaticResource IconDownload}" Stroke="{DynamicResource ThemeAccentBrush}" StrokeThickness="1.6" Fill="Transparent" />
+                      </Viewbox>
+                      <TextBlock Text="MP4" />
+                    </StackPanel>
+                  </Button>
+                  <Button Grid.Column="6" Height="30" Padding="10,4" Style="{StaticResource DenseGhostButton}" ToolTip="Download audio as MP3" Click="StreamDownloadMp3_Click">
+                    <StackPanel Orientation="Horizontal">
+                      <Viewbox Width="13" Height="13" Margin="0,0,5,0">
+                        <Path Data="{StaticResource IconDownload}" Stroke="{DynamicResource ThemeAccentBrush}" StrokeThickness="1.6" Fill="Transparent" />
+                      </Viewbox>
+                      <TextBlock Text="MP3" />
+                    </StackPanel>
+                  </Button>
+                </Grid>
+              </Grid>
+            </Grid>
+          </Border>
         </Grid>
+      </Grid>
+      <!-- CONVERT remains -->
+      <Grid x:Name="ConvertWorkspace" Visibility="Collapsed">
+        <Grid.RowDefinitions>
+          <RowDefinition Height="Auto" />
+          <RowDefinition Height="12" />
+          <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <StackPanel Grid.Row="0" Orientation="Horizontal">
+          <Viewbox Width="17" Height="17" Margin="0,0,7,0">
+            <Path Data="{StaticResource IconConvert}" Stroke="{DynamicResource ThemeAccentBrush}" StrokeThickness="1.7" Fill="Transparent" />
+          </Viewbox>
+          <TextBlock Text="CONVERT LOCAL VIDEO / AUDIO TO MP3" Foreground="{DynamicResource ThemeAccentBrush}" FontWeight="SemiBold" FontSize="11" />
+        </StackPanel>
+        <Grid Grid.Row="2">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="1.15*" />
+            <ColumnDefinition Width="12" />
+            <ColumnDefinition Width="0.85*" />
+          </Grid.ColumnDefinitions>
+          <Border x:Name="ConvertInputCard" Grid.Column="0" Style="{StaticResource ReferenceCard}">
+            <Grid>
+              <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="14" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="14" />
+                <RowDefinition Height="Auto" />
+              </Grid.RowDefinitions>
+              <TextBlock Text="INPUT MEDIA" Foreground="{DynamicResource ThemeAccentBrush}" FontWeight="SemiBold" FontSize="11" />
+              <Border x:Name="ConvertDropZone" Grid.Row="2" AllowDrop="True" DragOver="ConvertDropZone_DragOver" Drop="ConvertDropZone_Drop" Background="{DynamicResource ThemePanelBackgroundBrush}" BorderBrush="{DynamicResource ThemeStrongBorderBrush}" BorderThickness="1" CornerRadius="8" Padding="16">
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                  <Viewbox Width="40" Height="40">
+                    <Path Data="{StaticResource IconAddMedia}" Stroke="{DynamicResource ThemeAccentBrush}" StrokeThickness="1.6" Fill="Transparent" />
+                  </Viewbox>
+                  <TextBlock Margin="0,10,0,0" Text="{Binding ConversionInputFileName, Mode=OneWay}" HorizontalAlignment="Center" FontWeight="SemiBold" FontSize="12" />
+                  <TextBlock Margin="0,5,0,0" Text="Drop a local video or audio file here" Foreground="{DynamicResource ThemeSecondaryTextBrush}" HorizontalAlignment="Center" FontSize="9" />
+                  <Button Margin="0,12,0,0" HorizontalAlignment="Center" Style="{StaticResource DenseGhostButton}" Command="{Binding BrowseConversionInputCommand}">
+                    <StackPanel Orientation="Horizontal">
+                      <Viewbox Width="14" Height="14" Margin="0,0,6,0">
+                        <Path Data="{StaticResource IconFolder}" Stroke="{DynamicResource ThemeSecondaryTextBrush}" StrokeThickness="1.5" Fill="Transparent" />
+                      </Viewbox>
+                      <TextBlock Text="Browse Media" />
+                    </StackPanel>
+                  </Button>
+                </StackPanel>
+              </Border>
+              <TextBlock Grid.Row="4" Text="{Binding ConversionInputPath, Mode=OneWay}" Foreground="{DynamicResource ThemeMutedTextBrush}" FontSize="8.5" TextTrimming="CharacterEllipsis" />
+            </Grid>
+          </Border>
+          <Border x:Name="ConvertOptionsCard" Grid.Column="2" Style="{StaticResource ReferenceCard}">
+            <Grid>
+              <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="14" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="12" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+              </Grid.RowDefinitions>
+              <TextBlock Text="OUTPUT OPTIONS" Foreground="{DynamicResource ThemeAccentBrush}" FontWeight="SemiBold" FontSize="11" />
+              <StackPanel Grid.Row="2">
+                <TextBlock Text="Output format" Foreground="{DynamicResource ThemePrimaryTextBrush}" FontSize="9" />
+                <Border Margin="0,4,0,0" Background="{DynamicResource ThemePanelBackgroundBrush}" BorderBrush="{DynamicResource ThemeBorderBrush}" BorderThickness="1" CornerRadius="6" Padding="10,8">
+                  <TextBlock Text="MP3 Audio" FontWeight="SemiBold" />
+                </Border>
+              </StackPanel>
+              <Grid Grid.Row="4">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="0.72*" />
+                  <ColumnDefinition Width="8" />
+                  <ColumnDefinition Width="1.28*" />
+                </Grid.ColumnDefinitions>
+                <StackPanel>
+                  <TextBlock Text="Bitrate" Foreground="{DynamicResource ThemePrimaryTextBrush}" FontSize="9" />
+                  <ComboBox Margin="0,4,0,0" Style="{StaticResource DarkComboBox}" ItemsSource="{Binding ConversionMp3Bitrates}" SelectedItem="{Binding SelectedConversionBitrate}" />
+                </StackPanel>
+                <StackPanel Grid.Column="2">
+                  <TextBlock Text="Output folder" Foreground="{DynamicResource ThemePrimaryTextBrush}" FontSize="9" />
+                  <Border Margin="0,4,0,0" Background="{DynamicResource ThemePanelBackgroundBrush}" BorderBrush="{DynamicResource ThemeBorderBrush}" BorderThickness="1" CornerRadius="6" Padding="8,8">
+                    <TextBlock Text="{Binding ConversionOutputDirectory, Mode=OneWay}" FontSize="8.5" TextTrimming="CharacterEllipsis" />
+                  </Border>
+                </StackPanel>
+              </Grid>
+              <StackPanel Grid.Row="5" Margin="0,12,0,0">
+                <TextBlock Text="Uses your saved audio-processing settings." Foreground="{DynamicResource ThemeSecondaryTextBrush}" FontSize="9" />
+                <TextBlock Margin="0,7,0,0" Text="{Binding AudioFadeInOut3Seconds, Mode=OneWay, StringFormat=3-second fade: {0}}" Foreground="{DynamicResource ThemeSecondaryTextBrush}" FontSize="8.5" />
+                <TextBlock Margin="0,4,0,0" Text="{Binding TrimBoundarySilence, Mode=OneWay, StringFormat=Trim start/end silence: {0}}" Foreground="{DynamicResource ThemeSecondaryTextBrush}" FontSize="8.5" />
+                <TextBlock Margin="0,8,0,0" Text="{Binding LastConvertedFile, Mode=OneWay}" Foreground="{DynamicResource ThemeMutedTextBrush}" FontSize="8.5" TextTrimming="CharacterEllipsis" />
+              </StackPanel>
+              <Button Grid.Row="6" Style="{StaticResource NeonPrimaryButton}" Command="{Binding ConvertLocalFileCommand}" Padding="16,10">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                  <Viewbox Width="15" Height="15" Margin="0,0,7,0">
+                    <Path Data="{StaticResource IconConvert}" Stroke="White" StrokeThickness="1.6" Fill="Transparent" />
+                  </Viewbox>
+                  <TextBlock Text="Convert to MP3" FontWeight="SemiBold" />
+                </StackPanel>
+              </Button>
+            </Grid>
+          </Border>
+        </Grid>
+      </Grid>
+      <Border x:Name="TrialLockOverlay" Panel.ZIndex="100" Background="{DynamicResource ThemeWindowBackgroundBrush}" BorderBrush="{StaticResource AccentBorderGradient}" BorderThickness="1" CornerRadius="12" Visibility="Visible">
+        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="620" Margin="30" Name="LicenseActionsPanelR183" Orientation="Vertical">
+          <Border Width="64" Height="64" HorizontalAlignment="Center" Background="{DynamicResource ThemeAccentPanelBrush}" BorderBrush="{DynamicResource ThemeAccentBrush}" BorderThickness="1" CornerRadius="18">
+            <Viewbox Width="30" Height="30" HorizontalAlignment="Center" VerticalAlignment="Center">
+              <Path Data="{StaticResource IconLock}" Stroke="{DynamicResource ThemeAccentBrush}" StrokeThickness="1.6" Fill="Transparent" />
+            </Viewbox>
+          </Border>
+          <TextBlock Margin="0,18,0,0" Text="{Binding TrialLockTitle, Mode=OneWay}" HorizontalAlignment="Center" FontSize="24" FontWeight="SemiBold" Foreground="{DynamicResource ThemePrimaryTextBrush}" />
+          <TextBlock Margin="0,10,0,0" Text="{Binding TrialLockMessage, Mode=OneWay}" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" FontSize="12" LineHeight="19" Foreground="{DynamicResource ThemeSecondaryTextBrush}" />
+          <Button Margin="0,18,0,0" MinWidth="190" HorizontalAlignment="Center" Style="{StaticResource NeonPrimaryButton}" Padding="18,10" ToolTip="Buy a MediaDock license on Payhip" Click="OpenLicensePurchase_Click" Name="BuyLicenseButtonR183">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+              <Viewbox Width="15" Height="15" Margin="0,0,7,0">
+                <Path Data="{StaticResource IconPayhip}" Fill="White" />
+              </Viewbox>
+              <TextBlock Text="Buy MediaDock License" FontWeight="SemiBold" />
+            </StackPanel>
+          </Button>
+          <TextBlock Margin="0,12,0,0" Text="Settings, Diagnostics, completed queue items, and Support remain available." HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" FontSize="10" Foreground="{DynamicResource ThemeMutedTextBrush}" />
+          <Button Name="EnterSerialButtonR183" Content="Enter Serial" Click="EnterSerialButtonR183_Click" HorizontalAlignment="Center" Margin="0,12,0,0" ToolTip="Enter your MediaDock serial or license key." Style="{StaticResource NeonPrimaryButton}" MinWidth="190" Padding="18,10" />
+          <TextBlock Name="LicenseStatusTextR183" Text="MediaDock license" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" Margin="0,10,0,0" Visibility="Collapsed" />
+          <Button Content="Release This Device" Name="ReleaseLicenseButtonR183" Click="ReleaseLicenseButtonR183_Click" HorizontalAlignment="Center" Margin="0,12,0,0" Visibility="Collapsed" MinWidth="220" />
+          <Button x:Name="TrialPurchaseLinkR1620" Margin="0,8,0,0" Content="Get MediaDock License" Click="OpenLicensePurchase_Click" Padding="10,4" ToolTip="Open https://payhip.com/b/oxlUS" />
+        </StackPanel>
+      </Border>
+      <Border x:Name="UpdateNoticeR1620" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,4,4,0" Padding="10,6" Background="#F21A2738" BorderBrush="{DynamicResource ThemeAccentBrush}" BorderThickness="1" CornerRadius="8" Panel.ZIndex="80" Visibility="Collapsed">
+        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+          <TextBlock x:Name="UpdateNoticeTextR1620" Text="MediaDock update available" Foreground="{DynamicResource ThemePrimaryTextBrush}" FontWeight="SemiBold" FontSize="9.5" VerticalAlignment="Center" />
+          <Button Margin="9,0,0,0" Content="Update" Click="UpdateNoticeButtonR1620_Click" Padding="9,3" />
+        </StackPanel>
+      </Border>
     </Grid>
+    <Border Grid.Row="2" Background="{DynamicResource ThemeTitleBarBackgroundBrush}" BorderBrush="{DynamicResource ThemeBorderBrush}" BorderThickness="0,1,0,0">
+      <Grid Margin="12,0">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="Auto" />
+          <ColumnDefinition Width="*" />
+          <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+          <TextBlock VerticalAlignment="Center" Text="{Binding BuildIdentityText}" Foreground="{DynamicResource ThemeMutedTextBrush}" FontSize="8.5" />
+          <TextBlock Margin="12,0,0,0" VerticalAlignment="Center" Text="{Binding TrialSummary, Mode=OneWay}" Foreground="{DynamicResource ThemeSecondaryTextBrush}" FontSize="8.5" ToolTip="Trial usage counts successful output files and survives normal reinstall." />
+        </StackPanel>
+        <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+          <Ellipse Width="7" Height="7" Fill="{DynamicResource ThemeSuccessBrush}" />
+          <TextBlock Margin="6,0,0,0" Text="{Binding Status, Mode=OneWay}" Foreground="{DynamicResource ThemeSecondaryTextBrush}" FontSize="9.5" TextTrimming="CharacterEllipsis" MaxWidth="520" />
+        </StackPanel>
+        <Button x:Name="SupportStoreButton" Grid.Column="2" Style="{StaticResource FooterSupportButton}" ToolTip="Buy MediaDock License on Payhip" ToolTipService.InitialShowDelay="150" Click="OpenLicensePurchase_Click">
+          <Viewbox Width="15" Height="15">
+            <Path Data="{StaticResource IconPayhip}" Fill="#5C6AC4" />
+          </Viewbox>
+        </Button>
+      </Grid>
+    </Border>
+    <Grid x:Name="GlobalLinkDropOverlay" Grid.RowSpan="3" Panel.ZIndex="1000" Background="#D9000000" Visibility="Collapsed" IsHitTestVisible="False">
+      <Border Margin="22" Background="{DynamicResource ThemePanelBackgroundBrush}" BorderBrush="{StaticResource AccentBorderGradient}" BorderThickness="2" CornerRadius="18" Opacity="0.98">
+        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="620">
+          <Border Width="92" Height="92" HorizontalAlignment="Center" Background="{DynamicResource ThemeAccentPanelBrush}" BorderBrush="{DynamicResource ThemeAccentBrush}" BorderThickness="1" CornerRadius="24">
+            <Viewbox Width="46" Height="46" HorizontalAlignment="Center" VerticalAlignment="Center">
+              <Path Data="{StaticResource IconDownload}" Stroke="{DynamicResource ThemeAccentBrush}" StrokeThickness="1.9" Fill="Transparent" />
+            </Viewbox>
+          </Border>
+          <TextBlock x:Name="GlobalDropTitle" Margin="0,20,0,0" Text="Drop to add media" HorizontalAlignment="Center" FontSize="24" FontWeight="SemiBold" Foreground="{DynamicResource ThemePrimaryTextBrush}" />
+          <TextBlock x:Name="GlobalDropSubtitle" Margin="0,9,0,0" Text="Release the video link, TXT, or CSV anywhere in MediaDock." HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" FontSize="11" Foreground="{DynamicResource ThemeSecondaryTextBrush}" />
+          <TextBlock Margin="0,12,0,0" Text="HTTP/HTTPS links only ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¾ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¾ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¦ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¦ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¾ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¦ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¦ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â· duplicate queue links are skipped automatically" HorizontalAlignment="Center" TextAlignment="Center" FontSize="9.5" Foreground="{DynamicResource ThemeMutedTextBrush}" />
+        </StackPanel>
+      </Border>
+    </Grid>
+  </Grid>
 </Window>

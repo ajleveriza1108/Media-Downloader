@@ -14,7 +14,11 @@ public sealed record MediaFormat(
     double? AudioBitrate,
     bool HasVideo,
     bool HasAudio,
-    bool IsDrm)
+    bool IsDrm,
+    // MEDIADOCK_AUDIO_LANGUAGE_METADATA_R1630
+    string Language = "",
+    string FormatNote = "",
+    int LanguagePreference = 0)
 {
     public string DisplayName
     {
