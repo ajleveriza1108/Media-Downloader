@@ -444,7 +444,27 @@
         </Setter.Value>
       </Setter>
     </Style>
-  </Window.Resources>
+      <!-- MEDIADOCK_PREMIUM_GUI_STYLES_R1633 -->
+    <Style x:Key="PremiumCardR1633" TargetType="Border">
+      <Setter Property="Background" Value="{DynamicResource ThemeSurfaceBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ThemeBorderBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="12" />
+      <Setter Property="Padding" Value="16" />
+    </Style>
+    <Style x:Key="PremiumSubCardR1633" TargetType="Border">
+      <Setter Property="Background" Value="{DynamicResource ThemePanelBackgroundBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ThemeBorderBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="9" />
+      <Setter Property="Padding" Value="12" />
+    </Style>
+    <Style x:Key="PremiumEyebrowR1633" TargetType="TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource ThemeAccentBrush}" />
+      <Setter Property="FontSize" Value="9.5" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+</Window.Resources>
   <Grid x:Name="WindowRoot">
     <Grid.RowDefinitions>
       <RowDefinition x:Name="HeaderRow" Height="52" />
@@ -1563,105 +1583,138 @@
         </Grid>
       </Grid>
       <!-- CONVERT remains -->
+      <!-- MEDIADOCK_PREMIUM_CONVERT_WORKSPACE_R1633 -->
       <Grid x:Name="ConvertWorkspace" Visibility="Collapsed">
         <Grid.RowDefinitions>
           <RowDefinition Height="Auto" />
           <RowDefinition Height="12" />
           <RowDefinition Height="*" />
         </Grid.RowDefinitions>
-        <StackPanel Grid.Row="0" Orientation="Horizontal">
-          <Viewbox Width="17" Height="17" Margin="0,0,7,0">
-            <Path Data="{StaticResource IconConvert}" Stroke="{DynamicResource ThemeAccentBrush}" StrokeThickness="1.7" Fill="Transparent" />
-          </Viewbox>
-          <TextBlock Text="CONVERT LOCAL VIDEO / AUDIO TO MP3" Foreground="{DynamicResource ThemeAccentBrush}" FontWeight="SemiBold" FontSize="11" />
-        </StackPanel>
+        <Grid Grid.Row="0">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+          </Grid.ColumnDefinitions>
+          <StackPanel>
+            <StackPanel Orientation="Horizontal">
+              <Viewbox Width="17" Height="17" Margin="0,0,7,0">
+                <Path Data="{StaticResource IconConvert}" Stroke="{DynamicResource ThemeAccentBrush}" StrokeThickness="1.7" Fill="Transparent" />
+              </Viewbox>
+              <TextBlock Text="CONVERT LOCAL MEDIA TO MP3" Foreground="{DynamicResource ThemeAccentBrush}" FontWeight="SemiBold" FontSize="11" VerticalAlignment="Center" />
+            </StackPanel>
+            <TextBlock Margin="24,3,0,0" Text="Import a local video or audio file and create a high-quality MP3." Foreground="{DynamicResource ThemeMutedTextBrush}" FontSize="9.5" />
+          </StackPanel>
+          <Border Grid.Column="1" VerticalAlignment="Center" Background="{DynamicResource ThemeAccentPanelBrush}" BorderBrush="{DynamicResource ThemeAccentSoftBrush}" BorderThickness="1" CornerRadius="10" Padding="10,5">
+            <StackPanel Orientation="Horizontal">
+              <Ellipse Width="6" Height="6" Fill="{DynamicResource ThemeSuccessBrush}" VerticalAlignment="Center" />
+              <TextBlock Margin="6,0,0,0" Text="Local conversion • MP3" Foreground="{DynamicResource ThemeSecondaryTextBrush}" FontSize="9" />
+            </StackPanel>
+          </Border>
+        </Grid>
         <Grid Grid.Row="2">
           <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="1.15*" />
-            <ColumnDefinition Width="12" />
-            <ColumnDefinition Width="0.85*" />
+            <ColumnDefinition Width="1.16*" />
+            <ColumnDefinition Width="14" />
+            <ColumnDefinition Width="0.84*" />
           </Grid.ColumnDefinitions>
-          <Border x:Name="ConvertInputCard" Grid.Column="0" Style="{StaticResource ReferenceCard}">
+          <Border x:Name="ConvertInputCard" Grid.Column="0" Style="{StaticResource PremiumCardR1633}">
             <Grid>
               <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
-                <RowDefinition Height="14" />
+                <RowDefinition Height="12" />
                 <RowDefinition Height="*" />
-                <RowDefinition Height="14" />
+                <RowDefinition Height="12" />
                 <RowDefinition Height="Auto" />
               </Grid.RowDefinitions>
-              <TextBlock Text="INPUT MEDIA" Foreground="{DynamicResource ThemeAccentBrush}" FontWeight="SemiBold" FontSize="11" />
-              <Border x:Name="ConvertDropZone" Grid.Row="2" AllowDrop="True" DragOver="ConvertDropZone_DragOver" Drop="ConvertDropZone_Drop" Background="{DynamicResource ThemePanelBackgroundBrush}" BorderBrush="{DynamicResource ThemeStrongBorderBrush}" BorderThickness="1" CornerRadius="8" Padding="16">
+              <Grid>
+                <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                <StackPanel>
+                  <TextBlock Style="{StaticResource PremiumEyebrowR1633}" Text="INPUT MEDIA" />
+                  <TextBlock Margin="0,4,0,0" Text="Choose the media you want to convert" FontSize="12" FontWeight="SemiBold" />
+                </StackPanel>
+                <Border Grid.Column="1" Background="{DynamicResource ThemeAccentPanelBrush}" BorderBrush="{DynamicResource ThemeBorderBrush}" BorderThickness="1" CornerRadius="8" Padding="9,4" VerticalAlignment="Center">
+                  <TextBlock Text="VIDEO / AUDIO" Foreground="{DynamicResource ThemeAccentBrush}" FontWeight="SemiBold" FontSize="8.5" />
+                </Border>
+              </Grid>
+              <Border x:Name="ConvertDropZone" Grid.Row="2" AllowDrop="True" DragOver="ConvertDropZone_DragOver" Drop="ConvertDropZone_Drop" Background="{DynamicResource ThemePanelBackgroundBrush}" BorderBrush="{DynamicResource ThemeStrongBorderBrush}" BorderThickness="1" CornerRadius="12" Padding="20">
                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                  <Viewbox Width="40" Height="40">
-                    <Path Data="{StaticResource IconAddMedia}" Stroke="{DynamicResource ThemeAccentBrush}" StrokeThickness="1.6" Fill="Transparent" />
-                  </Viewbox>
-                  <TextBlock Margin="0,10,0,0" Text="{Binding ConversionInputFileName, Mode=OneWay}" HorizontalAlignment="Center" FontWeight="SemiBold" FontSize="12" />
-                  <TextBlock Margin="0,5,0,0" Text="Drop a local video or audio file here" Foreground="{DynamicResource ThemeSecondaryTextBrush}" HorizontalAlignment="Center" FontSize="9" />
-                  <Button Margin="0,12,0,0" HorizontalAlignment="Center" Style="{StaticResource DenseGhostButton}" Command="{Binding BrowseConversionInputCommand}">
+                  <Border Width="64" Height="64" Background="{DynamicResource ThemeAccentPanelBrush}" BorderBrush="{DynamicResource ThemeAccentSoftBrush}" BorderThickness="1" CornerRadius="18">
+                    <Viewbox Width="28" Height="28" HorizontalAlignment="Center" VerticalAlignment="Center">
+                      <Path Data="{StaticResource IconAddMedia}" Stroke="{DynamicResource ThemeAccentBrush}" StrokeThickness="1.55" Fill="Transparent" />
+                    </Viewbox>
+                  </Border>
+                  <TextBlock Margin="0,14,0,0" Text="{Binding ConversionInputFileName, Mode=OneWay}" HorizontalAlignment="Center" FontWeight="SemiBold" FontSize="13" TextTrimming="CharacterEllipsis" MaxWidth="520" />
+                  <TextBlock Margin="0,6,0,0" Text="Drag &amp; drop a local media file here" Foreground="{DynamicResource ThemeSecondaryTextBrush}" HorizontalAlignment="Center" FontSize="9.5" />
+                  <TextBlock Margin="0,3,0,0" Text="or" Foreground="{DynamicResource ThemeMutedTextBrush}" HorizontalAlignment="Center" FontSize="8.5" />
+                  <Button Margin="0,10,0,0" HorizontalAlignment="Center" Style="{StaticResource DenseGhostButton}" Padding="13,7" Command="{Binding BrowseConversionInputCommand}">
                     <StackPanel Orientation="Horizontal">
-                      <Viewbox Width="14" Height="14" Margin="0,0,6,0">
-                        <Path Data="{StaticResource IconFolder}" Stroke="{DynamicResource ThemeSecondaryTextBrush}" StrokeThickness="1.5" Fill="Transparent" />
-                      </Viewbox>
-                      <TextBlock Text="Browse Media" />
+                      <Viewbox Width="14" Height="14" Margin="0,0,6,0"><Path Data="{StaticResource IconFolder}" Stroke="{DynamicResource ThemeAccentBrush}" StrokeThickness="1.5" Fill="Transparent" /></Viewbox>
+                      <TextBlock Text="Browse Files" FontWeight="SemiBold" />
                     </StackPanel>
                   </Button>
                 </StackPanel>
               </Border>
-              <TextBlock Grid.Row="4" Text="{Binding ConversionInputPath, Mode=OneWay}" Foreground="{DynamicResource ThemeMutedTextBrush}" FontSize="8.5" TextTrimming="CharacterEllipsis" />
-            </Grid>
-          </Border>
-          <Border x:Name="ConvertOptionsCard" Grid.Column="2" Style="{StaticResource ReferenceCard}">
-            <Grid>
-              <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="14" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="12" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="*" />
-                <RowDefinition Height="Auto" />
-              </Grid.RowDefinitions>
-              <TextBlock Text="OUTPUT OPTIONS" Foreground="{DynamicResource ThemeAccentBrush}" FontWeight="SemiBold" FontSize="11" />
-              <StackPanel Grid.Row="2">
-                <TextBlock Text="Output format" Foreground="{DynamicResource ThemePrimaryTextBrush}" FontSize="9" />
-                <Border Margin="0,4,0,0" Background="{DynamicResource ThemePanelBackgroundBrush}" BorderBrush="{DynamicResource ThemeBorderBrush}" BorderThickness="1" CornerRadius="6" Padding="10,8">
-                  <TextBlock Text="MP3 Audio" FontWeight="SemiBold" />
-                </Border>
-              </StackPanel>
-              <Grid Grid.Row="4">
-                <Grid.ColumnDefinitions>
-                  <ColumnDefinition Width="0.72*" />
-                  <ColumnDefinition Width="8" />
-                  <ColumnDefinition Width="1.28*" />
-                </Grid.ColumnDefinitions>
-                <StackPanel>
-                  <TextBlock Text="Bitrate" Foreground="{DynamicResource ThemePrimaryTextBrush}" FontSize="9" />
-                  <ComboBox Margin="0,4,0,0" Style="{StaticResource DarkComboBox}" ItemsSource="{Binding ConversionMp3Bitrates}" SelectedItem="{Binding SelectedConversionBitrate}" />
-                </StackPanel>
-                <StackPanel Grid.Column="2">
-                  <TextBlock Text="Output folder" Foreground="{DynamicResource ThemePrimaryTextBrush}" FontSize="9" />
-                  <Border Margin="0,4,0,0" Background="{DynamicResource ThemePanelBackgroundBrush}" BorderBrush="{DynamicResource ThemeBorderBrush}" BorderThickness="1" CornerRadius="6" Padding="8,8">
-                    <TextBlock Text="{Binding ConversionOutputDirectory, Mode=OneWay}" FontSize="8.5" TextTrimming="CharacterEllipsis" />
+              <Border Grid.Row="4" Style="{StaticResource PremiumSubCardR1633}" Padding="12,10">
+                <Grid>
+                  <Grid.ColumnDefinitions><ColumnDefinition Width="42" /><ColumnDefinition Width="10" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                  <Border Width="42" Height="42" Background="{DynamicResource ThemeAccentPanelBrush}" CornerRadius="10">
+                    <Viewbox Width="20" Height="20" HorizontalAlignment="Center" VerticalAlignment="Center"><Path Data="{StaticResource IconAudio}" Stroke="{DynamicResource ThemeAccentBrush}" StrokeThickness="1.5" Fill="Transparent" /></Viewbox>
                   </Border>
-                </StackPanel>
-              </Grid>
-              <StackPanel Grid.Row="5" Margin="0,12,0,0">
-                <TextBlock Text="Uses your saved audio-processing settings." Foreground="{DynamicResource ThemeSecondaryTextBrush}" FontSize="9" />
-                <TextBlock Margin="0,7,0,0" Text="{Binding AudioFadeInOut3Seconds, Mode=OneWay, StringFormat=3-second fade: {0}}" Foreground="{DynamicResource ThemeSecondaryTextBrush}" FontSize="8.5" />
-                <TextBlock Margin="0,4,0,0" Text="{Binding TrimBoundarySilence, Mode=OneWay, StringFormat=Trim start/end silence: {0}}" Foreground="{DynamicResource ThemeSecondaryTextBrush}" FontSize="8.5" />
-                <TextBlock Margin="0,8,0,0" Text="{Binding LastConvertedFile, Mode=OneWay}" Foreground="{DynamicResource ThemeMutedTextBrush}" FontSize="8.5" TextTrimming="CharacterEllipsis" />
-              </StackPanel>
-              <Button Grid.Row="6" Style="{StaticResource NeonPrimaryButton}" Command="{Binding ConvertLocalFileCommand}" Padding="16,10">
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                  <Viewbox Width="15" Height="15" Margin="0,0,7,0">
-                    <Path Data="{StaticResource IconConvert}" Stroke="White" StrokeThickness="1.6" Fill="Transparent" />
-                  </Viewbox>
-                  <TextBlock Text="Convert to MP3" FontWeight="SemiBold" />
-                </StackPanel>
-              </Button>
+                  <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                    <TextBlock Text="Selected file" Foreground="{DynamicResource ThemeMutedTextBrush}" FontSize="8.5" />
+                    <TextBlock Margin="0,2,0,0" Text="{Binding ConversionInputFileName, Mode=OneWay}" FontWeight="SemiBold" FontSize="10.5" TextTrimming="CharacterEllipsis" />
+                    <TextBlock Margin="0,2,0,0" Text="{Binding ConversionInputPath, Mode=OneWay}" Foreground="{DynamicResource ThemeMutedTextBrush}" FontSize="8.5" TextTrimming="CharacterEllipsis" ToolTip="{Binding ConversionInputPath, Mode=OneWay}" />
+                  </StackPanel>
+                </Grid>
+              </Border>
             </Grid>
           </Border>
+          <Grid Grid.Column="2">
+            <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="12" /><RowDefinition Height="*" /></Grid.RowDefinitions>
+            <Border x:Name="ConvertOptionsCard" Grid.Row="0" Style="{StaticResource PremiumCardR1633}">
+              <StackPanel>
+                <TextBlock Style="{StaticResource PremiumEyebrowR1633}" Text="CONVERSION SETTINGS" />
+                <TextBlock Margin="0,4,0,0" Text="High-quality MP3 output" FontSize="12" FontWeight="SemiBold" />
+                <TextBlock Margin="0,14,0,0" Text="Output format" Foreground="{DynamicResource ThemeMutedTextBrush}" FontSize="8.5" />
+                <Border Margin="0,4,0,0" Style="{StaticResource PremiumSubCardR1633}" Padding="10,8">
+                  <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="28" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                    <Viewbox Width="15" Height="15"><Path Data="{StaticResource IconAudio}" Stroke="{DynamicResource ThemeAccentBrush}" StrokeThickness="1.5" Fill="Transparent" /></Viewbox>
+                    <TextBlock Grid.Column="1" Text="MP3 Audio" FontWeight="SemiBold" VerticalAlignment="Center" />
+                  </Grid>
+                </Border>
+                <TextBlock Margin="0,12,0,0" Text="Audio quality" Foreground="{DynamicResource ThemeMutedTextBrush}" FontSize="8.5" />
+                <ComboBox Margin="0,4,0,0" Style="{StaticResource DarkComboBox}" ItemsSource="{Binding ConversionMp3Bitrates}" SelectedItem="{Binding SelectedConversionBitrate}" />
+              </StackPanel>
+            </Border>
+            <Border Grid.Row="2" Style="{StaticResource PremiumCardR1633}">
+              <Grid>
+                <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="10" /><RowDefinition Height="Auto" /><RowDefinition Height="12" /><RowDefinition Height="Auto" /><RowDefinition Height="*" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+                <StackPanel>
+                  <TextBlock Style="{StaticResource PremiumEyebrowR1633}" Text="OUTPUT DESTINATION" />
+                  <TextBlock Margin="0,4,0,0" Text="Save converted audio here" FontSize="12" FontWeight="SemiBold" />
+                </StackPanel>
+                <Grid Grid.Row="2">
+                  <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="34" /><ColumnDefinition Width="34" /></Grid.ColumnDefinitions>
+                  <Border Style="{StaticResource PremiumSubCardR1633}" Padding="9,8"><TextBlock Text="{Binding ConversionOutputDirectory, Mode=OneWay}" FontSize="8.5" TextTrimming="CharacterEllipsis" ToolTip="{Binding ConversionOutputDirectory, Mode=OneWay}" /></Border>
+                  <Button Grid.Column="1" Margin="5,0,0,0" Style="{StaticResource DenseGhostButton}" Padding="0" Command="{Binding BrowseOutputDirectoryCommand}" ToolTip="Choose output folder"><Viewbox Width="14" Height="14"><Path Data="{StaticResource IconFolder}" Stroke="{DynamicResource ThemePrimaryTextBrush}" StrokeThickness="1.5" Fill="Transparent" /></Viewbox></Button>
+                  <Button Grid.Column="2" Margin="5,0,0,0" Style="{StaticResource DenseGhostButton}" Padding="0" Command="{Binding OpenDownloadsCommand}" ToolTip="Open output folder"><Viewbox Width="14" Height="14"><Path Data="{StaticResource IconFolderOpen}" Stroke="{DynamicResource ThemeAccentBrush}" StrokeThickness="1.5" Fill="Transparent" /></Viewbox></Button>
+                </Grid>
+                <Border Grid.Row="4" Style="{StaticResource PremiumSubCardR1633}" Padding="10">
+                  <StackPanel>
+                    <TextBlock Text="Audio processing" FontWeight="SemiBold" FontSize="9.5" />
+                    <Grid Margin="0,7,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="8" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                      <Border Background="{DynamicResource ThemeAccentPanelBrush}" CornerRadius="7" Padding="8,5"><TextBlock Text="{Binding AudioFadeInOut3Seconds, Mode=OneWay, StringFormat=3-second fade: {0}}" Foreground="{DynamicResource ThemeSecondaryTextBrush}" FontSize="8.3" /></Border>
+                      <Border Grid.Column="2" Background="{DynamicResource ThemeAccentPanelBrush}" CornerRadius="7" Padding="8,5"><TextBlock Text="{Binding TrimBoundarySilence, Mode=OneWay, StringFormat=Trim silence: {0}}" Foreground="{DynamicResource ThemeSecondaryTextBrush}" FontSize="8.3" /></Border>
+                    </Grid>
+                    <TextBlock Margin="0,7,0,0" Text="{Binding LastConvertedFile, Mode=OneWay}" Foreground="{DynamicResource ThemeMutedTextBrush}" FontSize="8.3" TextTrimming="CharacterEllipsis" ToolTip="{Binding LastConvertedFile, Mode=OneWay}" />
+                  </StackPanel>
+                </Border>
+                <Button Grid.Row="6" Style="{StaticResource NeonPrimaryButton}" Command="{Binding ConvertLocalFileCommand}" Padding="16,10">
+                  <StackPanel Orientation="Horizontal" HorizontalAlignment="Center"><Viewbox Width="15" Height="15" Margin="0,0,7,0"><Path Data="{StaticResource IconConvert}" Stroke="White" StrokeThickness="1.6" Fill="Transparent" /></Viewbox><TextBlock Text="Convert to MP3" FontWeight="SemiBold" /></StackPanel>
+                </Button>
+              </Grid>
+            </Border>
+          </Grid>
         </Grid>
       </Grid>
       <Border x:Name="TrialLockOverlay" Panel.ZIndex="100" Background="{DynamicResource ThemeWindowBackgroundBrush}" BorderBrush="{StaticResource AccentBorderGradient}" BorderThickness="1" CornerRadius="12" Visibility="Visible">
@@ -1688,11 +1741,15 @@
           <Button x:Name="TrialPurchaseLinkR1620" Margin="0,8,0,0" Content="Get MediaDock License" Click="OpenLicensePurchase_Click" Padding="10,4" ToolTip="Open https://payhip.com/b/oxlUS" />
         </StackPanel>
       </Border>
-      <Border x:Name="UpdateNoticeR1620" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,4,4,0" Padding="10,6" Background="#F21A2738" BorderBrush="{DynamicResource ThemeAccentBrush}" BorderThickness="1" CornerRadius="8" Panel.ZIndex="80" Visibility="Collapsed">
-        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-          <TextBlock x:Name="UpdateNoticeTextR1620" Text="MediaDock update available" Foreground="{DynamicResource ThemePrimaryTextBrush}" FontWeight="SemiBold" FontSize="9.5" VerticalAlignment="Center" />
-          <Button Margin="9,0,0,0" Content="Update" Click="UpdateNoticeButtonR1620_Click" Padding="9,3" />
-        </StackPanel>
+      <!-- MEDIADOCK_PREMIUM_UPDATE_TOAST_R1633 -->
+      <Border x:Name="UpdateNoticeR1620" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,6,8,0" Padding="8,6" Background="{DynamicResource ThemeSurfaceBrush}" BorderBrush="{DynamicResource ThemeStrongBorderBrush}" BorderThickness="1" CornerRadius="11" Panel.ZIndex="80" Visibility="Collapsed">
+        <Border.Effect><DropShadowEffect BlurRadius="18" ShadowDepth="2" Opacity="0.22" Color="#000000" /></Border.Effect>
+        <Grid>
+          <Grid.ColumnDefinitions><ColumnDefinition Width="28" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+          <Border Width="26" Height="26" Background="{DynamicResource ThemeAccentPanelBrush}" CornerRadius="8"><Viewbox Width="13" Height="13" HorizontalAlignment="Center" VerticalAlignment="Center"><Path Data="{StaticResource IconDownload}" Stroke="{DynamicResource ThemeAccentBrush}" StrokeThickness="1.6" Fill="Transparent" /></Viewbox></Border>
+          <StackPanel Grid.Column="1" Margin="7,0,0,0" VerticalAlignment="Center"><TextBlock x:Name="UpdateNoticeTextR1620" Text="MediaDock update available" Foreground="{DynamicResource ThemePrimaryTextBrush}" FontWeight="SemiBold" FontSize="9.5" /><TextBlock Text="Verified stable release" Foreground="{DynamicResource ThemeMutedTextBrush}" FontSize="8" /></StackPanel>
+          <Button Grid.Column="2" Margin="10,0,0,0" Content="Update" Click="UpdateNoticeButtonR1620_Click" Style="{StaticResource DenseGhostButton}" Padding="11,5" FontWeight="SemiBold" />
+        </Grid>
       </Border>
     </Grid>
     <Border Grid.Row="2" Background="{DynamicResource ThemeTitleBarBackgroundBrush}" BorderBrush="{DynamicResource ThemeBorderBrush}" BorderThickness="0,1,0,0">
