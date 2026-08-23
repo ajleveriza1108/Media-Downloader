@@ -977,7 +977,7 @@
                            FontSize="12"/>
 
                 <Border Grid.Row="2"
-                        Background="{DynamicResource ThemeInputBackgroundBrush}"
+                        Background="{DynamicResource ThemeSurfaceBrush}"
                         BorderBrush="{DynamicResource ThemeStrongBorderBrush}"
                         BorderThickness="1"
                         CornerRadius="8"
