@@ -1742,13 +1742,128 @@
         </StackPanel>
       </Border>
       <!-- MEDIADOCK_PREMIUM_UPDATE_TOAST_R1633 -->
-      <Border x:Name="UpdateNoticeR1620" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,6,8,0" Padding="8,6" Background="{DynamicResource ThemeSurfaceBrush}" BorderBrush="{DynamicResource ThemeStrongBorderBrush}" BorderThickness="1" CornerRadius="11" Panel.ZIndex="80" Visibility="Collapsed">
-        <Border.Effect><DropShadowEffect BlurRadius="18" ShadowDepth="2" Opacity="0.22" Color="#000000" /></Border.Effect>
+      <!-- MEDIADOCK_PREMIUM_UPDATE_POPUP_R1635 -->
+      <Border x:Name="UpdateNoticeR1620"
+              Width="356"
+              HorizontalAlignment="Right"
+              VerticalAlignment="Top"
+              Margin="0,8,10,0"
+              Padding="14"
+              Background="{DynamicResource ThemeSurfaceBrush}"
+              BorderBrush="{DynamicResource ThemeStrongBorderBrush}"
+              BorderThickness="1"
+              CornerRadius="14"
+              Panel.ZIndex="90"
+              Visibility="Collapsed"
+              Opacity="1"
+              IsVisibleChanged="UpdateNoticeR1635_IsVisibleChanged">
+        <Border.RenderTransform>
+          <TranslateTransform x:Name="UpdateNoticeTransformR1635" Y="0" />
+        </Border.RenderTransform>
+        <Border.Effect>
+          <DropShadowEffect BlurRadius="24"
+                            ShadowDepth="3"
+                            Opacity="0.28"
+                            Color="#000000" />
+        </Border.Effect>
         <Grid>
-          <Grid.ColumnDefinitions><ColumnDefinition Width="28" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
-          <Border Width="26" Height="26" Background="{DynamicResource ThemeAccentPanelBrush}" CornerRadius="8"><Viewbox Width="13" Height="13" HorizontalAlignment="Center" VerticalAlignment="Center"><Path Data="{StaticResource IconDownload}" Stroke="{DynamicResource ThemeAccentBrush}" StrokeThickness="1.6" Fill="Transparent" /></Viewbox></Border>
-          <StackPanel Grid.Column="1" Margin="7,0,0,0" VerticalAlignment="Center"><TextBlock x:Name="UpdateNoticeTextR1620" Text="MediaDock update available" Foreground="{DynamicResource ThemePrimaryTextBrush}" FontWeight="SemiBold" FontSize="9.5" /><TextBlock Text="Verified stable release" Foreground="{DynamicResource ThemeMutedTextBrush}" FontSize="8" /></StackPanel>
-          <Button Grid.Column="2" Margin="10,0,0,0" Content="Update" Click="UpdateNoticeButtonR1620_Click" Style="{StaticResource DenseGhostButton}" Padding="11,5" FontWeight="SemiBold" />
+          <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="10" />
+            <RowDefinition Height="Auto" />
+          </Grid.RowDefinitions>
+
+          <Grid>
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="42" />
+              <ColumnDefinition Width="*" />
+              <ColumnDefinition Width="28" />
+            </Grid.ColumnDefinitions>
+
+            <Border Width="38"
+                    Height="38"
+                    Background="{DynamicResource ThemeAccentPanelBrush}"
+                    BorderBrush="{DynamicResource ThemeAccentSoftBrush}"
+                    BorderThickness="1"
+                    CornerRadius="11">
+              <Viewbox Width="18" Height="18"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center">
+                <Path Data="{StaticResource IconSpark}"
+                      Stroke="{DynamicResource ThemeAccentBrush}"
+                      StrokeThickness="1.55"
+                      Fill="Transparent" />
+              </Viewbox>
+            </Border>
+
+            <StackPanel Grid.Column="1"
+                        Margin="10,0,8,0"
+                        VerticalAlignment="Center">
+              <TextBlock x:Name="UpdateNoticeTextR1620"
+                         Text="A new MediaDock update is ready"
+                         Foreground="{DynamicResource ThemePrimaryTextBrush}"
+                         FontSize="11"
+                         FontWeight="SemiBold"
+                         TextWrapping="Wrap" />
+              <TextBlock Margin="0,3,0,0"
+                         Text="Enjoy the latest improvements with one quick update."
+                         Foreground="{DynamicResource ThemeMutedTextBrush}"
+                         FontSize="8.7"
+                         TextWrapping="Wrap" />
+            </StackPanel>
+
+            <Button Grid.Column="2"
+                    Width="26"
+                    Height="26"
+                    Padding="5"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Top"
+                    Background="Transparent"
+                    BorderBrush="Transparent"
+                    BorderThickness="0"
+                    Cursor="Hand"
+                    FocusVisualStyle="{x:Null}"
+                    ToolTip="Later"
+                    Click="UpdateNoticeDismissR1635_Click">
+              <Viewbox Width="11" Height="11">
+                <Path Data="{StaticResource IconCancel}"
+                      Stroke="{DynamicResource ThemeSecondaryTextBrush}"
+                      StrokeThickness="1.6"
+                      StrokeStartLineCap="Round"
+                      StrokeEndLineCap="Round"
+                      Fill="Transparent" />
+              </Viewbox>
+            </Button>
+          </Grid>
+
+          <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="*" />
+              <ColumnDefinition Width="Auto" />
+              <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <TextBlock VerticalAlignment="Center"
+                       Text="Ready when you are"
+                       Foreground="{DynamicResource ThemeSecondaryTextBrush}"
+                       FontSize="8.3" />
+
+            <Button Grid.Column="1"
+                    Margin="8,0,0,0"
+                    Content="Later"
+                    Click="UpdateNoticeDismissR1635_Click"
+                    Style="{StaticResource DenseGhostButton}"
+                    Padding="12,6"
+                    MinHeight="31" />
+
+            <Button Grid.Column="2"
+                    Margin="7,0,0,0"
+                    Content="Update Now"
+                    Click="UpdateNoticeButtonR1620_Click"
+                    Style="{StaticResource NeonPrimaryButton}"
+                    Padding="14,7"
+                    MinHeight="31" />
+          </Grid>
         </Grid>
       </Border>
     </Grid>

@@ -7,10 +7,10 @@
     <RootNamespace>MediaDownloader</RootNamespace>
     <ApplicationIcon>Assets\MediaDock.ico</ApplicationIcon>
     <NoWarn>$(NoWarn);WPF0001</NoWarn>
-      <Version>1.6.34</Version>
-      <AssemblyVersion>1.6.34.0</AssemblyVersion>
-      <FileVersion>1.6.34.0</FileVersion>
-      <InformationalVersion>R1.6.34</InformationalVersion>
+      <Version>1.6.35</Version>
+      <AssemblyVersion>1.6.35.0</AssemblyVersion>
+      <FileVersion>1.6.35.0</FileVersion>
+      <InformationalVersion>R1.6.35</InformationalVersion>
       <Features>$(Features);experimental-data-section-string-literals=100</Features>
   </PropertyGroup>
   <ItemGroup>
