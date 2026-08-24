@@ -426,6 +426,8 @@ public partial class App : Application
         MediaDownloader.Infrastructure.ThemeTextBoxGuard.RunTextRepairSelfTestR1628();
         // MEDIADOCK_AUDIO_LANGUAGE_SELFTEST_R1630
         MediaDownloader.Core.Services.YtDlpService.RunAudioLanguagePreferenceSelfTestR1630();
+        // MEDIADOCK_AUDIO_TRACK_DUB_SELFTEST_R1636
+        MediaDownloader.Core.Services.YtDlpService.RunAudioTrackSelectionSelfTestR1636();
         MediaDownloader.ViewModels.MainWindowViewModel.RunEntitlementQueueContractSelfTestR1630();}
 
 

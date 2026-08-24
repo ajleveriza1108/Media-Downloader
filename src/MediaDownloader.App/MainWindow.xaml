@@ -642,8 +642,8 @@
                   <ComboBox Margin="0,3,0,0" Style="{StaticResource DarkComboBox}" ItemsSource="{Binding QualityChoices}" SelectedItem="{Binding SelectedQuality}" IsEnabled="{Binding CanChooseQuality}" />
                 </StackPanel>
                 <StackPanel Grid.Row="2">
-                  <TextBlock Text="Audio" Foreground="{DynamicResource ThemePrimaryTextBrush}" FontSize="9" />
-                  <ComboBox Margin="0,3,0,0" Style="{StaticResource DarkComboBox}" ItemsSource="{Binding AudioChoices}" SelectedItem="{Binding SelectedAudioChoice}" />
+                  <TextBlock Text="Audio Track" Foreground="{DynamicResource ThemePrimaryTextBrush}" FontSize="9" ToolTip="The video's original language is selected by default. Choose another available dub if you prefer." />
+                  <ComboBox Margin="0,3,0,0" Style="{StaticResource DarkComboBox}" ItemsSource="{Binding AudioChoices}" SelectedItem="{Binding SelectedAudioChoice}" ToolTip="Original language is selected automatically. Choose any available dub here." />
                 </StackPanel>
                 <StackPanel Grid.Row="2" Grid.Column="2">
                   <TextBlock Text="MP3 Bitrate" Foreground="{DynamicResource ThemePrimaryTextBrush}" FontSize="9" />
@@ -1743,6 +1743,7 @@
       </Border>
       <!-- MEDIADOCK_PREMIUM_UPDATE_TOAST_R1633 -->
       <!-- MEDIADOCK_PREMIUM_UPDATE_POPUP_R1635 -->
+      <!-- MEDIADOCK_PREMIUM_UPDATE_POPUP_R1636 -->
       <Border x:Name="UpdateNoticeR1620"
               Width="356"
               HorizontalAlignment="Right"
@@ -1756,9 +1757,9 @@
               Panel.ZIndex="90"
               Visibility="Collapsed"
               Opacity="1"
-              IsVisibleChanged="UpdateNoticeR1635_IsVisibleChanged">
+              IsVisibleChanged="UpdateNoticeR1636_IsVisibleChanged">
         <Border.RenderTransform>
-          <TranslateTransform x:Name="UpdateNoticeTransformR1635" Y="0" />
+          <TranslateTransform x:Name="UpdateNoticeTransformR1636" Y="0" />
         </Border.RenderTransform>
         <Border.Effect>
           <DropShadowEffect BlurRadius="24"
@@ -1824,7 +1825,7 @@
                     Cursor="Hand"
                     FocusVisualStyle="{x:Null}"
                     ToolTip="Later"
-                    Click="UpdateNoticeDismissR1635_Click">
+                    Click="UpdateNoticeDismissR1636_Click">
               <Viewbox Width="11" Height="11">
                 <Path Data="{StaticResource IconCancel}"
                       Stroke="{DynamicResource ThemeSecondaryTextBrush}"
@@ -1851,7 +1852,7 @@
             <Button Grid.Column="1"
                     Margin="8,0,0,0"
                     Content="Later"
-                    Click="UpdateNoticeDismissR1635_Click"
+                    Click="UpdateNoticeDismissR1636_Click"
                     Style="{StaticResource DenseGhostButton}"
                     Padding="12,6"
                     MinHeight="31" />

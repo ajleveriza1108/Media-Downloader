@@ -6,11 +6,11 @@
         WindowStartupLocation="CenterOwner" ResizeMode="NoResize" Background="Transparent"
         Foreground="{DynamicResource ThemePrimaryTextBrush}" FontFamily="Segoe UI"
         WindowStyle="None" UseLayoutRounding="True" SnapsToDevicePixels="True" AllowsTransparency="True" SizeToContent="Manual"
-        Loaded="SettingsWindowR1635_Loaded">
+        Loaded="SettingsWindowR1636_Loaded">
   <Window.Resources>
     <!-- MEDIADOCK_PREMIUM_SETTINGS_R1633 -->
-    <!-- MEDIADOCK_PREMIUM_SETTINGS_NAV_POLISH_R1635 -->
-    <!-- MEDIADOCK_PREMIUM_SETTINGS_NAV_MOTION_ICONS_R1635 -->
+    <!-- MEDIADOCK_PREMIUM_SETTINGS_NAV_POLISH_R1636 -->
+    <!-- MEDIADOCK_PREMIUM_SETTINGS_NAV_MOTION_ICONS_R1636 -->
     <Geometry x:Key="SIconGear">M12,4 A8,8 0 1 0 12,20 A8,8 0 1 0 12,4 M12,9 A3,3 0 1 0 12,15 A3,3 0 1 0 12,9</Geometry>
     <Geometry x:Key="SIconAudio">M4,12 L6,12 M7,8 L7,16 M10,5 L10,19 M13,9 L13,15 M16,6 L16,18 M19,10 L19,14</Geometry>
     <Geometry x:Key="SIconDownload">M12,4 L12,15 M7,10 L12,15 L17,10 M5,20 L19,20</Geometry>
@@ -117,7 +117,7 @@
     <Style x:Key="SettingsSectionLabel" TargetType="TextBlock">
       <Setter Property="Foreground" Value="{DynamicResource ThemeAccentBrush}" /><Setter Property="FontWeight" Value="SemiBold" /><Setter Property="FontSize" Value="9.5" />
     </Style>
-    <Style x:Key="SettingsNavButtonR1635" TargetType="RadioButton">
+    <Style x:Key="SettingsNavButtonR1636" TargetType="RadioButton">
       <Setter Property="Height" Value="38" />
       <Setter Property="Foreground" Value="{DynamicResource ThemeSecondaryTextBrush}" />
       <Setter Property="Background" Value="Transparent" />
@@ -159,7 +159,7 @@
       </Setter>
     </Style>
 
-    <Style x:Key="SettingsScrollBarR1635" TargetType="ScrollBar">
+    <Style x:Key="SettingsScrollBarR1636" TargetType="ScrollBar">
       <Setter Property="Width" Value="9" />
       <Setter Property="Background" Value="Transparent" />
       <Setter Property="Template">
@@ -244,8 +244,8 @@
                        FontSize="8"
                        FontWeight="SemiBold" />
 
-            <Grid x:Name="SettingsNavButtonsHostR1635">
-              <Border x:Name="SettingsNavIndicatorR1635"
+            <Grid x:Name="SettingsNavButtonsHostR1636">
+              <Border x:Name="SettingsNavIndicatorR1636"
                       Width="3"
                       Height="22"
                       HorizontalAlignment="Left"
@@ -256,17 +256,17 @@
                       IsHitTestVisible="False"
                       Panel.ZIndex="4">
                 <Border.RenderTransform>
-                  <TranslateTransform x:Name="SettingsNavIndicatorTransformR1635" Y="8" />
+                  <TranslateTransform x:Name="SettingsNavIndicatorTransformR1636" Y="8" />
                 </Border.RenderTransform>
               </Border>
 
               <StackPanel>
-                <RadioButton x:Name="SettingsNavAudioR1635"
-                             GroupName="SettingsNavigationR1635"
+                <RadioButton x:Name="SettingsNavAudioR1636"
+                             GroupName="SettingsNavigationR1636"
                              IsChecked="True"
                              Tag="Audio"
-                             Click="SettingsNavR1635_Click"
-                             Style="{StaticResource SettingsNavButtonR1635}">
+                             Click="SettingsNavR1636_Click"
+                             Style="{StaticResource SettingsNavButtonR1636}">
                   <StackPanel Orientation="Horizontal">
                     <Viewbox Width="16" Height="16" Margin="0,0,9,0">
                       <Path Data="{StaticResource SIconAudio}" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}" StrokeThickness="1.65" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" Fill="Transparent" />
@@ -275,11 +275,11 @@
                   </StackPanel>
                 </RadioButton>
 
-                <RadioButton x:Name="SettingsNavDownloadR1635"
-                             GroupName="SettingsNavigationR1635"
+                <RadioButton x:Name="SettingsNavDownloadR1636"
+                             GroupName="SettingsNavigationR1636"
                              Tag="Download"
-                             Click="SettingsNavR1635_Click"
-                             Style="{StaticResource SettingsNavButtonR1635}">
+                             Click="SettingsNavR1636_Click"
+                             Style="{StaticResource SettingsNavButtonR1636}">
                   <StackPanel Orientation="Horizontal">
                     <Viewbox Width="16" Height="16" Margin="0,0,9,0">
                       <Path Data="{StaticResource SIconDownload}" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}" StrokeThickness="1.65" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" Fill="Transparent" />
@@ -288,11 +288,11 @@
                   </StackPanel>
                 </RadioButton>
 
-                <RadioButton x:Name="SettingsNavOutputR1635"
-                             GroupName="SettingsNavigationR1635"
+                <RadioButton x:Name="SettingsNavOutputR1636"
+                             GroupName="SettingsNavigationR1636"
                              Tag="Output"
-                             Click="SettingsNavR1635_Click"
-                             Style="{StaticResource SettingsNavButtonR1635}">
+                             Click="SettingsNavR1636_Click"
+                             Style="{StaticResource SettingsNavButtonR1636}">
                   <StackPanel Orientation="Horizontal">
                     <Viewbox Width="16" Height="16" Margin="0,0,9,0">
                       <Path Data="{StaticResource SIconFolder}" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}" StrokeThickness="1.65" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" Fill="Transparent" />
@@ -301,11 +301,11 @@
                   </StackPanel>
                 </RadioButton>
 
-                <RadioButton x:Name="SettingsNavAppearanceR1635"
-                             GroupName="SettingsNavigationR1635"
+                <RadioButton x:Name="SettingsNavAppearanceR1636"
+                             GroupName="SettingsNavigationR1636"
                              Tag="Appearance"
-                             Click="SettingsNavR1635_Click"
-                             Style="{StaticResource SettingsNavButtonR1635}">
+                             Click="SettingsNavR1636_Click"
+                             Style="{StaticResource SettingsNavButtonR1636}">
                   <StackPanel Orientation="Horizontal">
                     <Viewbox Width="16" Height="16" Margin="0,0,9,0">
                       <Path Data="{StaticResource SIconAppearance}" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}" StrokeThickness="1.65" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" Fill="Transparent" />
@@ -314,11 +314,11 @@
                   </StackPanel>
                 </RadioButton>
 
-                <RadioButton x:Name="SettingsNavWindowR1635"
-                             GroupName="SettingsNavigationR1635"
+                <RadioButton x:Name="SettingsNavWindowR1636"
+                             GroupName="SettingsNavigationR1636"
                              Tag="Window"
-                             Click="SettingsNavR1635_Click"
-                             Style="{StaticResource SettingsNavButtonR1635}">
+                             Click="SettingsNavR1636_Click"
+                             Style="{StaticResource SettingsNavButtonR1636}">
                   <StackPanel Orientation="Horizontal">
                     <Viewbox Width="16" Height="16" Margin="0,0,9,0">
                       <Path Data="{StaticResource SIconWindow}" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}" StrokeThickness="1.65" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" Fill="Transparent" />
@@ -327,11 +327,11 @@
                   </StackPanel>
                 </RadioButton>
 
-                <RadioButton x:Name="SettingsNavUpdatesR1635"
-                             GroupName="SettingsNavigationR1635"
+                <RadioButton x:Name="SettingsNavUpdatesR1636"
+                             GroupName="SettingsNavigationR1636"
                              Tag="Updates"
-                             Click="SettingsNavR1635_Click"
-                             Style="{StaticResource SettingsNavButtonR1635}">
+                             Click="SettingsNavR1636_Click"
+                             Style="{StaticResource SettingsNavButtonR1636}">
                   <StackPanel Orientation="Horizontal">
                     <Viewbox Width="16" Height="16" Margin="0,0,9,0">
                       <Path Data="{StaticResource SIconUpdate}" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}" StrokeThickness="1.65" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" Fill="Transparent" />
@@ -340,11 +340,11 @@
                   </StackPanel>
                 </RadioButton>
 
-                <RadioButton x:Name="SettingsNavSupportR1635"
-                             GroupName="SettingsNavigationR1635"
+                <RadioButton x:Name="SettingsNavSupportR1636"
+                             GroupName="SettingsNavigationR1636"
                              Tag="Support"
-                             Click="SettingsNavR1635_Click"
-                             Style="{StaticResource SettingsNavButtonR1635}">
+                             Click="SettingsNavR1636_Click"
+                             Style="{StaticResource SettingsNavButtonR1636}">
                   <StackPanel Orientation="Horizontal">
                     <Viewbox Width="16" Height="16" Margin="0,0,9,0">
                       <Path Data="{StaticResource SIconInfo}" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}" StrokeThickness="1.65" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" Fill="Transparent" />
@@ -379,30 +379,30 @@
                       CanContentScroll="False"
                       Focusable="False"
                       ClipToBounds="True"
-                      ScrollChanged="SettingsContentScrollViewerR1635_ScrollChanged">
+                      ScrollChanged="SettingsContentScrollViewerR1636_ScrollChanged">
           <ScrollViewer.Resources>
-            <Style TargetType="{x:Type ScrollBar}" BasedOn="{StaticResource SettingsScrollBarR1635}" />
+            <Style TargetType="{x:Type ScrollBar}" BasedOn="{StaticResource SettingsScrollBarR1636}" />
           </ScrollViewer.Resources>
           <StackPanel x:Name="SettingsContentStack" Margin="16,14,14,16">
-            <TextBlock x:Name="SettingsSectionAudioR1635" Style="{StaticResource SettingsSectionLabel}" Text="AUDIO PROCESSING" />
+            <TextBlock x:Name="SettingsSectionAudioR1636" Style="{StaticResource SettingsSectionLabel}" Text="AUDIO PROCESSING" />
             <Border Margin="0,5,0,0" Style="{StaticResource SettingsCard}"><StackPanel><CheckBox Style="{StaticResource SettingCheckBox}" IsChecked="{Binding AudioFadeInOut3Seconds, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Content="3-second audio fade in / fade out" /><TextBlock Margin="22,3,0,0" Foreground="{DynamicResource ThemeMutedTextBrush}" FontSize="8.3" TextWrapping="Wrap" Text="Applies to MP3 downloads and local MP3 conversions." /><Border Height="1" Margin="0,10" Background="{DynamicResource ThemeBorderBrush}" /><CheckBox Style="{StaticResource SettingCheckBox}" IsChecked="{Binding TrimBoundarySilence, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Content="Remove silence at the start and end" /><TextBlock Margin="22,3,0,0" Foreground="{DynamicResource ThemeMutedTextBrush}" FontSize="8.3" TextWrapping="Wrap" Text="Trims boundary dead air only. Interior pauses are preserved." /></StackPanel></Border>
 
-            <TextBlock x:Name="SettingsSectionDownloadR1635" Margin="0,12,0,0" Style="{StaticResource SettingsSectionLabel}" Text="DOWNLOAD" />
+            <TextBlock x:Name="SettingsSectionDownloadR1636" Margin="0,12,0,0" Style="{StaticResource SettingsSectionLabel}" Text="DOWNLOAD" />
             <Border Margin="0,5,0,0" Style="{StaticResource SettingsCard}"><StackPanel><CheckBox Style="{StaticResource SettingCheckBox}" IsChecked="{Binding AutoRemoveTikTokWatermark, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Content="Auto-remove TikTok watermark" /><TextBlock Margin="22,3,0,0" Foreground="{DynamicResource ThemeMutedTextBrush}" FontSize="8.3" TextWrapping="Wrap" Text="Prefers a watermark-free TikTok source when yt-dlp exposes one. Falls back safely if unavailable." /></StackPanel></Border>
 
-            <TextBlock x:Name="SettingsSectionOutputR1635" Margin="0,12,0,0" Style="{StaticResource SettingsSectionLabel}" Text="OUTPUT FOLDER" />
+            <TextBlock x:Name="SettingsSectionOutputR1636" Margin="0,12,0,0" Style="{StaticResource SettingsSectionLabel}" Text="OUTPUT FOLDER" />
             <Border Margin="0,5,0,0" Style="{StaticResource SettingsCard}"><Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions><StackPanel VerticalAlignment="Center"><TextBlock Text="Download save location" FontWeight="SemiBold" FontSize="10.5" /><TextBlock x:Name="SettingsOutputFolderPathR1630" Margin="0,4,0,0" Text="{Binding OutputDirectory, Mode=OneWay}" Foreground="{DynamicResource ThemeMutedTextBrush}" FontSize="8.3" TextTrimming="CharacterEllipsis" ToolTip="{Binding OutputDirectory, Mode=OneWay}" /></StackPanel><Button x:Name="SettingsBrowseOutputFolderR1630" Grid.Column="1" Margin="8,0,0,0" VerticalAlignment="Center" Style="{StaticResource CloseButton}" Command="{Binding BrowseOutputDirectoryCommand}" Content="Browse" ToolTip="Choose output folder" /><Button x:Name="SettingsOpenOutputFolderR1630" Grid.Column="2" Margin="6,0,0,0" VerticalAlignment="Center" Style="{StaticResource CloseButton}" Command="{Binding OpenDownloadsCommand}" Content="Open" ToolTip="Open output folder" /></Grid></Border>
 
-            <TextBlock x:Name="SettingsSectionAppearanceR1635" Margin="0,12,0,0" Style="{StaticResource SettingsSectionLabel}" Text="APPEARANCE" />
+            <TextBlock x:Name="SettingsSectionAppearanceR1636" Margin="0,12,0,0" Style="{StaticResource SettingsSectionLabel}" Text="APPEARANCE" />
             <Border Margin="0,5,0,0" Style="{StaticResource SettingsCard}"><Grid><Grid.ColumnDefinitions><ColumnDefinition Width="170" /><ColumnDefinition Width="12" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions><StackPanel><TextBlock Text="Theme" FontWeight="SemiBold" FontSize="10.5" /><ComboBox Margin="0,5,0,0" Style="{StaticResource SettingComboBox}" ItemsSource="{Binding ThemeChoices, Mode=OneWay}" SelectedItem="{Binding SelectedThemeName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" /></StackPanel><TextBlock Grid.Column="2" VerticalAlignment="Center" Foreground="{DynamicResource ThemeMutedTextBrush}" FontSize="8.5" TextWrapping="Wrap" Text="{Binding ThemeDescription, Mode=OneWay}" /></Grid></Border>
 
-            <TextBlock x:Name="SettingsSectionWindowR1635" Margin="0,12,0,0" Style="{StaticResource SettingsSectionLabel}" Text="WINDOW" />
+            <TextBlock x:Name="SettingsSectionWindowR1636" Margin="0,12,0,0" Style="{StaticResource SettingsSectionLabel}" Text="WINDOW" />
             <Border Margin="0,5,0,0" Style="{StaticResource SettingsCard}"><StackPanel><CheckBox Style="{StaticResource SettingCheckBox}" IsChecked="{Binding AlwaysOpenMaximized, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Content="Always open maximized" /><TextBlock Margin="22,3,0,0" Foreground="{DynamicResource ThemeMutedTextBrush}" FontSize="8.3" TextWrapping="Wrap" Text="Uses the Windows working area, so the taskbar remains visible." /></StackPanel></Border>
 
-            <TextBlock x:Name="SettingsSectionUpdatesR1635" Margin="0,12,0,0" Style="{StaticResource SettingsSectionLabel}" Text="UPDATES" />
+            <TextBlock x:Name="SettingsSectionUpdatesR1636" Margin="0,12,0,0" Style="{StaticResource SettingsSectionLabel}" Text="UPDATES" />
             <Border Margin="0,5,0,0" Style="{StaticResource SettingsCard}"><Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions><StackPanel><TextBlock Text="MediaDock Update" FontWeight="SemiBold" FontSize="10.5" /><TextBlock x:Name="UpdateStatusTextR1620" Margin="0,4,14,0" Text="Check for the latest MediaDock improvements." Foreground="{DynamicResource ThemeSecondaryTextBrush}" FontSize="8.3" TextWrapping="Wrap" /></StackPanel><Button x:Name="CheckForUpdatesButtonR1620" Grid.Column="1" Content="Check Now" Click="CheckForUpdatesButtonR1620_Click" VerticalAlignment="Center" Style="{StaticResource CloseButton}" MinWidth="120" /></Grid></Border>
 
-            <TextBlock x:Name="SettingsSectionSupportR1635" Margin="0,12,0,0" Style="{StaticResource SettingsSectionLabel}" Text="SUPPORT &amp; DIAGNOSTICS" />
+            <TextBlock x:Name="SettingsSectionSupportR1636" Margin="0,12,0,0" Style="{StaticResource SettingsSectionLabel}" Text="SUPPORT &amp; DIAGNOSTICS" />
             <Border x:Name="SupportDiagnosticsCard" Margin="0,5,0,0" Style="{StaticResource SettingsCard}"><Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions><StackPanel VerticalAlignment="Center"><TextBlock Text="Diagnostics" FontWeight="SemiBold" FontSize="10.5" /><TextBlock Margin="0,4,16,0" Foreground="{DynamicResource ThemeMutedTextBrush}" FontSize="8.3" TextWrapping="Wrap" Text="Technical troubleshooting and engine status. Most users will not need this." /></StackPanel><Button Grid.Column="1" Style="{StaticResource CloseButton}" ToolTip="Open Diagnostics" Click="OpenDiagnostics_Click" Content="Open Diagnostics" /></Grid></Border>
           </StackPanel>
         </ScrollViewer>

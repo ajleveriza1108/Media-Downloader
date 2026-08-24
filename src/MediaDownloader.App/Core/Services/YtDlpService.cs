@@ -464,52 +464,101 @@ public sealed class YtDlpService
     ];
     public static IReadOnlyList<AudioChoice> BuildAudioChoices(MediaInfo media)
     {
-        var choices = new List<AudioChoice>
+        // MEDIADOCK_YOUTUBE_AUDIO_TRACKS_DUBS_R1636
+        static string FriendlyLanguage(string language)
         {
-            new("Best available audio")
-        };
+            var raw = (language ?? string.Empty).Trim();
+            if (string.IsNullOrWhiteSpace(raw) ||
+                string.Equals(raw, "und", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Original audio";
+            }
 
-        // MEDIADOCK_ORIGINAL_AUDIO_PREFERENCE_R1630
-        // YouTube can expose many auto-dub tracks. Keep languages distinct and
-        // rank original audio first, then English, then default, before bitrate.
-        var representatives = media.Formats
-            .Where(format => format.HasAudio && !format.HasVideo && !format.IsDrm && !string.IsNullOrWhiteSpace(format.FormatId))
+            try
+            {
+                return CultureInfo.GetCultureInfo(raw).EnglishName;
+            }
+            catch (CultureNotFoundException)
+            {
+                var baseCode = raw.Split('-', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
+                if (!string.IsNullOrWhiteSpace(baseCode))
+                {
+                    try
+                    {
+                        return CultureInfo.GetCultureInfo(baseCode).EnglishName;
+                    }
+                    catch (CultureNotFoundException)
+                    {
+                    }
+                }
+
+                return raw.ToUpperInvariant();
+            }
+        }
+
+        static bool IsDubbed(MediaFormat format)
+        {
+            var note = format.FormatNote ?? string.Empty;
+            return note.Contains("dub", StringComparison.OrdinalIgnoreCase) ||
+                   note.Contains("translated", StringComparison.OrdinalIgnoreCase);
+        }
+
+        var audioFormats = media.Formats
+            .Where(format =>
+                format.HasAudio &&
+                !format.HasVideo &&
+                !format.IsDrm &&
+                !string.IsNullOrWhiteSpace(format.FormatId))
+            .ToArray();
+
+        if (audioFormats.Length == 0)
+        {
+            return [new AudioChoice("Best available audio")];
+        }
+
+        var representatives = audioFormats
             .GroupBy(format => new
             {
-                Codec = NormalizeCodecLabel(format.AudioCodec),
-                Bitrate = format.AudioBitrate is > 0 ? (int)Math.Round(format.AudioBitrate.Value) : 0,
-                Extension = format.Extension.ToUpperInvariant(),
                 Language = NormalizeAudioLanguageR1630(format.Language),
                 Original = IsOriginalAudioR1630(format),
-                Default = IsDefaultAudioR1630(format)
+                Default = IsDefaultAudioR1630(format),
+                Dubbed = IsDubbed(format)
             })
             .Select(group => group
                 .OrderByDescending(AudioPreferenceScoreR1630)
                 .ThenByDescending(format => format.AudioBitrate ?? 0)
+                .ThenByDescending(format => format.LanguagePreference)
                 .First())
-            .OrderByDescending(AudioPreferenceScoreR1630)
-            .ThenByDescending(format => format.AudioBitrate ?? 0)
-            .Take(12);
+            .OrderByDescending(format => IsOriginalAudioR1630(format))
+            .ThenByDescending(format => IsDefaultAudioR1630(format))
+            .ThenBy(format => IsDubbed(format) ? 1 : 0)
+            .ThenBy(format => FriendlyLanguage(format.Language), StringComparer.OrdinalIgnoreCase)
+            .ToArray();
 
+        var choices = new List<AudioChoice>(representatives.Length);
         foreach (var format in representatives)
         {
-            var codec = NormalizeCodecLabel(format.AudioCodec);
-            var bitrate = format.AudioBitrate is > 0
-                ? $" Â· {Math.Round(format.AudioBitrate.Value):0} kbps"
-                : string.Empty;
-            var extension = string.IsNullOrWhiteSpace(format.Extension)
-                ? string.Empty
-                : $" Â· {format.Extension.ToUpperInvariant()}";
-            var language = string.IsNullOrWhiteSpace(format.Language)
-                ? string.Empty
-                : $" Â· {format.Language}";
+            var language = FriendlyLanguage(format.Language);
             var role = IsOriginalAudioR1630(format)
-                ? " Â· Original"
-                : IsDefaultAudioR1630(format) ? " Â· Default" : string.Empty;
-            choices.Add(new AudioChoice($"{codec}{bitrate}{extension}{language}{role}", format.FormatId));
+                ? "Original"
+                : IsDubbed(format)
+                    ? "Dub"
+                    : IsDefaultAudioR1630(format)
+                        ? "Default"
+                        : "Alternate";
+
+            var bitrate = format.AudioBitrate is > 0
+                ? $" · {Math.Round(format.AudioBitrate.Value):0} kbps"
+                : string.Empty;
+
+            choices.Add(new AudioChoice(
+                $"{language} — {role}{bitrate}",
+                format.FormatId));
         }
 
-        return choices;
+        return choices.Count > 0
+            ? choices
+            : [new AudioChoice("Best available audio")];
     }
 
     public static QualityChoice? SelectPreferredDefaultQuality(IEnumerable<QualityChoice> choices)
@@ -555,11 +604,17 @@ public sealed class YtDlpService
             ?? all.FirstOrDefault(choice => choice.Kind == QualityChoiceKind.Best)
             ?? all.FirstOrDefault();
     }
-
     public static AudioChoice? SelectPreferredDefaultAudio(IEnumerable<AudioChoice> choices)
     {
+        // The video's source/original language is always the default when yt-dlp exposes it.
         var all = choices.ToArray();
-        return all.FirstOrDefault(choice => !string.IsNullOrWhiteSpace(choice.FormatId))
+        return all.FirstOrDefault(choice =>
+                   !string.IsNullOrWhiteSpace(choice.FormatId) &&
+                   choice.Label.Contains("— Original", StringComparison.OrdinalIgnoreCase))
+            ?? all.FirstOrDefault(choice =>
+                   !string.IsNullOrWhiteSpace(choice.FormatId) &&
+                   choice.Label.Contains("— Default", StringComparison.OrdinalIgnoreCase))
+            ?? all.FirstOrDefault(choice => !string.IsNullOrWhiteSpace(choice.FormatId))
             ?? all.FirstOrDefault();
     }
 
@@ -842,6 +897,15 @@ return args;
         {
             QualityChoiceKind.Best => $"bestvideo+{audioSelector}/best",
             QualityChoiceKind.AudioOnly => BuildPreferredAudioSelectorR1630(audioChoice),
+            // MEDIADOCK_EXPLICIT_AUDIO_TRACK_OVERRIDE_R1636
+            // If the user chose a specific original/dub track, never let a combined
+            // video format silently replace that selection with its embedded audio.
+            QualityChoiceKind.ExactHeight when
+                !string.IsNullOrWhiteSpace(audioChoice?.FormatId) &&
+                choice.Height is > 0 =>
+                $"bestvideo[height={choice.Height.Value}]+{audioSelector}/" +
+                $"bestvideo[height<={choice.Height.Value}]+{audioSelector}/" +
+                $"bestvideo+{audioSelector}/best",
             QualityChoiceKind.ExactHeight when !string.IsNullOrWhiteSpace(choice.FormatId) && choice.FormatHasAudio =>
                 choice.FormatId!,
             QualityChoiceKind.ExactHeight when !string.IsNullOrWhiteSpace(choice.FormatId) =>
@@ -1108,6 +1172,88 @@ return args;
         return score;
     }
 
+    public static void RunAudioTrackSelectionSelfTestR1636()
+    {
+        static MediaFormat Audio(
+            string id,
+            double bitrate,
+            string language,
+            string note,
+            int preference) =>
+            new(
+                FormatId: id,
+                Width: null,
+                Height: null,
+                Fps: null,
+                Extension: "m4a",
+                VideoCodec: "none",
+                AudioCodec: "mp4a.40.2",
+                Protocol: "https",
+                FileSize: null,
+                VideoBitrate: null,
+                AudioBitrate: bitrate,
+                HasVideo: false,
+                HasAudio: true,
+                IsDrm: false,
+                Language: language,
+                FormatNote: note,
+                LanguagePreference: preference);
+
+        var media = new MediaInfo(
+            Id: "fixture",
+            Title: "Audio track fixture",
+            WebpageUrl: "https://www.youtube.com/watch?v=fixture",
+            Extractor: "Youtube",
+            Uploader: "Fixture",
+            DurationSeconds: 60,
+            ThumbnailUrl: string.Empty,
+            Formats:
+            [
+                Audio("es-original", 128, "es", "Spanish original (default)", 0),
+                Audio("en-dub", 192, "en", "English dubbed audio", 50),
+                Audio("ja-dub", 160, "ja", "Japanese dubbed audio", 40)
+            ]);
+
+        var choices = BuildAudioChoices(media);
+        var selected = SelectPreferredDefaultAudio(choices);
+
+        if (!string.Equals(selected?.FormatId, "es-original", StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                "R1.6.36 audio-track contract failed: the video's original language was not selected by default.");
+        }
+
+        if (!choices.Any(choice =>
+                string.Equals(choice.FormatId, "en-dub", StringComparison.Ordinal) &&
+                choice.Label.Contains("English", StringComparison.OrdinalIgnoreCase) &&
+                choice.Label.Contains("Dub", StringComparison.OrdinalIgnoreCase)))
+        {
+            throw new InvalidOperationException(
+                "R1.6.36 audio-track contract failed: an exposed English dub was not presented as a selectable dub.");
+        }
+
+        var englishDub = choices.First(choice =>
+            string.Equals(choice.FormatId, "en-dub", StringComparison.Ordinal));
+
+        var explicitSelector = BuildFormatSelector(
+            new QualityChoice(
+                QualityChoiceKind.ExactHeight,
+                1080,
+                "1080p",
+                30,
+                "combined-1080",
+                FormatHasAudio: true),
+            englishDub,
+            preferTikTokWatermarkFree: false);
+
+        if (!explicitSelector.Contains("en-dub", StringComparison.Ordinal) ||
+            !explicitSelector.Contains("bestvideo", StringComparison.Ordinal) ||
+            string.Equals(explicitSelector, "combined-1080", StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                "R1.6.36 audio-track contract failed: explicit dub selection was bypassed by combined video audio.");
+        }
+    }
     public static void RunAudioLanguagePreferenceSelfTestR1630()
     {
         static MediaFormat Audio(
