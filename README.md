@@ -4,7 +4,7 @@ Windows desktop video/audio downloader and converter built with .NET 10 and WPF.
 
 ## Current development track
 
-R1.6.19 - Clean License Client + Installer-Only Updater
+R1.6.37 - Clip Range + Queue Batch Controls
 
 MediaDock uses one customer Windows package: the per-user installer.
 

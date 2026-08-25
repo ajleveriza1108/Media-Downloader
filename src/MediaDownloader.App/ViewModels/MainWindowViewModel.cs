@@ -24,6 +24,8 @@ public sealed class MainWindowViewModel : ObservableObject
     private readonly AppSettingsService _settingsService;
     private readonly QueuePersistenceService _queuePersistenceService;
     private readonly TrialStateService _trialStateService;
+    private readonly QueueDownloadPreferencesService _queueDownloadPreferencesService;
+    private readonly QueueDownloadPreferences _queueDownloadPreferences;
     private TrialStateSnapshot _trialState;
     private readonly AppSettings _settings;
     private readonly bool _queuePersistenceEnabled;
@@ -98,6 +100,8 @@ public sealed class MainWindowViewModel : ObservableObject
         _trialStateService = new TrialStateService();
         _trialState = _trialStateService.Load();
         _settings = _settingsService.Load();
+        _queueDownloadPreferencesService = new QueueDownloadPreferencesService();
+        _queueDownloadPreferences = _queueDownloadPreferencesService.Load();
 
         _outputDirectory = _settings.OutputDirectory;
         _conversionOutputDirectory = _settings.ConversionOutputDirectory;
@@ -679,6 +683,45 @@ public sealed class MainWindowViewModel : ObservableObject
             _settings.AlwaysOpenMaximized = value;
             OnPropertyChanged();
             SaveSettingsSafely();
+        }
+    }
+
+    // MEDIADOCK_QUEUE_BATCH_SETTINGS_R1637
+    public IReadOnlyList<string> QueueBatchFormatChoices => QueueDownloadPreferencesService.BatchFormatChoices;
+    public IReadOnlyList<int> QueueConcurrencyChoices => QueueDownloadPreferencesService.ConcurrentDownloadChoices;
+
+    public string SelectedQueueBatchFormat
+    {
+        get => QueueDownloadPreferencesService.NormalizeBatchFormat(_queueDownloadPreferences.BatchFormat);
+        set
+        {
+            var normalized = QueueDownloadPreferencesService.NormalizeBatchFormat(value);
+            if (string.Equals(_queueDownloadPreferences.BatchFormat, normalized, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            _queueDownloadPreferences.BatchFormat = normalized;
+            OnPropertyChanged();
+            SaveQueueDownloadPreferencesSafelyR1637();
+            ApplyQueueBatchFormatPreferenceR1637(DownloadQueue.Where(item => item.CanStart));
+        }
+    }
+
+    public int QueueConcurrentDownloads
+    {
+        get => QueueDownloadPreferencesService.NormalizeConcurrency(_queueDownloadPreferences.MaxConcurrentDownloads);
+        set
+        {
+            var normalized = QueueDownloadPreferencesService.NormalizeConcurrency(value);
+            if (_queueDownloadPreferences.MaxConcurrentDownloads == normalized)
+            {
+                return;
+            }
+
+            _queueDownloadPreferences.MaxConcurrentDownloads = normalized;
+            OnPropertyChanged();
+            SaveQueueDownloadPreferencesSafelyR1637();
         }
     }
 
@@ -1449,6 +1492,7 @@ public sealed class MainWindowViewModel : ObservableObject
             MediaSnapshot = media,
             QualityChoice = quality,
             AudioChoice = audio,
+            DurationSeconds = media.DurationSeconds,
             Status = "Ready",
             ProgressText = "Started from Stream"
         };
@@ -1932,6 +1976,18 @@ public sealed class MainWindowViewModel : ObservableObject
                 item.MediaSnapshot = media;
             }
 
+            item.DurationSeconds = media.DurationSeconds;
+            if (!item.TryResolveClipRangeR1637(
+                    out var clipStartSecondsR1637,
+                    out var clipEndSecondsR1637,
+                    out var clipErrorR1637))
+            {
+                item.Status = "Ready";
+                item.ProgressText = clipErrorR1637;
+                Status = clipErrorR1637;
+                return;
+            }
+
             if (!string.IsNullOrWhiteSpace(media.ThumbnailUrl))
             {
                 item.ThumbnailUrl = media.ThumbnailUrl;
@@ -1987,7 +2043,9 @@ public sealed class MainWindowViewModel : ObservableObject
                     {
                         PostToUi(() => ApplyQueueProgress(item, line));
                     }
-                });
+                },
+                clipStartSeconds: clipStartSecondsR1637,
+                clipEndSeconds: clipEndSecondsR1637);
 
             Diagnostics = string.Join(Environment.NewLine, progressLines);
             LastDownloadedFile = path;
@@ -2537,9 +2595,14 @@ var converted = new DownloadQueueItem(
             return;
         }
 
-        var pending = source
-            .Where(item => item is not null && item.CanStart)
+        var requestedR1637 = source
+            .Where(item => item is not null)
             .Distinct()
+            .ToArray();
+        ApplyQueueBatchFormatPreferenceR1637(requestedR1637);
+
+        var pending = requestedR1637
+            .Where(item => item.CanStart)
             .ToList();
         if (pending.Count == 0)
         {
@@ -2560,11 +2623,11 @@ var converted = new DownloadQueueItem(
                 var licensed = LicenseEntitlementState.IsLicensed;
                 var videoSlots = licensed ? int.MaxValue : TrialVideoRemaining;
                 var mp3Slots = licensed ? int.MaxValue : TrialMp3Remaining;
-                var wave = new List<DownloadQueueItem>(MaxConcurrentQueueDownloadsR1630);
+                var wave = new List<DownloadQueueItem>(QueueConcurrentDownloads);
 
                 foreach (var item in pending)
                 {
-                    if (wave.Count >= MaxConcurrentQueueDownloadsR1630)
+                    if (wave.Count >= QueueConcurrentDownloads)
                     {
                         break;
                     }
@@ -2619,7 +2682,30 @@ var converted = new DownloadQueueItem(
 
         Status = trialSkipped > 0
             ? $"Batch finished for {label}. {trialSkipped} item(s) were not started because the unlicensed trial allowance is exhausted."
-            : $"Batch finished for {label}. Attempted {attempted} item(s), with up to {MaxConcurrentQueueDownloadsR1630} simultaneous downloads.";
+            : $"Batch finished for {label}. Attempted {attempted} item(s), with up to {QueueConcurrentDownloads} simultaneous downloads.";
+    }
+
+    private void ApplyQueueBatchFormatPreferenceR1637(IEnumerable<DownloadQueueItem> items)
+    {
+        var preference = QueueDownloadPreferencesService.NormalizeBatchFormat(SelectedQueueBatchFormat);
+        if (string.Equals(preference, QueueDownloadPreferencesService.KeepEachItemFormat, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        var selectedFormat = string.Equals(
+            preference,
+            QueueDownloadPreferencesService.AllAsMp3,
+            StringComparison.Ordinal)
+            ? "MP3"
+            : "MP4";
+
+        foreach (var item in items.Where(item => item.CanStart))
+        {
+            item.SelectedFormatR1629 = selectedFormat;
+        }
+
+        PersistQueueSafely();
     }
 
     private Task RemoveSelectedQueueAsync()
@@ -2690,6 +2776,7 @@ var converted = new DownloadQueueItem(
             MediaSnapshot = media,
             QualityChoice = SelectedQuality,
             AudioChoice = SelectedAudioChoice,
+            DurationSeconds = media.DurationSeconds,
             Status = "Ready",
             ProgressText = "Ready to download"
         };
@@ -3186,6 +3273,9 @@ var converted = new DownloadQueueItem(
                 nameof(DownloadQueueItem.QualityChoice) or
                 nameof(DownloadQueueItem.AudioChoice) or
                 nameof(DownloadQueueItem.ThumbnailUrl) or
+                nameof(DownloadQueueItem.DurationSeconds) or
+                nameof(DownloadQueueItem.ClipStartText) or
+                nameof(DownloadQueueItem.ClipEndText) or
                 nameof(DownloadQueueItem.ProgressText))
         {
             PersistQueueSafely();
@@ -3247,6 +3337,19 @@ var converted = new DownloadQueueItem(
         {
             Diagnostics = ex.ToString();
             Status = "Settings could not be saved. Open Diagnostics for details.";
+        }
+    }
+
+    private void SaveQueueDownloadPreferencesSafelyR1637()
+    {
+        try
+        {
+            _queueDownloadPreferencesService.Save(_queueDownloadPreferences);
+        }
+        catch (Exception ex)
+        {
+            Diagnostics = ex.ToString();
+            Status = "Queue download settings could not be saved. Open Diagnostics for details.";
         }
     }
 
@@ -3323,7 +3426,7 @@ var converted = new DownloadQueueItem(
     private void ApplyQueueProgress(DownloadQueueItem item, string line)
     {
         var parts = line.Split('|');
-        if (parts.Length < 6)
+        if (parts.Length < 5)
         {
             item.Status = "Downloading";
             return;
@@ -3333,14 +3436,13 @@ var converted = new DownloadQueueItem(
         var downloadedBytes = ParseDouble(parts[2]);
         var totalBytes = ParseDouble(parts[3]);
         var speed = ParseDouble(parts[4]);
-        var eta = parts[5];
         var itemPercent = totalBytes > 0 && downloadedBytes >= 0
             ? Math.Clamp(downloadedBytes / totalBytes * 100.0, 0, 100)
             : 0;
 
-        var playlistIndex = parts.Length > 6 ? ParseInt(parts[6]) : 0;
-        var playlistCount = parts.Length > 7 ? ParseInt(parts[7]) : 0;
-        var playlistTitle = parts.Length > 8 ? parts[8].Trim() : string.Empty;
+        var playlistIndex = parts.Length > 5 ? ParseInt(parts[5]) : 0;
+        var playlistCount = parts.Length > 6 ? ParseInt(parts[6]) : 0;
+        var playlistTitle = parts.Length > 7 ? parts[7].Trim() : string.Empty;
 
         if (playlistIndex > 0 && playlistCount > 0)
         {
@@ -3369,9 +3471,7 @@ var converted = new DownloadQueueItem(
 
             item.Status = string.Equals(state, "finished", StringComparison.OrdinalIgnoreCase)
                 ? "Processing"
-                : string.IsNullOrWhiteSpace(eta) || eta == "NA"
-                    ? "Downloading"
-                    : $"Downloading - ETA {eta}s";
+                : "Downloading";
         }
 
         item.SpeedText = speed > 0 ? $"{FormatBytes(speed)}/s" : string.Empty;

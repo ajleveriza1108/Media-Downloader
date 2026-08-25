@@ -1097,12 +1097,13 @@
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="34"/>
                             <ColumnDefinition Width="78"/>
-                            <ColumnDefinition Width="2.30*"/>
-                            <ColumnDefinition Width="0.92*"/>
+                            <ColumnDefinition Width="2.05*"/>
                             <ColumnDefinition Width="0.82*"/>
-                            <ColumnDefinition Width="1.05*"/>
-                            <ColumnDefinition Width="0.82*"/>
-                            <ColumnDefinition Width="162"/>
+                            <ColumnDefinition Width="0.72*"/>
+                            <ColumnDefinition Width="1.18*"/>
+                            <ColumnDefinition Width="0.96*"/>
+                            <ColumnDefinition Width="0.74*"/>
+                            <ColumnDefinition Width="150"/>
                         </Grid.ColumnDefinitions>
                         <CheckBox Margin="9,0,0,0"
                                   VerticalAlignment="Center"
@@ -1112,9 +1113,10 @@
                         <TextBlock Grid.Column="2" Margin="7,0" VerticalAlignment="Center" Text="Title / Video Source" Foreground="{DynamicResource ThemeSecondaryTextBrush}" FontSize="9"/>
                         <TextBlock Grid.Column="3" VerticalAlignment="Center" Text="Download Format" Foreground="{DynamicResource ThemeSecondaryTextBrush}" FontSize="9"/>
                         <TextBlock Grid.Column="4" VerticalAlignment="Center" Text="Quality" Foreground="{DynamicResource ThemeSecondaryTextBrush}" FontSize="9"/>
-                        <TextBlock Grid.Column="5" VerticalAlignment="Center" Text="Progress" Foreground="{DynamicResource ThemeSecondaryTextBrush}" FontSize="9"/>
-                        <TextBlock Grid.Column="6" VerticalAlignment="Center" Text="Status" Foreground="{DynamicResource ThemeSecondaryTextBrush}" FontSize="9"/>
-                        <TextBlock Grid.Column="7" HorizontalAlignment="Center" VerticalAlignment="Center" Text="Actions" Foreground="{DynamicResource ThemeSecondaryTextBrush}" FontSize="9"/>
+                        <TextBlock Grid.Column="5" VerticalAlignment="Center" Text="Clip Range" Foreground="{DynamicResource ThemeSecondaryTextBrush}" FontSize="9"/>
+                        <TextBlock Grid.Column="6" VerticalAlignment="Center" Text="Progress" Foreground="{DynamicResource ThemeSecondaryTextBrush}" FontSize="9"/>
+                        <TextBlock Grid.Column="7" VerticalAlignment="Center" Text="Status" Foreground="{DynamicResource ThemeSecondaryTextBrush}" FontSize="9"/>
+                        <TextBlock Grid.Column="8" HorizontalAlignment="Center" VerticalAlignment="Center" Text="Actions" Foreground="{DynamicResource ThemeSecondaryTextBrush}" FontSize="9"/>
                     </Grid>
                 </Border>
 
@@ -1156,12 +1158,13 @@
                                                 <Grid.ColumnDefinitions>
                                                     <ColumnDefinition Width="34"/>
                                                     <ColumnDefinition Width="78"/>
-                                                    <ColumnDefinition Width="2.30*"/>
-                                                    <ColumnDefinition Width="0.92*"/>
+                                                    <ColumnDefinition Width="2.05*"/>
                                                     <ColumnDefinition Width="0.82*"/>
-                                                    <ColumnDefinition Width="1.05*"/>
-                                                    <ColumnDefinition Width="0.82*"/>
-                                                    <ColumnDefinition Width="162"/>
+                                                    <ColumnDefinition Width="0.72*"/>
+                                                    <ColumnDefinition Width="1.18*"/>
+                                                    <ColumnDefinition Width="0.96*"/>
+                                                    <ColumnDefinition Width="0.74*"/>
+                                                    <ColumnDefinition Width="150"/>
                                                 </Grid.ColumnDefinitions>
 
                                                 <CheckBox Margin="9,0,0,0"
@@ -1237,7 +1240,37 @@
                                                     <ComboBoxItem Content="360p"/>
                                                 </ComboBox>
 
-                                                <Grid Grid.Column="5" Margin="0,0,9,0" VerticalAlignment="Center">
+                                                <StackPanel Grid.Column="5" Margin="0,3,7,3" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding DurationDisplayText}"
+                                                               Foreground="{DynamicResource ThemeMutedTextBrush}"
+                                                               FontSize="7.8"
+                                                               HorizontalAlignment="Center"/>
+                                                    <StackPanel Margin="0,3,0,0" Orientation="Horizontal" HorizontalAlignment="Center">
+                                                        <TextBox Width="47"
+                                                                 Style="{StaticResource QueueTitleTextBox}"
+                                                                 FontSize="8.5"
+                                                                 FontWeight="Normal"
+                                                                 Background="{DynamicResource ThemeInputBackgroundBrush}"
+                                                                 BorderBrush="{DynamicResource ThemeBorderBrush}"
+                                                                 TextAlignment="Center"
+                                                                 IsEnabled="{Binding CanStart}"
+                                                                 Text="{Binding ClipStartText, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                                                                 ToolTip="Start time (mm:ss or hh:mm:ss)"/>
+                                                        <TextBlock Margin="4,0" Text="→" VerticalAlignment="Center" Foreground="{DynamicResource ThemeMutedTextBrush}" FontSize="8"/>
+                                                        <TextBox Width="47"
+                                                                 Style="{StaticResource QueueTitleTextBox}"
+                                                                 FontSize="8.5"
+                                                                 FontWeight="Normal"
+                                                                 Background="{DynamicResource ThemeInputBackgroundBrush}"
+                                                                 BorderBrush="{DynamicResource ThemeBorderBrush}"
+                                                                 TextAlignment="Center"
+                                                                 IsEnabled="{Binding CanStart}"
+                                                                 Text="{Binding ClipEndText, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                                                                 ToolTip="End time; defaults to the detected full video length"/>
+                                                    </StackPanel>
+                                                </StackPanel>
+
+                                                <Grid Grid.Column="6" Margin="0,0,9,0" VerticalAlignment="Center">
                                                     <Grid.RowDefinitions>
                                                         <RowDefinition Height="Auto"/>
                                                         <RowDefinition Height="4"/>
@@ -1254,7 +1287,7 @@
                                                                TextTrimming="CharacterEllipsis"/>
                                                 </Grid>
 
-                                                <StackPanel Grid.Column="6" Margin="0,0,5,0" VerticalAlignment="Center">
+                                                <StackPanel Grid.Column="7" Margin="0,0,5,0" VerticalAlignment="Center">
                                                     <TextBlock Text="{Binding Status}"
                                                                Foreground="{DynamicResource ThemePrimaryTextBrush}"
                                                                FontWeight="SemiBold"
@@ -1267,7 +1300,7 @@
                                                                TextTrimming="CharacterEllipsis"/>
                                                 </StackPanel>
 
-                                                <StackPanel Grid.Column="7"
+                                                <StackPanel Grid.Column="8"
                                                             Orientation="Horizontal"
                                                             HorizontalAlignment="Center"
                                                             VerticalAlignment="Center">

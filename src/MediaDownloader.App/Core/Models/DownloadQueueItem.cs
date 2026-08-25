@@ -23,6 +23,10 @@ public sealed class DownloadQueueItem : ObservableObject
     private bool _outputFileAvailable;
     private bool _isSelected;
     private string _thumbnailUrl;
+    // MEDIADOCK_CLIP_RANGE_R1637
+    private double? _durationSeconds;
+    private string _clipStartText = "00:00";
+    private string _clipEndText = string.Empty;
 
     public DownloadQueueItem(
         string title,
@@ -63,6 +67,178 @@ public sealed class DownloadQueueItem : ObservableObject
     {
         get => _thumbnailUrl;
         set => SetProperty(ref _thumbnailUrl, value ?? string.Empty);
+    }
+
+    // MEDIADOCK_CLIP_RANGE_R1637
+    public double? DurationSeconds
+    {
+        get => _durationSeconds;
+        set
+        {
+            var normalized = value is > 0 ? value : null;
+            if (SetProperty(ref _durationSeconds, normalized))
+            {
+                OnPropertyChanged(nameof(DurationText));
+                OnPropertyChanged(nameof(DurationDisplayText));
+                if (normalized is > 0 && string.IsNullOrWhiteSpace(_clipEndText))
+                {
+                    ClipEndText = FormatTimestampR1637(normalized.Value);
+                }
+            }
+        }
+    }
+
+    public string DurationText => DurationSeconds is > 0
+        ? FormatTimestampR1637(DurationSeconds.Value)
+        : "--:--";
+
+    public string DurationDisplayText => $"Length {DurationText}";
+
+    public string ClipStartText
+    {
+        get => _clipStartText;
+        set => SetProperty(ref _clipStartText, string.IsNullOrWhiteSpace(value) ? "00:00" : value.Trim());
+    }
+
+    public string ClipEndText
+    {
+        get => _clipEndText;
+        set => SetProperty(ref _clipEndText, value?.Trim() ?? string.Empty);
+    }
+
+    public bool TryResolveClipRangeR1637(
+        out double startSeconds,
+        out double? endSeconds,
+        out string error)
+    {
+        startSeconds = 0;
+        endSeconds = null;
+        error = string.Empty;
+
+        if (!TryParseTimestampR1637(ClipStartText, out startSeconds))
+        {
+            error = "Start time must use mm:ss or hh:mm:ss.";
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(ClipEndText))
+        {
+            endSeconds = DurationSeconds;
+        }
+        else if (TryParseTimestampR1637(ClipEndText, out var parsedEnd))
+        {
+            endSeconds = parsedEnd;
+        }
+        else
+        {
+            error = "End time must use mm:ss or hh:mm:ss.";
+            return false;
+        }
+
+        if (DurationSeconds is > 0)
+        {
+            if (startSeconds >= DurationSeconds.Value)
+            {
+                error = $"Start time must be earlier than {DurationText}.";
+                return false;
+            }
+
+            if (endSeconds is > 0 && endSeconds.Value > DurationSeconds.Value + 0.5)
+            {
+                error = $"End time cannot be later than {DurationText}.";
+                return false;
+            }
+
+            if (endSeconds is > 0)
+            {
+                endSeconds = Math.Min(endSeconds.Value, DurationSeconds.Value);
+            }
+        }
+
+        if (endSeconds is not null && endSeconds.Value <= startSeconds)
+        {
+            error = "End time must be later than start time.";
+            return false;
+        }
+
+        return true;
+    }
+
+    private static bool TryParseTimestampR1637(string? value, out double seconds)
+    {
+        seconds = 0;
+        var text = value?.Trim() ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return true;
+        }
+
+        var parts = text.Split(':');
+        if (parts.Length is not (2 or 3))
+        {
+            return false;
+        }
+
+        if (!int.TryParse(parts[^1], out var secondPart) || secondPart is < 0 or > 59 ||
+            !int.TryParse(parts[^2], out var minutePart) || minutePart < 0)
+        {
+            return false;
+        }
+
+        var hourPart = 0;
+        if (parts.Length == 3)
+        {
+            if (minutePart > 59 || !int.TryParse(parts[0], out hourPart) || hourPart < 0)
+            {
+                return false;
+            }
+        }
+
+        seconds = hourPart * 3600d + minutePart * 60d + secondPart;
+        return true;
+    }
+
+    private static string FormatTimestampR1637(double seconds)
+    {
+        var total = Math.Max(0L, (long)Math.Round(seconds, MidpointRounding.AwayFromZero));
+        var hours = total / 3600;
+        var minutes = (total % 3600) / 60;
+        var secondsPart = total % 60;
+        return hours > 0
+            ? $"{hours:00}:{minutes:00}:{secondsPart:00}"
+            : $"{total / 60:00}:{secondsPart:00}";
+    }
+
+    public static void RunClipRangeSelfTestR1637()
+    {
+        var item = new DownloadQueueItem(
+            "Clip fixture",
+            "YouTube",
+            "https://www.youtube.com/watch?v=fixture",
+            "1080p",
+            "MP4",
+            OutputFormatKind.Mp4,
+            string.Empty)
+        {
+            DurationSeconds = 157,
+            ClipStartText = "00:05"
+        };
+
+        if (!string.Equals(item.ClipEndText, "02:37", StringComparison.Ordinal) ||
+            !item.TryResolveClipRangeR1637(out var start, out var end, out _) ||
+            Math.Abs(start - 5) > 0.001 ||
+            Math.Abs((end ?? 0) - 157) > 0.001)
+        {
+            throw new InvalidOperationException(
+                "R1.6.37 clip range contract failed for 00:05 through 02:37.");
+        }
+
+        item.ClipEndText = "03:00";
+        if (item.TryResolveClipRangeR1637(out _, out _, out _))
+        {
+            throw new InvalidOperationException(
+                "R1.6.37 clip range contract failed: end time beyond detected duration was accepted.");
+        }
     }
 
     // Queue selection is intentionally transient UI state. It is not persisted

@@ -7,7 +7,7 @@ namespace MediaDownloader.Core.Services;
 
 public sealed class YtDlpService
 {
-    private const string ProgressTemplate = "download:MDPROGRESS|%(progress.status)s|%(progress.downloaded_bytes)s|%(progress.total_bytes,progress.total_bytes_estimate)s|%(progress.speed)s|%(progress.eta)s|%(info.playlist_index)s|%(info.playlist_count)s|%(info.title)s";
+    private const string ProgressTemplate = "download:MDPROGRESS|%(progress.status)s|%(progress.downloaded_bytes)s|%(progress.total_bytes,progress.total_bytes_estimate)s|%(progress.speed)s|%(info.playlist_index)s|%(info.playlist_count)s|%(info.title)s";
 
     private readonly ToolLocator _tools;
     private readonly ProcessRunner _runner;
@@ -251,7 +251,9 @@ public sealed class YtDlpService
         bool autoRemoveTikTokWatermark = true,
         string? outputTitleOverride = null,
         CancellationToken cancellationToken = default,
-        Action<string>? onProgress = null)
+        Action<string>? onProgress = null,
+        double? clipStartSeconds = null,
+        double? clipEndSeconds = null)
     {
         Directory.CreateDirectory(outputDirectory);
 
@@ -276,6 +278,17 @@ public sealed class YtDlpService
             audioFadeInOut3Seconds,
             trimBoundarySilence,
             autoRemoveTikTokWatermark && IsTikTokTarget(target.Url));
+
+        var downloadSectionR1637 = BuildDownloadSectionSpecR1637(
+            clipStartSeconds,
+            clipEndSeconds,
+            media.DurationSeconds);
+        if (!string.IsNullOrWhiteSpace(downloadSectionR1637))
+        {
+            args.Add("--download-sections");
+            args.Add(downloadSectionR1637);
+        }
+
         args.Add(target.Url);
 
         return await RunDownloadAsync(
@@ -341,6 +354,65 @@ public sealed class YtDlpService
             cancellationToken,
             onProgress,
             requireOutput: true);
+    }
+
+    // MEDIADOCK_DOWNLOAD_SECTION_R1637
+    public static string? BuildDownloadSectionSpecR1637(
+        double? startSeconds,
+        double? endSeconds,
+        double? durationSeconds)
+    {
+        var duration = durationSeconds is > 0 ? durationSeconds.Value : (double?)null;
+        var start = Math.Max(0, startSeconds ?? 0);
+        var end = endSeconds is > 0 ? endSeconds : duration;
+
+        if (duration is not null && end is not null)
+        {
+            end = Math.Min(end.Value, duration.Value);
+        }
+
+        if (end is not null && end.Value <= start)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(endSeconds),
+                "Clip end must be later than clip start.");
+        }
+
+        var coversFullMedia = start <= 0.001 &&
+            (end is null || (duration is not null && end.Value >= duration.Value - 0.25));
+        if (coversFullMedia)
+        {
+            return null;
+        }
+
+        var startText = FormatSectionTimestampR1637(start);
+        var endText = end is null ? "inf" : FormatSectionTimestampR1637(end.Value);
+        return $"*{startText}-{endText}";
+    }
+
+    private static string FormatSectionTimestampR1637(double seconds)
+    {
+        var total = Math.Max(0L, (long)Math.Floor(seconds));
+        var hours = total / 3600;
+        var minutes = (total % 3600) / 60;
+        var secondsPart = total % 60;
+        return $"{hours:00}:{minutes:00}:{secondsPart:00}";
+    }
+
+    public static void RunClipRangeSelfTestR1637()
+    {
+        var fixture = BuildDownloadSectionSpecR1637(5, 157, 157);
+        if (!string.Equals(fixture, "*00:00:05-00:02:37", StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                "R1.6.37 download-section contract failed for 00:05 through 02:37.");
+        }
+
+        if (BuildDownloadSectionSpecR1637(0, 157, 157) is not null)
+        {
+            throw new InvalidOperationException(
+                "R1.6.37 download-section contract failed: full media should not invoke clipping.");
+        }
     }
 
     public static IReadOnlyList<string> BuildEmbeddedArtworkArguments() =>

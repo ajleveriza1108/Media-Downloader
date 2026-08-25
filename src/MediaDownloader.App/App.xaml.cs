@@ -428,6 +428,10 @@ public partial class App : Application
         MediaDownloader.Core.Services.YtDlpService.RunAudioLanguagePreferenceSelfTestR1630();
         // MEDIADOCK_AUDIO_TRACK_DUB_SELFTEST_R1636
         MediaDownloader.Core.Services.YtDlpService.RunAudioTrackSelectionSelfTestR1636();
+        // MEDIADOCK_CLIP_QUEUE_SELFTEST_R1637
+        MediaDownloader.Core.Services.YtDlpService.RunClipRangeSelfTestR1637();
+        MediaDownloader.Core.Services.QueueDownloadPreferencesService.RunSelfTestR1637();
+        MediaDownloader.Core.Models.DownloadQueueItem.RunClipRangeSelfTestR1637();
         MediaDownloader.ViewModels.MainWindowViewModel.RunEntitlementQueueContractSelfTestR1630();}
 
 
