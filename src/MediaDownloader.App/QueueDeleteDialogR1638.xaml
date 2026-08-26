@@ -1,0 +1,179 @@
+<Window x:Class="MediaDownloader.QueueDeleteDialogR1638"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Remove Queue Item"
+        Width="620"
+        Height="300"
+        MinWidth="620"
+        MinHeight="300"
+        MaxWidth="620"
+        MaxHeight="300"
+        WindowStartupLocation="CenterOwner"
+        WindowStyle="None"
+        ResizeMode="NoResize"
+        AllowsTransparency="True"
+        ShowInTaskbar="False"
+        Background="Transparent"
+        Foreground="{DynamicResource ThemePrimaryTextBrush}"
+        FontFamily="Segoe UI"
+        PreviewKeyDown="QueueDeleteDialogR1638_PreviewKeyDown">
+  <Window.Resources>
+    <Style x:Key="DialogButtonR1638" TargetType="Button">
+      <Setter Property="MinWidth" Value="154" />
+      <Setter Property="Height" Value="38" />
+      <Setter Property="Padding" Value="14,7" />
+      <Setter Property="Foreground" Value="{DynamicResource ThemePrimaryTextBrush}" />
+      <Setter Property="Background" Value="{DynamicResource ThemeSurfaceBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ThemeBorderBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="Cursor" Value="Hand" />
+      <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+      <Setter Property="FontSize" Value="11" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="Button">
+            <Border x:Name="Surface"
+                    Background="{TemplateBinding Background}"
+                    BorderBrush="{TemplateBinding BorderBrush}"
+                    BorderThickness="{TemplateBinding BorderThickness}"
+                    CornerRadius="9"
+                    Padding="{TemplateBinding Padding}">
+              <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+            </Border>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="Surface" Property="Background" Value="{DynamicResource ThemeHoverBrush}" />
+                <Setter TargetName="Surface" Property="BorderBrush" Value="{DynamicResource ThemeAccentBrush}" />
+              </Trigger>
+              <Trigger Property="IsPressed" Value="True">
+                <Setter TargetName="Surface" Property="Opacity" Value="0.82" />
+              </Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+    <Style x:Key="DeleteButtonR1638" TargetType="Button" BasedOn="{StaticResource DialogButtonR1638}">
+      <Setter Property="Foreground" Value="#FFFFFF" />
+      <Setter Property="Background" Value="#C42B1C" />
+      <Setter Property="BorderBrush" Value="#E05243" />
+    </Style>
+    <Style x:Key="SafeRemoveButtonR1638" TargetType="Button" BasedOn="{StaticResource DialogButtonR1638}">
+      <Setter Property="Foreground" Value="#FFFFFF" />
+      <Setter Property="Background" Value="{DynamicResource ThemeAccentBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ThemeAccentBrush}" />
+    </Style>
+  </Window.Resources>
+
+  <Border Margin="10"
+          Background="{DynamicResource ThemePanelBackgroundBrush}"
+          BorderBrush="{DynamicResource ThemeStrongBorderBrush}"
+          BorderThickness="1"
+          CornerRadius="14">
+    <Grid>
+      <Grid.RowDefinitions>
+        <RowDefinition Height="52" />
+        <RowDefinition Height="*" />
+        <RowDefinition Height="64" />
+      </Grid.RowDefinitions>
+
+      <Border Grid.Row="0"
+              Background="{DynamicResource ThemeTitleBarBackgroundBrush}"
+              CornerRadius="14,14,0,0"
+              MouseLeftButtonDown="QueueDeleteDialogR1638_TitleMouseDown">
+        <Grid Margin="16,0,10,0">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="38" />
+          </Grid.ColumnDefinitions>
+          <TextBlock VerticalAlignment="Center"
+                     Text="Remove Queue Item"
+                     FontSize="14"
+                     FontWeight="SemiBold" />
+          <Button Grid.Column="1"
+                  Width="30"
+                  Height="30"
+                  HorizontalAlignment="Center"
+                  VerticalAlignment="Center"
+                  Background="Transparent"
+                  BorderThickness="0"
+                  Foreground="{DynamicResource ThemeSecondaryTextBrush}"
+                  Cursor="Hand"
+                  ToolTip="Cancel"
+                  Click="CancelR1638_Click">
+            <Viewbox Width="13" Height="13">
+              <Path Data="M4,4 L20,20 M20,4 L4,20"
+                    Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                    StrokeThickness="2"
+                    StrokeStartLineCap="Round"
+                    StrokeEndLineCap="Round" />
+            </Viewbox>
+          </Button>
+        </Grid>
+      </Border>
+
+      <Grid Grid.Row="1" Margin="20,18,20,12">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="54" />
+          <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+        <Border Width="42" Height="42"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Top"
+                Background="{DynamicResource ThemeAccentPanelBrush}"
+                BorderBrush="{DynamicResource ThemeBorderBrush}"
+                BorderThickness="1"
+                CornerRadius="21">
+          <Viewbox Width="19" Height="19" HorizontalAlignment="Center" VerticalAlignment="Center">
+            <Path Data="M7,7 L17,7 M9,7 L10,20 L16,20 L17,7 M10,4 L16,4 M12,10 L12,17 M15,10 L15,17"
+                  Stroke="{DynamicResource ThemeDangerBrush}"
+                  StrokeThickness="1.7"
+                  StrokeStartLineCap="Round"
+                  StrokeEndLineCap="Round"
+                  StrokeLineJoin="Round"
+                  Fill="Transparent" />
+          </Viewbox>
+        </Border>
+        <StackPanel Grid.Column="1">
+          <TextBlock x:Name="QuestionTextR1638"
+                     FontSize="13"
+                     FontWeight="SemiBold"
+                     TextWrapping="Wrap" />
+          <TextBlock Margin="0,9,0,0"
+                     Foreground="{DynamicResource ThemeSecondaryTextBrush}"
+                     FontSize="10"
+                     LineHeight="16"
+                     TextWrapping="Wrap"
+                     Text="Remove from MediaDock removes only the queue entry and keeps downloaded files in File Explorer. Delete from Computer removes the entry and permanently deletes its downloaded file from disk. Cancel changes nothing." />
+        </StackPanel>
+      </Grid>
+
+      <Border Grid.Row="2"
+              Background="{DynamicResource ThemeTitleBarBackgroundBrush}"
+              CornerRadius="0,0,14,14">
+        <StackPanel Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Center"
+                    Margin="14,0">
+          <Button Style="{StaticResource DialogButtonR1638}"
+                  Content="Cancel"
+                  IsCancel="True"
+                  Click="CancelR1638_Click" />
+          <Button Margin="8,0,0,0"
+                  Style="{StaticResource SafeRemoveButtonR1638}"
+                  x:Name="RemoveFromMediaDockButtonR1638"
+                  Content="Remove from MediaDock"
+                  IsDefault="True"
+                  ToolTip="Remove the queue entry only. Keep downloaded files on this computer."
+                  Click="RemoveFromMediaDockR1638_Click" />
+          <Button Margin="8,0,0,0"
+                  Style="{StaticResource DeleteButtonR1638}"
+                  Content="Delete from Computer"
+                  ToolTip="Remove the queue entry and permanently delete its downloaded file from disk."
+                  Click="DeleteFromComputerR1638_Click" />
+        </StackPanel>
+      </Border>
+    </Grid>
+  </Border>
+</Window>

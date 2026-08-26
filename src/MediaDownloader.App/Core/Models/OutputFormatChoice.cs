@@ -4,7 +4,9 @@ public enum OutputFormatKind
 {
     Mp4,
     Mkv,
-    Mp3
+    Mp3,
+    M4a,
+    Flac
 }
 
 public sealed record OutputFormatChoice(

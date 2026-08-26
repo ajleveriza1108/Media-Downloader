@@ -17,6 +17,8 @@ public sealed class DownloadQueueItem : ObservableObject
     private int _mp3BitrateKbps;
     private QualityChoice? _qualityChoice;
     private AudioChoice? _audioChoice;
+    // MEDIADOCK_QUEUE_AUDIO_VISIBILITY_R1638
+    private IReadOnlyList<AudioChoice> _availableAudioChoicesR1638 = [new AudioChoice("Original / best")];
     private MediaInfo? _mediaSnapshot;
     private bool _hasDownloadedMp3Counterpart;
     private bool _hasDownloadedMp4Counterpart;
@@ -209,6 +211,42 @@ public sealed class DownloadQueueItem : ObservableObject
             : $"{total / 60:00}:{secondsPart:00}";
     }
 
+    public static void RunAudioChoiceSelfTestR1638()
+    {
+        var item = new DownloadQueueItem(
+            "fixture",
+            "YouTube",
+            "https://example.invalid/watch?v=fixture",
+            "1080p",
+            "MP4",
+            OutputFormatKind.Mp4,
+            string.Empty);
+
+        var original = new AudioChoice("English — Original", "en-original");
+        var dub = new AudioChoice("Japanese — Dub", "ja-dub");
+        item.AudioChoice = original;
+        item.SetAvailableAudioChoicesR1638([original, dub]);
+
+        if (item.AvailableAudioChoicesR1638.Count != 2 ||
+            !item.CanChooseAudioR1638 ||
+            !string.Equals(item.AudioChoice?.FormatId, "en-original", StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException("R1.6.39 queue audio-choice initialization contract failed.");
+        }
+
+        item.AudioChoice = dub;
+        if (!string.Equals(item.AudioDisplayTextR1638, "Japanese — Dub", StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException("R1.6.39 queue audio-choice selection contract failed.");
+        }
+
+        item.Status = "Downloading";
+        if (item.CanChooseAudioR1638)
+        {
+            throw new InvalidOperationException("R1.6.39 queue audio selector must lock after download starts.");
+        }
+    }
+
     public static void RunClipRangeSelfTestR1637()
     {
         var item = new DownloadQueueItem(
@@ -289,7 +327,63 @@ public sealed class DownloadQueueItem : ObservableObject
     public AudioChoice? AudioChoice
     {
         get => _audioChoice;
-        set => SetProperty(ref _audioChoice, value);
+        set
+        {
+            if (SetProperty(ref _audioChoice, value))
+            {
+                OnPropertyChanged(nameof(AudioDisplayTextR1638));
+            }
+        }
+    }
+
+    [System.Text.Json.Serialization.JsonIgnore]
+    public IReadOnlyList<AudioChoice> AvailableAudioChoicesR1638 => _availableAudioChoicesR1638;
+
+    [System.Text.Json.Serialization.JsonIgnore]
+    public string AudioDisplayTextR1638 => AudioChoice?.Label
+        ?? _availableAudioChoicesR1638.FirstOrDefault()?.Label
+        ?? "Original / best";
+
+    [System.Text.Json.Serialization.JsonIgnore]
+    public bool CanChooseAudioR1638 => CanStart && _availableAudioChoicesR1638.Count > 1;
+
+    public void SetAvailableAudioChoicesR1638(IEnumerable<AudioChoice>? choices)
+    {
+        var normalized = (choices ?? [])
+            .Where(choice => choice is not null)
+            .GroupBy(
+                choice => (choice.FormatId ?? string.Empty) + "\u001F" + choice.Label,
+                StringComparer.Ordinal)
+            .Select(group => group.First())
+            .ToArray();
+
+        if (normalized.Length == 0)
+        {
+            normalized = AudioChoice is null
+                ? [new AudioChoice("Original / best")]
+                : [AudioChoice];
+        }
+
+        AudioChoice? selected = null;
+        if (AudioChoice is not null)
+        {
+            selected = !string.IsNullOrWhiteSpace(AudioChoice.FormatId)
+                ? normalized.FirstOrDefault(choice => string.Equals(
+                    choice.FormatId,
+                    AudioChoice.FormatId,
+                    StringComparison.Ordinal))
+                : normalized.FirstOrDefault(choice => string.Equals(
+                    choice.Label,
+                    AudioChoice.Label,
+                    StringComparison.Ordinal));
+        }
+
+        _availableAudioChoicesR1638 = normalized;
+        OnPropertyChanged(nameof(AvailableAudioChoicesR1638));
+        OnPropertyChanged(nameof(CanChooseAudioR1638));
+
+        AudioChoice = selected ?? normalized[0];
+        OnPropertyChanged(nameof(AudioDisplayTextR1638));
     }
 
     public MediaInfo? MediaSnapshot
@@ -312,6 +406,7 @@ public sealed class DownloadQueueItem : ObservableObject
             if (SetProperty(ref _status, value))
             {
                 OnPropertyChanged(nameof(CanStart));
+                OnPropertyChanged(nameof(CanChooseAudioR1638));
             }
         }
     }
@@ -397,7 +492,7 @@ public sealed class DownloadQueueItem : ObservableObject
     public bool CanStart => !Completed && string.Equals(Status, "Ready", StringComparison.OrdinalIgnoreCase);
     public bool CanConvertToMp3 => Completed && OutputKind == OutputFormatKind.Mp4 &&
         !string.IsNullOrWhiteSpace(OutputPath) && !HasDownloadedMp3Counterpart;
-    public bool CanRedownloadAsMp4 => Completed && OutputKind == OutputFormatKind.Mp3 &&
+    public bool CanRedownloadAsMp4 => Completed && (OutputKind is OutputFormatKind.Mp3 or OutputFormatKind.M4a or OutputFormatKind.Flac) &&
         !string.IsNullOrWhiteSpace(SourceUrl) && !HasDownloadedMp4Counterpart;
 
     // MEDIADOCK_QUEUE_ROW_STATE_R1629
@@ -416,20 +511,38 @@ public sealed class DownloadQueueItem : ObservableObject
     public string SelectedFormatR1629
     {
         get => string.IsNullOrWhiteSpace(_selectedFormatR1629)
-            ? (OutputKind == OutputFormatKind.Mp3 ? "MP3" : "MP4")
+            ? OutputKind switch
+            {
+                OutputFormatKind.Mp3 => "MP3",
+                OutputFormatKind.M4a => "M4A",
+                OutputFormatKind.Flac => "FLAC",
+                _ => "MP4"
+            }
             : _selectedFormatR1629;
         set
         {
-            var normalized = string.Equals(value, "MP3", StringComparison.OrdinalIgnoreCase) ? "MP3" : "MP4";
+            var normalized = value?.Trim().ToUpperInvariant() switch
+            {
+                "MP3" => "MP3",
+                "M4A" => "M4A",
+                "FLAC" => "FLAC",
+                _ => "MP4"
+            };
             if (!SetProperty(ref _selectedFormatR1629, normalized))
             {
                 return;
             }
 
-            OutputKind = normalized == "MP3" ? OutputFormatKind.Mp3 : OutputFormatKind.Mp4;
+            OutputKind = normalized switch
+            {
+                "MP3" => OutputFormatKind.Mp3,
+                "M4A" => OutputFormatKind.M4a,
+                "FLAC" => OutputFormatKind.Flac,
+                _ => OutputFormatKind.Mp4
+            };
             Format = normalized;
 
-            if (OutputKind == OutputFormatKind.Mp3)
+            if (OutputKind is OutputFormatKind.Mp3 or OutputFormatKind.M4a or OutputFormatKind.Flac)
             {
                 QualityChoice = null;
                 SelectedQualityR1629 = "Highest";
@@ -442,7 +555,7 @@ public sealed class DownloadQueueItem : ObservableObject
     {
         get
         {
-            if (OutputKind == OutputFormatKind.Mp3)
+            if (OutputKind is OutputFormatKind.Mp3 or OutputFormatKind.M4a or OutputFormatKind.Flac)
             {
                 return "Highest";
             }
@@ -470,7 +583,7 @@ public sealed class DownloadQueueItem : ObservableObject
         }
         set
         {
-            var normalized = OutputKind == OutputFormatKind.Mp3
+            var normalized = OutputKind is OutputFormatKind.Mp3 or OutputFormatKind.M4a or OutputFormatKind.Flac
                 ? "Highest"
                 : value switch
                 {
@@ -489,7 +602,7 @@ public sealed class DownloadQueueItem : ObservableObject
             }
 
             QualityChoice = null;
-            Quality = OutputKind == OutputFormatKind.Mp3
+            Quality = OutputKind is OutputFormatKind.Mp3 or OutputFormatKind.M4a or OutputFormatKind.Flac
                 ? "Best audio"
                 : normalized == "Highest" ? "Best available" : normalized;
         }

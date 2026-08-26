@@ -385,11 +385,18 @@
           </ScrollViewer.Resources>
           <StackPanel x:Name="SettingsContentStack" Margin="16,14,14,16">
             <TextBlock x:Name="SettingsSectionAudioR1636" Style="{StaticResource SettingsSectionLabel}" Text="AUDIO PROCESSING" />
-            <Border Margin="0,5,0,0" Style="{StaticResource SettingsCard}"><StackPanel><CheckBox Style="{StaticResource SettingCheckBox}" IsChecked="{Binding AudioFadeInOut3Seconds, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Content="3-second audio fade in / fade out" /><TextBlock Margin="22,3,0,0" Foreground="{DynamicResource ThemeMutedTextBrush}" FontSize="8.3" TextWrapping="Wrap" Text="Applies to MP3 downloads and local MP3 conversions." /><Border Height="1" Margin="0,10" Background="{DynamicResource ThemeBorderBrush}" /><CheckBox Style="{StaticResource SettingCheckBox}" IsChecked="{Binding TrimBoundarySilence, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Content="Remove silence at the start and end" /><TextBlock Margin="22,3,0,0" Foreground="{DynamicResource ThemeMutedTextBrush}" FontSize="8.3" TextWrapping="Wrap" Text="Trims boundary dead air only. Interior pauses are preserved." /></StackPanel></Border>
+            <Border Margin="0,5,0,0" Style="{StaticResource SettingsCard}"><StackPanel><CheckBox Style="{StaticResource SettingCheckBox}" IsChecked="{Binding AudioFadeInOut3Seconds, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Content="3-second audio fade in / fade out" /><TextBlock Margin="22,3,0,0" Foreground="{DynamicResource ThemeMutedTextBrush}" FontSize="8.3" TextWrapping="Wrap" Text="Applies to MP3, M4A, and FLAC downloads plus local MP3 conversions." /><Border Height="1" Margin="0,10" Background="{DynamicResource ThemeBorderBrush}" /><CheckBox Style="{StaticResource SettingCheckBox}" IsChecked="{Binding TrimBoundarySilence, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Content="Remove silence at the start and end" /><TextBlock Margin="22,3,0,0" Foreground="{DynamicResource ThemeMutedTextBrush}" FontSize="8.3" TextWrapping="Wrap" Text="Trims boundary dead air only. Interior pauses are preserved." /></StackPanel></Border>
 
             <TextBlock x:Name="SettingsSectionDownloadR1636" Margin="0,12,0,0" Style="{StaticResource SettingsSectionLabel}" Text="DOWNLOAD" />
             <Border Margin="0,5,0,0" Style="{StaticResource SettingsCard}">
               <StackPanel>
+                <CheckBox x:Name="ClipboardDetectionR1639"
+                          Style="{StaticResource SettingCheckBox}"
+                          Loaded="ClipboardDetectionR1639_Loaded"
+                          Click="ClipboardDetectionR1639_Click"
+                          Content="Detect copied media links" />
+                <TextBlock Margin="22,3,0,0" Foreground="{DynamicResource ThemeMutedTextBrush}" FontSize="8.3" TextWrapping="Wrap" Text="Off by default. When enabled, MediaDock asks whether to analyze a supported media URL copied to the clipboard. It never starts a download automatically." />
+                <Border Height="1" Margin="0,10" Background="{DynamicResource ThemeBorderBrush}" />
                 <CheckBox Style="{StaticResource SettingCheckBox}" IsChecked="{Binding AutoRemoveTikTokWatermark, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Content="Auto-remove TikTok watermark" />
                 <TextBlock Margin="22,3,0,0" Foreground="{DynamicResource ThemeMutedTextBrush}" FontSize="8.3" TextWrapping="Wrap" Text="Prefers a watermark-free TikTok source when yt-dlp exposes one. Falls back safely if unavailable." />
                 <Border Height="1" Margin="0,10" Background="{DynamicResource ThemeBorderBrush}" />

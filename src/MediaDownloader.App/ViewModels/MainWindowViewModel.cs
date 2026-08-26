@@ -115,7 +115,9 @@ public sealed class MainWindowViewModel : ObservableObject
         foreach (var format in new[]
         {
             new OutputFormatChoice(OutputFormatKind.Mp4, "MP4"),
-            new OutputFormatChoice(OutputFormatKind.Mp3, "MP3")
+            new OutputFormatChoice(OutputFormatKind.Mp3, "MP3"),
+            new OutputFormatChoice(OutputFormatKind.M4a, "M4A"),
+            new OutputFormatChoice(OutputFormatKind.Flac, "FLAC")
         })
         {
             DownloadFormats.Add(format);
@@ -474,6 +476,7 @@ public sealed class MainWindowViewModel : ObservableObject
             if (SetProperty(ref _selectedDownloadFormat, value))
             {
                 OnPropertyChanged(nameof(IsMp3Download));
+                OnPropertyChanged(nameof(IsAudioDownloadR1639));
                 OnPropertyChanged(nameof(IsQualitySelectionEnabled));
                 OnPropertyChanged(nameof(CanChooseQuality));
                 SyncActiveQueueSelection();
@@ -516,7 +519,8 @@ public sealed class MainWindowViewModel : ObservableObject
     }
 
     public bool IsMp3Download => SelectedDownloadFormat?.Kind == OutputFormatKind.Mp3;
-    public bool IsQualitySelectionEnabled => !IsMp3Download;
+    public bool IsAudioDownloadR1639 => SelectedDownloadFormat is not null && IsAudioOutputKindR1639(SelectedDownloadFormat.Kind);
+    public bool IsQualitySelectionEnabled => !IsAudioDownloadR1639;
     public bool CanChooseQuality => IsMediaReady && IsQualitySelectionEnabled;
     public bool IsPlaylistReady => _playlist is not null && PlaylistEntries.Count > 0;
     public int PlaylistSelectedCount => PlaylistEntries.Count(item => item.IsSelected);
@@ -562,11 +566,11 @@ public sealed class MainWindowViewModel : ObservableObject
         ? "Licensed: MediaDock"
         : TrialTamperDetected
             ? "Trial locked"
-            : $"Trial: Video {TrialVideoUsed}/{TrialStateService.MaxVideoOutputs} | MP3 {TrialMp3Used}/{TrialStateService.MaxMp3Outputs}";
+            : $"Trial: Video {TrialVideoUsed}/{TrialStateService.MaxVideoOutputs} | Audio {TrialMp3Used}/{TrialStateService.MaxMp3Outputs}";
     public string TrialLockTitle => TrialTamperDetected ? "Trial security validation failed" : "MediaDock trial complete";
     public string TrialLockMessage => TrialTamperDetected
         ? "MediaDock detected an invalid protected trial state. Trial download and conversion output is locked. Reinstalling or deleting local settings does not restore the trial."
-        : $"You have completed {TrialStateService.MaxVideoOutputs} video outputs and {TrialStateService.MaxMp3Outputs} MP3 outputs. A MediaDock license is required for more downloads. Stream and Convert are full-version features.";
+        : $"You have completed {TrialStateService.MaxVideoOutputs} video outputs and {TrialStateService.MaxMp3Outputs} audio outputs. MP3, M4A, and FLAC share the audio allowance. A MediaDock license is required for more downloads. Stream and Convert are full-version features.";
 
     public string DownloadButtonText => _playlist is not null
         ? PlaylistSelectedCount == 0
@@ -984,8 +988,23 @@ public sealed class MainWindowViewModel : ObservableObject
         File.Exists(ConversionInputPath) &&
         SelectedConversionBitrate is not null;
 
+    private static bool IsAudioOutputKindR1639(OutputFormatKind outputKind) =>
+        outputKind is OutputFormatKind.Mp3 or OutputFormatKind.M4a or OutputFormatKind.Flac;
+
+    private static OutputFormatKind TrialAccountingKindR1639(OutputFormatKind outputKind) =>
+        IsAudioOutputKindR1639(outputKind) ? OutputFormatKind.Mp3 : OutputFormatKind.Mp4;
+
+    private static string OutputFormatLabelR1639(OutputFormatKind outputKind) =>
+        outputKind switch
+        {
+            OutputFormatKind.Mp3 => "MP3",
+            OutputFormatKind.M4a => "M4A",
+            OutputFormatKind.Flac => "FLAC",
+            _ => "MP4"
+        };
+
     private bool CanCreateTrialOutput(OutputFormatKind outputKind) =>
-        !IsTrialMode || _trialStateService.CanCreate(outputKind, _trialState);
+        !IsTrialMode || _trialStateService.CanCreate(TrialAccountingKindR1639(outputKind), _trialState);
     private bool EnsureTrialAvailable(OutputFormatKind outputKind)
     {
         if (!IsTrialMode)
@@ -998,9 +1017,9 @@ public sealed class MainWindowViewModel : ObservableObject
             return true;
         }
 
-        Status = outputKind == OutputFormatKind.Mp4
-            ? "The 5-video trial allowance has been used. A MediaDock license is required for more video outputs."
-            : "The 5-MP3 trial allowance has been used. A MediaDock license is required for more MP3 outputs.";
+        Status = IsAudioOutputKindR1639(outputKind)
+            ? "The 5-audio trial allowance has been used. MP3, M4A, and FLAC share the same audio trial counter."
+            : "The 5-video trial allowance has been used. A MediaDock license is required for more video outputs.";
 
         NotifyTrialStateChanged();
         return false;
@@ -1014,7 +1033,7 @@ public sealed class MainWindowViewModel : ObservableObject
 
         lock (_trialAccountingGateR1630)
         {
-            _trialState = _trialStateService.RecordCompletion(outputKind);
+            _trialState = _trialStateService.RecordCompletion(TrialAccountingKindR1639(outputKind));
         }
 
         NotifyTrialStateChanged();
@@ -2001,15 +2020,16 @@ public sealed class MainWindowViewModel : ObservableObject
 
             var qualityChoices = YtDlpService.BuildQualityChoices(media);
             var audioChoices = YtDlpService.BuildAudioChoices(media);
+            item.SetAvailableAudioChoicesR1638(audioChoices);
             var quality = ResolveQueuedQuality(item, qualityChoices);
             var audio = ResolveQueuedAudio(item, audioChoices);
 
             item.QualityChoice = quality;
             item.AudioChoice = audio;
-            item.Quality = item.OutputKind == OutputFormatKind.Mp3
+            item.Quality = IsAudioOutputKindR1639(item.OutputKind)
                 ? "Best audio"
                 : quality?.Label ?? "Best available";
-            item.Format = item.OutputKind == OutputFormatKind.Mp3 ? "MP3" : "MP4";
+            item.Format = OutputFormatLabelR1639(item.OutputKind);
             item.Status = "Starting";
 
             WriteDownloadAttemptLog(item);
@@ -2366,19 +2386,21 @@ var converted = new DownloadQueueItem(
 
         var outputKind = SelectedDownloadFormat?.Kind ?? OutputFormatKind.Mp4;
         var licensedR1630 = LicenseEntitlementState.IsLicensed;
-        var trialRemaining = outputKind == OutputFormatKind.Mp3
+        var trialRemaining = IsAudioOutputKindR1639(outputKind)
             ? TrialMp3Remaining
             : TrialVideoRemaining;
         var alreadyQueued = DownloadQueue.Count(item =>
-            item.OutputKind == outputKind &&
+            (IsAudioOutputKindR1639(outputKind)
+                ? IsAudioOutputKindR1639(item.OutputKind)
+                : item.OutputKind == outputKind) &&
             !item.Completed &&
             !string.Equals(item.Status, "Failed", StringComparison.OrdinalIgnoreCase));
         var capacity = CalculateTrialQueueCapacityR1630(licensedR1630, trialRemaining, alreadyQueued);
 
-        var quality = outputKind == OutputFormatKind.Mp3
+        var quality = IsAudioOutputKindR1639(outputKind)
             ? "Best audio"
             : "Auto 1080p -> 720p -> 480p";
-        var format = outputKind == OutputFormatKind.Mp3 ? "MP3" : "MP4";
+        var format = OutputFormatLabelR1639(outputKind);
         var bitrate = SelectedMp3Bitrate?.KilobitsPerSecond ?? 320;
         var existing = new HashSet<string>(
             DownloadQueue
@@ -2447,12 +2469,12 @@ var converted = new DownloadQueueItem(
                 : $"Added {jobs.Count} playlist item(s) directly to the queue";
             return;
         }
-        var mediaLabel = outputKind == OutputFormatKind.Mp3 ? "MP3" : "video";
+        var mediaLabel = IsAudioOutputKindR1639(outputKind) ? "audio" : "video";
         var skippedByTrial = Math.Max(0, playlist.Entries.Count - jobs.Count - duplicateCount - invalidCount);
 
         var notice =
             $"MediaDock is in trial mode. The trial allows {TrialStateService.MaxVideoOutputs} successful video downloads and " +
-            $"{TrialStateService.MaxMp3Outputs} successful MP3 downloads.\n\n" +
+            $"{TrialStateService.MaxMp3Outputs} successful audio downloads (MP3/M4A/FLAC).\n\n" +
             $"This playlist contains {playlist.Entries.Count} item(s).\n" +
             $"{mediaLabel} trial remaining: {trialRemaining}.\n" +
             $"Already queued for this format: {alreadyQueued}.\n" +
@@ -2518,11 +2540,13 @@ var converted = new DownloadQueueItem(
     }
     private int GetTrialQueueCapacity(OutputFormatKind outputKind)
     {
-        var remaining = outputKind == OutputFormatKind.Mp3
+        var remaining = IsAudioOutputKindR1639(outputKind)
             ? TrialMp3Remaining
             : TrialVideoRemaining;
         var pending = DownloadQueue.Count(item =>
-            item.OutputKind == outputKind &&
+            (IsAudioOutputKindR1639(outputKind)
+                ? IsAudioOutputKindR1639(item.OutputKind)
+                : item.OutputKind == outputKind) &&
             !item.Completed &&
             !string.Equals(item.Status, "Failed", StringComparison.OrdinalIgnoreCase));
 
@@ -2639,7 +2663,7 @@ var converted = new DownloadQueueItem(
 
                     if (!licensed)
                     {
-                        if (item.OutputKind == OutputFormatKind.Mp3)
+                        if (IsAudioOutputKindR1639(item.OutputKind))
                         {
                             if (mp3Slots <= 0) continue;
                             mp3Slots--;
@@ -2767,8 +2791,8 @@ var converted = new DownloadQueueItem(
             media.Title,
             FriendlyExtractorName(media.Extractor),
             normalizedUrl,
-            outputKind == OutputFormatKind.Mp3 ? "Best audio" : SelectedQuality?.Label ?? "Best available",
-            outputKind == OutputFormatKind.Mp3 ? "MP3" : "MP4",
+            IsAudioOutputKindR1639(outputKind) ? "Best audio" : SelectedQuality?.Label ?? "Best available",
+            OutputFormatLabelR1639(outputKind),
             outputKind,
             media.ThumbnailUrl,
             SelectedMp3Bitrate?.KilobitsPerSecond ?? 320)
@@ -2813,11 +2837,11 @@ var converted = new DownloadQueueItem(
 
         var outputKind = SelectedDownloadFormat?.Kind ?? OutputFormatKind.Mp4;
         _activeQueueItem.OutputKind = outputKind;
-        _activeQueueItem.Format = outputKind == OutputFormatKind.Mp3 ? "MP3" : "MP4";
-        _activeQueueItem.QualityChoice = SelectedQuality;
+        _activeQueueItem.Format = OutputFormatLabelR1639(outputKind);
+        _activeQueueItem.QualityChoice = IsAudioOutputKindR1639(outputKind) ? null : SelectedQuality;
         _activeQueueItem.AudioChoice = SelectedAudioChoice;
         _activeQueueItem.Mp3BitrateKbps = SelectedMp3Bitrate?.KilobitsPerSecond ?? 320;
-        _activeQueueItem.Quality = outputKind == OutputFormatKind.Mp3
+        _activeQueueItem.Quality = IsAudioOutputKindR1639(outputKind)
             ? "Best audio"
             : SelectedQuality?.Label ?? "Best available";
         OnPropertyChanged(nameof(DownloadButtonText));
@@ -2827,7 +2851,7 @@ var converted = new DownloadQueueItem(
         DownloadQueueItem item,
         IReadOnlyList<QualityChoice> available)
     {
-        if (item.OutputKind == OutputFormatKind.Mp3)
+        if (IsAudioOutputKindR1639(item.OutputKind))
         {
             return null;
         }
@@ -3045,10 +3069,10 @@ var converted = new DownloadQueueItem(
             StringComparer.OrdinalIgnoreCase);
 
         var outputKind = SelectedDownloadFormat?.Kind ?? OutputFormatKind.Mp4;
-        var quality = outputKind == OutputFormatKind.Mp3
+        var quality = IsAudioOutputKindR1639(outputKind)
             ? "Best audio"
             : SelectedQuality?.Label ?? "Auto - Best available";
-        var format = outputKind == OutputFormatKind.Mp3 ? "MP3" : "MP4";
+        var format = OutputFormatLabelR1639(outputKind);
         var bitrate = SelectedMp3Bitrate?.KilobitsPerSecond ?? 320;
 
         var added = 0;
@@ -3230,6 +3254,7 @@ var converted = new DownloadQueueItem(
         {
             foreach (var newItem in e.NewItems.OfType<DownloadQueueItem>())
             {
+                RefreshQueueAudioChoicesR1638(newItem);
                 newItem.PropertyChanged += QueueItem_PropertyChanged;
             }
         }
@@ -3338,6 +3363,20 @@ var converted = new DownloadQueueItem(
             Diagnostics = ex.ToString();
             Status = "Settings could not be saved. Open Diagnostics for details.";
         }
+    }
+
+    private static void RefreshQueueAudioChoicesR1638(DownloadQueueItem item)
+    {
+        if (item.MediaSnapshot is not null)
+        {
+            item.SetAvailableAudioChoicesR1638(YtDlpService.BuildAudioChoices(item.MediaSnapshot));
+            return;
+        }
+
+        item.SetAvailableAudioChoicesR1638(
+            item.AudioChoice is null
+                ? []
+                : [item.AudioChoice]);
     }
 
     private void SaveQueueDownloadPreferencesSafelyR1637()
@@ -3709,6 +3748,17 @@ var converted = new DownloadQueueItem(
         return licensed
             ? int.MaxValue
             : Math.Max(0, remaining - Math.Max(0, alreadyReserved));
+    }
+
+    public static void RunAudioTrialMappingSelfTestR1639()
+    {
+        if (TrialAccountingKindR1639(OutputFormatKind.Mp4) != OutputFormatKind.Mp4 ||
+            TrialAccountingKindR1639(OutputFormatKind.Mp3) != OutputFormatKind.Mp3 ||
+            TrialAccountingKindR1639(OutputFormatKind.M4a) != OutputFormatKind.Mp3 ||
+            TrialAccountingKindR1639(OutputFormatKind.Flac) != OutputFormatKind.Mp3)
+        {
+            throw new InvalidOperationException("R1.6.39 audio trial-mapping contract failed.");
+        }
     }
 
     public static void RunEntitlementQueueContractSelfTestR1630()

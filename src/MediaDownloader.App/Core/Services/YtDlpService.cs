@@ -856,6 +856,27 @@ public sealed class YtDlpService
         args.Add("after_move:MDOUTPUT|%(filepath)s");
     }
 
+    // MEDIADOCK_AUDIO_OUTPUT_FORMATS_R1639
+    public static string? GetExtractAudioFormatR1639(OutputFormatKind outputFormat) =>
+        outputFormat switch
+        {
+            OutputFormatKind.Mp3 => "mp3",
+            OutputFormatKind.M4a => "m4a",
+            OutputFormatKind.Flac => "flac",
+            _ => null
+        };
+
+    public static void RunAudioOutputFormatSelfTestR1639()
+    {
+        if (!string.Equals(GetExtractAudioFormatR1639(OutputFormatKind.Mp3), "mp3", StringComparison.Ordinal) ||
+            !string.Equals(GetExtractAudioFormatR1639(OutputFormatKind.M4a), "m4a", StringComparison.Ordinal) ||
+            !string.Equals(GetExtractAudioFormatR1639(OutputFormatKind.Flac), "flac", StringComparison.Ordinal) ||
+            GetExtractAudioFormatR1639(OutputFormatKind.Mp4) is not null)
+        {
+            throw new InvalidOperationException("R1.6.39 audio output-format mapping contract failed.");
+        }
+    }
+
     private static void AddFormatArguments(
         List<string> args,
         OutputFormatKind outputFormat,
@@ -866,15 +887,19 @@ public sealed class YtDlpService
         bool trimBoundarySilence,
         bool preferTikTokWatermarkFree)
     {
-        if (outputFormat == OutputFormatKind.Mp3)
+        var extractAudioFormatR1639 = GetExtractAudioFormatR1639(outputFormat);
+        if (!string.IsNullOrWhiteSpace(extractAudioFormatR1639))
         {
             args.Add("--format");
             args.Add(string.IsNullOrWhiteSpace(audioChoice?.FormatId) ? "bestaudio[format_note*=original]/bestaudio[language^=en]/bestaudio[format_note*=default]/bestaudio/best" : audioChoice!.FormatId!);
             args.Add("--extract-audio");
             args.Add("--audio-format");
-            args.Add("mp3");
-            args.Add("--audio-quality");
-            args.Add(string.Format(CultureInfo.InvariantCulture, "{0}K", mp3BitrateKbps));
+            args.Add(extractAudioFormatR1639);
+            if (outputFormat == OutputFormatKind.Mp3)
+            {
+                args.Add("--audio-quality");
+                args.Add(string.Format(CultureInfo.InvariantCulture, "{0}K", mp3BitrateKbps));
+            }
 
             var audioFilter = FfmpegConversionService.BuildAudioFilter(
                 audioFadeInOut3Seconds,

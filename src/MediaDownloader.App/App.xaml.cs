@@ -205,11 +205,13 @@ public partial class App : Application
         }
 
         var outputFormatNames = Enum.GetNames<MediaDownloader.Core.Models.OutputFormatKind>();
-        if (outputFormatNames.Length != 2 ||
-            !outputFormatNames.Contains("Mp4", StringComparer.Ordinal) ||
-            !outputFormatNames.Contains("Mp3", StringComparer.Ordinal))
+        if (!outputFormatNames.Contains("Mp4", StringComparer.Ordinal) ||
+            !outputFormatNames.Contains("Mkv", StringComparer.Ordinal) ||
+            !outputFormatNames.Contains("Mp3", StringComparer.Ordinal) ||
+            !outputFormatNames.Contains("M4a", StringComparer.Ordinal) ||
+            !outputFormatNames.Contains("Flac", StringComparer.Ordinal))
         {
-            throw new InvalidOperationException("Download-format contract failed: only MP4 and MP3 may be exposed as download formats.");
+            throw new InvalidOperationException("Download-format contract failed: MP4, MKV, MP3, M4A, and FLAC model values are required.");
         }
 
         var queueVideo = new MediaDownloader.Core.Models.DownloadQueueItem(
@@ -432,6 +434,12 @@ public partial class App : Application
         MediaDownloader.Core.Services.YtDlpService.RunClipRangeSelfTestR1637();
         MediaDownloader.Core.Services.QueueDownloadPreferencesService.RunSelfTestR1637();
         MediaDownloader.Core.Models.DownloadQueueItem.RunClipRangeSelfTestR1637();
+        // MEDIADOCK_QUEUE_UX_AUDIO_SELFTEST_R1638
+        MediaDownloader.Core.Models.DownloadQueueItem.RunAudioChoiceSelfTestR1638();
+        // MEDIADOCK_CLIPBOARD_MONITOR_SELFTEST_R1639
+        MediaDownloader.Core.Services.ClipboardMediaLinkPreferencesR1639.RunSelfTestR1639();
+        MediaDownloader.Core.Services.YtDlpService.RunAudioOutputFormatSelfTestR1639();
+        MediaDownloader.ViewModels.MainWindowViewModel.RunAudioTrialMappingSelfTestR1639();
         MediaDownloader.ViewModels.MainWindowViewModel.RunEntitlementQueueContractSelfTestR1630();}
 
 

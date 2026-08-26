@@ -1,4 +1,4 @@
-<Window x:Class="MediaDownloader.MainWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework" xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf" Title="MediaDock - Downloader &amp; Converter" Icon="Assets/MediaDock.ico" Width="1240" Height="700" MinWidth="1240" MinHeight="700" WindowStartupLocation="CenterScreen" WindowStyle="None" ResizeMode="NoResize" Background="{DynamicResource ThemeWindowBackgroundBrush}" Foreground="{DynamicResource ThemePrimaryTextBrush}" FontFamily="Segoe UI" UseLayoutRounding="True" SnapsToDevicePixels="True" AllowDrop="True" PreviewDragEnter="Window_PreviewDragEnter" PreviewDragOver="Window_PreviewDragOver" PreviewDragLeave="Window_PreviewDragLeave" PreviewDrop="Window_PreviewDrop" PreviewKeyDown="Window_PreviewKeyDown" SizeChanged="Window_SizeChanged" MaxWidth="1240" MaxHeight="700">
+<Window x:Class="MediaDownloader.MainWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework" xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf" Title="MediaDock - Downloader &amp; Converter" Icon="Assets/MediaDock.ico" Width="1240" Height="700" MinWidth="1240" MinHeight="700" WindowStartupLocation="CenterScreen" WindowStyle="None" ResizeMode="NoResize" Background="{DynamicResource ThemeWindowBackgroundBrush}" Foreground="{DynamicResource ThemePrimaryTextBrush}" FontFamily="Segoe UI" UseLayoutRounding="True" SnapsToDevicePixels="True" AllowDrop="True" PreviewDragEnter="Window_PreviewDragEnter" PreviewDragOver="Window_PreviewDragOver" PreviewDragLeave="Window_PreviewDragLeave" PreviewDrop="Window_PreviewDrop" PreviewKeyDown="Window_PreviewKeyDown" SizeChanged="Window_SizeChanged" Loaded="MainWindowClipboardR1639_Loaded" Closed="MainWindowClipboardR1639_Closed" MaxWidth="1240" MaxHeight="700">
   <shell:WindowChrome.WindowChrome>
     <shell:WindowChrome CaptionHeight="0" ResizeBorderThickness="7" CornerRadius="0" GlassFrameThickness="0" UseAeroCaptionButtons="False" />
   </shell:WindowChrome.WindowChrome>
@@ -408,6 +408,45 @@
       <Setter Property="Padding" Value="10,6" />
       <Setter Property="MinHeight" Value="31" />
       <Setter Property="FontSize" Value="11" />
+    </Style>
+    <!-- MEDIADOCK_QUEUE_ACTION_BUTTONS_R1638 -->
+    <Style x:Key="QueueActionButtonR1638" TargetType="Button">
+      <Setter Property="Width" Value="28" />
+      <Setter Property="Height" Value="28" />
+      <Setter Property="Padding" Value="5" />
+      <Setter Property="Foreground" Value="{DynamicResource ThemePrimaryTextBrush}" />
+      <Setter Property="Background" Value="{DynamicResource ThemeSurfaceBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ThemeBorderBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="Cursor" Value="Hand" />
+      <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="Button">
+            <Border x:Name="QueueActionSurfaceR1638"
+                    Background="{TemplateBinding Background}"
+                    BorderBrush="{TemplateBinding BorderBrush}"
+                    BorderThickness="{TemplateBinding BorderThickness}"
+                    CornerRadius="14"
+                    Padding="{TemplateBinding Padding}">
+              <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+            </Border>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="QueueActionSurfaceR1638" Property="Background" Value="{DynamicResource ThemeHoverBrush}" />
+                <Setter TargetName="QueueActionSurfaceR1638" Property="BorderBrush" Value="{DynamicResource ThemeAccentBrush}" />
+              </Trigger>
+              <Trigger Property="IsPressed" Value="True">
+                <Setter TargetName="QueueActionSurfaceR1638" Property="Opacity" Value="0.78" />
+              </Trigger>
+              <Trigger Property="IsEnabled" Value="False">
+                <Setter TargetName="QueueActionSurfaceR1638" Property="Opacity" Value="0.38" />
+                <Setter Property="Cursor" Value="Arrow" />
+              </Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
     </Style>
     <Style x:Key="InspectorLabel" TargetType="TextBlock">
       <Setter Property="Foreground" Value="{DynamicResource ThemeMutedTextBrush}" />
@@ -1097,13 +1136,14 @@
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="34"/>
                             <ColumnDefinition Width="78"/>
-                            <ColumnDefinition Width="2.05*"/>
-                            <ColumnDefinition Width="0.82*"/>
-                            <ColumnDefinition Width="0.72*"/>
-                            <ColumnDefinition Width="1.18*"/>
-                            <ColumnDefinition Width="0.96*"/>
-                            <ColumnDefinition Width="0.74*"/>
-                            <ColumnDefinition Width="150"/>
+                            <ColumnDefinition Width="*" MinWidth="250"/>
+                            <ColumnDefinition Width="118"/>
+                            <ColumnDefinition Width="108"/>
+                            <ColumnDefinition Width="145"/>
+                            <ColumnDefinition Width="145"/>
+                            <ColumnDefinition Width="145"/>
+                            <ColumnDefinition Width="88"/>
+                            <ColumnDefinition Width="180"/>
                         </Grid.ColumnDefinitions>
                         <CheckBox Margin="9,0,0,0"
                                   VerticalAlignment="Center"
@@ -1113,10 +1153,11 @@
                         <TextBlock Grid.Column="2" Margin="7,0" VerticalAlignment="Center" Text="Title / Video Source" Foreground="{DynamicResource ThemeSecondaryTextBrush}" FontSize="9"/>
                         <TextBlock Grid.Column="3" VerticalAlignment="Center" Text="Download Format" Foreground="{DynamicResource ThemeSecondaryTextBrush}" FontSize="9"/>
                         <TextBlock Grid.Column="4" VerticalAlignment="Center" Text="Quality" Foreground="{DynamicResource ThemeSecondaryTextBrush}" FontSize="9"/>
-                        <TextBlock Grid.Column="5" VerticalAlignment="Center" Text="Clip Range" Foreground="{DynamicResource ThemeSecondaryTextBrush}" FontSize="9"/>
-                        <TextBlock Grid.Column="6" VerticalAlignment="Center" Text="Progress" Foreground="{DynamicResource ThemeSecondaryTextBrush}" FontSize="9"/>
-                        <TextBlock Grid.Column="7" VerticalAlignment="Center" Text="Status" Foreground="{DynamicResource ThemeSecondaryTextBrush}" FontSize="9"/>
-                        <TextBlock Grid.Column="8" HorizontalAlignment="Center" VerticalAlignment="Center" Text="Actions" Foreground="{DynamicResource ThemeSecondaryTextBrush}" FontSize="9"/>
+                        <TextBlock Grid.Column="5" VerticalAlignment="Center" Text="Audio / Dub" Foreground="{DynamicResource ThemeSecondaryTextBrush}" FontSize="9"/>
+                        <TextBlock Grid.Column="6" VerticalAlignment="Center" Text="Clip Range" Foreground="{DynamicResource ThemeSecondaryTextBrush}" FontSize="9"/>
+                        <TextBlock Grid.Column="7" VerticalAlignment="Center" Text="Progress" Foreground="{DynamicResource ThemeSecondaryTextBrush}" FontSize="9"/>
+                        <TextBlock Grid.Column="8" VerticalAlignment="Center" Text="Status" Foreground="{DynamicResource ThemeSecondaryTextBrush}" FontSize="9"/>
+                        <TextBlock Grid.Column="9" HorizontalAlignment="Center" VerticalAlignment="Center" Text="Actions" Foreground="{DynamicResource ThemeSecondaryTextBrush}" FontSize="9"/>
                     </Grid>
                 </Border>
 
@@ -1158,13 +1199,14 @@
                                                 <Grid.ColumnDefinitions>
                                                     <ColumnDefinition Width="34"/>
                                                     <ColumnDefinition Width="78"/>
-                                                    <ColumnDefinition Width="2.05*"/>
-                                                    <ColumnDefinition Width="0.82*"/>
-                                                    <ColumnDefinition Width="0.72*"/>
-                                                    <ColumnDefinition Width="1.18*"/>
-                                                    <ColumnDefinition Width="0.96*"/>
-                                                    <ColumnDefinition Width="0.74*"/>
-                                                    <ColumnDefinition Width="150"/>
+                                                    <ColumnDefinition Width="*" MinWidth="250"/>
+                                                    <ColumnDefinition Width="118"/>
+                                                    <ColumnDefinition Width="108"/>
+                                                    <ColumnDefinition Width="145"/>
+                                                    <ColumnDefinition Width="145"/>
+                                                    <ColumnDefinition Width="145"/>
+                                                    <ColumnDefinition Width="88"/>
+                                                    <ColumnDefinition Width="180"/>
                                                 </Grid.ColumnDefinitions>
 
                                                 <CheckBox Margin="9,0,0,0"
@@ -1184,11 +1226,14 @@
                                                     <Image Source="{Binding ThumbnailUrl}" Stretch="UniformToFill"/>
                                                 </Border>
 
-                                                <StackPanel Grid.Column="2" Margin="7,5,8,5" VerticalAlignment="Center">
+                                                <StackPanel Grid.Column="2" Margin="7,5,10,5" VerticalAlignment="Center" ClipToBounds="True">
                                                     <TextBlock Text="{Binding Title}"
                                                                Foreground="{DynamicResource ThemePrimaryTextBrush}"
                                                                FontSize="10"
                                                                FontWeight="SemiBold"
+                                                               LineHeight="14"
+                                                               MaxHeight="28"
+                                                               TextWrapping="Wrap"
                                                                TextTrimming="CharacterEllipsis"
                                                                ToolTip="{Binding Title}"/>
                                                     <TextBlock Margin="0,3,0,0"
@@ -1210,6 +1255,8 @@
                                                           SelectedValue="{Binding SelectedFormatR1629, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
                                                     <ComboBoxItem Content="MP4"/>
                                                     <ComboBoxItem Content="MP3"/>
+                                                    <ComboBoxItem Content="M4A"/>
+                                                    <ComboBoxItem Content="FLAC"/>
                                                 </ComboBox>
 
                                                 <ComboBox Grid.Column="4"
@@ -1240,7 +1287,19 @@
                                                     <ComboBoxItem Content="360p"/>
                                                 </ComboBox>
 
-                                                <StackPanel Grid.Column="5" Margin="0,3,7,3" VerticalAlignment="Center">
+                                                <ComboBox Grid.Column="5"
+                                                          Margin="4,0,7,0"
+                                                          VerticalAlignment="Center"
+                                                          MinHeight="32"
+                                                          Padding="7,4"
+                                                          Style="{StaticResource DarkComboBox}"
+                                                          ItemsSource="{Binding AvailableAudioChoicesR1638}"
+                                                          DisplayMemberPath="Label"
+                                                          SelectedItem="{Binding AudioChoice, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                          IsEnabled="{Binding CanChooseAudioR1638}"
+                                                          ToolTip="{Binding AudioDisplayTextR1638}"/>
+
+                                                <StackPanel Grid.Column="6" Margin="0,3,7,3" VerticalAlignment="Center">
                                                     <TextBlock Text="{Binding DurationDisplayText}"
                                                                Foreground="{DynamicResource ThemeMutedTextBrush}"
                                                                FontSize="7.8"
@@ -1270,7 +1329,7 @@
                                                     </StackPanel>
                                                 </StackPanel>
 
-                                                <Grid Grid.Column="6" Margin="0,0,9,0" VerticalAlignment="Center">
+                                                <Grid Grid.Column="7" Margin="0,0,9,0" VerticalAlignment="Center">
                                                     <Grid.RowDefinitions>
                                                         <RowDefinition Height="Auto"/>
                                                         <RowDefinition Height="4"/>
@@ -1287,7 +1346,7 @@
                                                                TextTrimming="CharacterEllipsis"/>
                                                 </Grid>
 
-                                                <StackPanel Grid.Column="7" Margin="0,0,5,0" VerticalAlignment="Center">
+                                                <StackPanel Grid.Column="8" Margin="0,0,5,0" VerticalAlignment="Center">
                                                     <TextBlock Text="{Binding Status}"
                                                                Foreground="{DynamicResource ThemePrimaryTextBrush}"
                                                                FontWeight="SemiBold"
@@ -1300,12 +1359,12 @@
                                                                TextTrimming="CharacterEllipsis"/>
                                                 </StackPanel>
 
-                                                <StackPanel Grid.Column="8"
+                                                <StackPanel Grid.Column="9"
                                                             Orientation="Horizontal"
                                                             HorizontalAlignment="Center"
                                                             VerticalAlignment="Center">
-                                                    <Button Width="23" Height="23" Margin="1"
-                                                            Style="{StaticResource DenseGhostButton}"
+                                                    <Button Width="28" Height="28" Margin="1"
+                                                            Style="{StaticResource QueueActionButtonR1638}"
                                                             Padding="3"
                                                             IsEnabled="{Binding CanStart}"
                                                             Click="QueueRowDownloadR1631_Click"
@@ -1313,24 +1372,24 @@
                                                             ToolTipService.ShowOnDisabled="True">
                                                         <Viewbox Width="13" Height="13"><Path Data="{StaticResource IconDownload}" Stroke="{DynamicResource ThemeAccentBrush}" StrokeThickness="1.6" Fill="Transparent"/></Viewbox>
                                                     </Button>
-                                                    <Button Width="23" Height="23" Margin="1"
-                                                            Style="{StaticResource DenseGhostButton}"
+                                                    <Button Width="28" Height="28" Margin="1"
+                                                            Style="{StaticResource QueueActionButtonR1638}"
                                                             Padding="3"
                                                             Click="QueueRowSubtitlesR1631_Click"
                                                             ToolTip="Download subtitles"
                                                             ToolTipService.ShowOnDisabled="True">
                                                         <Viewbox Width="13" Height="13"><Path Data="{StaticResource IconLibrary}" Stroke="{DynamicResource ThemePrimaryTextBrush}" StrokeThickness="1.5" Fill="Transparent"/></Viewbox>
                                                     </Button>
-                                                    <Button Width="23" Height="23" Margin="1"
-                                                            Style="{StaticResource DenseGhostButton}"
+                                                    <Button Width="28" Height="28" Margin="1"
+                                                            Style="{StaticResource QueueActionButtonR1638}"
                                                             Padding="3"
                                                             Click="QueueRowSourceLinkR1631_Click"
                                                             ToolTip="Copy source link"
                                                             ToolTipService.ShowOnDisabled="True">
                                                         <Viewbox Width="13" Height="13"><Path Data="{StaticResource IconLink}" Stroke="{DynamicResource ThemePrimaryTextBrush}" StrokeThickness="1.5" Fill="Transparent"/></Viewbox>
                                                     </Button>
-                                                    <Button Width="23" Height="23" Margin="1"
-                                                            Style="{StaticResource DenseGhostButton}"
+                                                    <Button Width="28" Height="28" Margin="1"
+                                                            Style="{StaticResource QueueActionButtonR1638}"
                                                             Padding="3"
                                                             IsEnabled="{Binding CanConvertToMp3}"
                                                             Click="QueueRowConvertMp3R1631_Click"
@@ -1338,8 +1397,8 @@
                                                             ToolTipService.ShowOnDisabled="True">
                                                         <Viewbox Width="13" Height="13"><Path Data="{StaticResource IconAudio}" Stroke="{DynamicResource ThemePrimaryTextBrush}" StrokeThickness="1.4" Fill="Transparent"/></Viewbox>
                                                     </Button>
-                                                    <Button Width="23" Height="23" Margin="1"
-                                                            Style="{StaticResource DenseGhostButton}"
+                                                    <Button Width="28" Height="28" Margin="1"
+                                                            Style="{StaticResource QueueActionButtonR1638}"
                                                             Padding="3"
                                                             IsEnabled="{Binding CanRedownloadAsMp4}"
                                                             Click="QueueRowConvertMp4R1631_Click"
@@ -1347,11 +1406,11 @@
                                                             ToolTipService.ShowOnDisabled="True">
                                                         <Viewbox Width="13" Height="13"><Path Data="{StaticResource IconScreen}" Stroke="{DynamicResource ThemePrimaryTextBrush}" StrokeThickness="1.5" Fill="Transparent"/></Viewbox>
                                                     </Button>
-                                                    <Button Width="23" Height="23" Margin="1"
-                                                            Style="{StaticResource DenseGhostButton}"
+                                                    <Button Width="28" Height="28" Margin="1"
+                                                            Style="{StaticResource QueueActionButtonR1638}"
                                                             Padding="3"
                                                             Click="QueueRowDeleteR1631_Click"
-                                                            ToolTip="Delete from queue"
+                                                            ToolTip="Remove from MediaDock or delete the downloaded file"
                                                             ToolTipService.ShowOnDisabled="True">
                                                         <Viewbox Width="13" Height="13"><Path Data="{StaticResource IconTrash}" Stroke="{DynamicResource ThemePrimaryTextBrush}" StrokeThickness="1.5" Fill="Transparent"/></Viewbox>
                                                     </Button>
