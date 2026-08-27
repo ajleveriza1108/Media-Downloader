@@ -13,7 +13,7 @@ using MediaDownloader.Infrastructure;
 
 namespace MediaDownloader.ViewModels;
 
-public sealed class MainWindowViewModel : ObservableObject
+public sealed partial class MainWindowViewModel : ObservableObject
 {
     // MEDIADOCK_BUILD_IDENTITY_BINDING_R1623
     public string BuildIdentityText =>
@@ -1957,7 +1957,9 @@ public sealed class MainWindowViewModel : ObservableObject
 
     private async Task DownloadQueueItemCoreR1630Async(DownloadQueueItem item, bool manageGlobalBusyR1630)
     {
-        if ((manageGlobalBusyR1630 && Busy) || item.Completed || string.IsNullOrWhiteSpace(item.SourceUrl))
+        ReconcileQueueItemArtifactR1640(item, announce: false);
+
+        if ((manageGlobalBusyR1630 && Busy) || !item.CanStart || string.IsNullOrWhiteSpace(item.SourceUrl))
         {
             return;
         }
@@ -3307,15 +3309,8 @@ var converted = new DownloadQueueItem(
         }
     }
 
-    private void RefreshCounterpartAvailability()
-    {
-        foreach (var item in DownloadQueue)
-        {
-            item.OutputFileAvailable = IsQueueOutputAvailable(item);
-            item.HasDownloadedMp3Counterpart = HasCompletedArtifact(item, OutputFormatKind.Mp3);
-            item.HasDownloadedMp4Counterpart = HasCompletedArtifact(item, OutputFormatKind.Mp4);
-        }
-    }
+    private void RefreshCounterpartAvailability() =>
+        ReconcileAllQueueArtifactsR1640(false);
 
     private bool HasCompletedArtifact(DownloadQueueItem sourceItem, OutputFormatKind targetKind)
     {

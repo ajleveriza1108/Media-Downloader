@@ -440,6 +440,7 @@ public partial class App : Application
         MediaDownloader.Core.Services.ClipboardMediaLinkPreferencesR1639.RunSelfTestR1639();
         MediaDownloader.Core.Services.YtDlpService.RunAudioOutputFormatSelfTestR1639();
         MediaDownloader.ViewModels.MainWindowViewModel.RunAudioTrialMappingSelfTestR1639();
+        MediaDownloader.Core.Services.QueueArtifactReconciliationServiceR1640.RunSelfTestR1640();
         MediaDownloader.ViewModels.MainWindowViewModel.RunEntitlementQueueContractSelfTestR1630();}
 
 

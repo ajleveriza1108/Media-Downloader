@@ -489,7 +489,10 @@ public sealed class DownloadQueueItem : ObservableObject
 
     public bool CanOpenFile => Completed && OutputFileAvailable;
 
-    public bool CanStart => !Completed && string.Equals(Status, "Ready", StringComparison.OrdinalIgnoreCase);
+    public bool CanStart => !Completed &&
+        (string.Equals(Status, "Ready", StringComparison.OrdinalIgnoreCase) ||
+         string.Equals(Status, "Missing", StringComparison.OrdinalIgnoreCase) ||
+         string.Equals(Status, "Partial found", StringComparison.OrdinalIgnoreCase));
     public bool CanConvertToMp3 => Completed && OutputKind == OutputFormatKind.Mp4 &&
         !string.IsNullOrWhiteSpace(OutputPath) && !HasDownloadedMp3Counterpart;
     public bool CanRedownloadAsMp4 => Completed && (OutputKind is OutputFormatKind.Mp3 or OutputFormatKind.M4a or OutputFormatKind.Flac) &&
