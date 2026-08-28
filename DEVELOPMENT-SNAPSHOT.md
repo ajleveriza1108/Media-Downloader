@@ -1,15 +1,17 @@
-# MediaDock R1.6.40 development snapshot
+# MediaDock R1.6.41 development snapshot
 
 Status: verified public-source and customer installer release; installed validation passed and the build is eligible for stable activation.
 
-R1.6.40:
-- Keeps Download, Stream, Convert, and Settings inside the existing MediaDock main window.
-- Makes Download Queue columns responsive and disables horizontal queue scrolling so normal controls are not cropped or hidden.
-- Keeps Title / Video Source and Audio / Dub flexible while Format, Quality, Clip Range, Progress, Status, Refresh, and Actions remain compact and visible.
-- Adds Refresh All beside Download Queue and Refresh on every row.
-- Reconciles persisted output paths plus MediaDock download/conversion folders for existing video/audio files.
-- Detects completed, converted, missing, and partial/in-progress output states and prevents silent duplicate downloads when a matching completed output already exists.
-- Preserves R1.6.39 Audio / Dub, Clip Range, M4A/FLAC, safe-delete, clipboard detection, trial accounting, and parallel-download behavior.
-- R1.6.40 customer distribution remains installer-only; no portable customer package is produced.
+R1.6.41:
+- Enables Stream and Convert navigation from the main header for licensed MediaDock users instead of hard-disabling those buttons.
+- Rewires the visible queue controls through dedicated R1.6.41 partial handlers; visible controls may not ship as dead/no-op entry points.
+- Unifies queue-row selection with bulk Download/Delete selection state.
+- Restores MKV in the row selector, download-format catalog, labels, and yt-dlp merge-container path.
+- Shows analyzed source-supported video quality choices instead of fixed unavailable resolutions; MP3 rows expose bitrate choices.
+- Keeps Audio / Dub, adds Full / Custom clip mode, and allows failed rows to be edited and retried.
+- Shows Open File only when an output exists and hides context-only Convert actions when they are not applicable.
+- Adds Default MP3 quality to Settings while preserving output folder, theme, concurrency, clipboard detection, watermark handling, updates, and diagnostics.
+- Preserves R1.6.40 responsive queue, Refresh/reconciliation, M4A/FLAC, safe-delete, trial accounting, and installer-only distribution.
+- R1.6.41 customer distribution remains installer-only; no portable customer package is produced.
 
 Commercial/private licensing, trial, entitlement, updater implementation, backend secrets, customer state, and installer implementation remain excluded from the public source repository.
