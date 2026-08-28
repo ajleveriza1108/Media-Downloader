@@ -441,6 +441,8 @@ public partial class App : Application
         MediaDownloader.Core.Services.YtDlpService.RunAudioOutputFormatSelfTestR1639();
         MediaDownloader.ViewModels.MainWindowViewModel.RunAudioTrialMappingSelfTestR1639();
         MediaDownloader.Core.Services.QueueArtifactReconciliationServiceR1640.RunSelfTestR1640();
+        MediaDownloader.Core.Services.OutputFormatPolicyR1641.RunSelfTestR1641();
+        MediaDownloader.Core.Models.DownloadQueueItem.RunFunctionalGuiSelfTestR1641();
         MediaDownloader.ViewModels.MainWindowViewModel.RunEntitlementQueueContractSelfTestR1630();}
 
 

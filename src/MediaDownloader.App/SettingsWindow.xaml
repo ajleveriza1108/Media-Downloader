@@ -417,6 +417,24 @@
                   </StackPanel>
                   <TextBlock Grid.Column="2" VerticalAlignment="Center" Foreground="{DynamicResource ThemeMutedTextBrush}" FontSize="8.3" TextWrapping="Wrap" Text="Choose 1 to 5 simultaneous queue downloads. MediaDock never exceeds 5." />
                 </Grid>
+                <Border Height="1" Margin="0,10" Background="{DynamicResource ThemeBorderBrush}" />
+                <!-- MEDIADOCK_DEFAULT_MP3_SETTING_R1641 -->
+                <Grid>
+                  <Grid.ColumnDefinitions><ColumnDefinition Width="170" /><ColumnDefinition Width="12" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                  <StackPanel>
+                    <TextBlock Text="Default MP3 quality" FontWeight="SemiBold" FontSize="10.5" />
+                    <ComboBox Margin="0,5,0,0"
+                              Style="{StaticResource SettingComboBox}"
+                              ItemsSource="{Binding Mp3Bitrates}"
+                              SelectedItem="{Binding SelectedMp3Bitrate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                  </StackPanel>
+                  <TextBlock Grid.Column="2"
+                             VerticalAlignment="Center"
+                             Foreground="{DynamicResource ThemeMutedTextBrush}"
+                             FontSize="8.3"
+                             TextWrapping="Wrap"
+                             Text="Used for new MP3 downloads and queue items. Individual MP3 rows can still choose 320, 256, 192, or 128 kbps." />
+                </Grid>
               </StackPanel>
             </Border>
 

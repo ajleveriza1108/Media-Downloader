@@ -115,6 +115,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         foreach (var format in new[]
         {
             new OutputFormatChoice(OutputFormatKind.Mp4, "MP4"),
+            new OutputFormatChoice(OutputFormatKind.Mkv, "MKV"),
             new OutputFormatChoice(OutputFormatKind.Mp3, "MP3"),
             new OutputFormatChoice(OutputFormatKind.M4a, "M4A"),
             new OutputFormatChoice(OutputFormatKind.Flac, "FLAC")
@@ -546,6 +547,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
     public bool CanGoNextQueuePage => false;
 
     // R1.6.30: all trial/premium behavior follows the shared license entitlement.
+    // MEDIADOCK_FUNCTIONAL_GUI_VIEWMODEL_HOOKS_R1641
     // MEDIADOCK_ENTITLEMENT_QUEUE_CONSISTENCY_R1630
     public bool IsTrialMode => !LicenseEntitlementState.IsLicensed;
     public bool PremiumWorkspacesEnabled => LicenseEntitlementState.IsLicensed;
@@ -997,6 +999,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private static string OutputFormatLabelR1639(OutputFormatKind outputKind) =>
         outputKind switch
         {
+            OutputFormatKind.Mkv => "MKV",
             OutputFormatKind.Mp3 => "MP3",
             OutputFormatKind.M4a => "M4A",
             OutputFormatKind.Flac => "FLAC",

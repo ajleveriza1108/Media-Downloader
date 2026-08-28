@@ -916,7 +916,7 @@ public sealed class YtDlpService
         args.Add("--format");
         args.Add(BuildFormatSelector(qualityChoice, audioChoice, preferTikTokWatermarkFree));
         args.Add("--merge-output-format");
-        args.Add("mp4");
+        args.Add(OutputFormatPolicyR1641.MergeContainer(outputFormat));
     }
 
     private List<string> BuildCommonArguments()

@@ -536,7 +536,7 @@
             <TextBlock Text="Download" FontWeight="SemiBold" />
           </StackPanel>
         </Button>
-        <Button x:Name="StreamViewButton" Margin="7,0,0,0" Style="{StaticResource DenseGhostButton}" Padding="14,7" Click="ShowStreamR1626_Click" IsEnabled="False" ToolTip="Stream is available after MediaDock license activation. Disabled during trial.">
+        <Button x:Name="StreamViewButton" Margin="7,0,0,0" Style="{StaticResource DenseGhostButton}" Padding="14,7" Click="ShowStreamR1626_Click" IsEnabled="{Binding PremiumWorkspacesEnabled}" ToolTip="{Binding PremiumStreamNavigationHintR1641}" ToolTipService.ShowOnDisabled="True">
           <StackPanel Orientation="Horizontal">
             <Viewbox Width="14" Height="14" Margin="0,0,6,0">
               <Path Data="{StaticResource IconStream}" Stroke="{DynamicResource ThemeAccentBrush}" StrokeThickness="1.6" Fill="Transparent" />
@@ -544,7 +544,7 @@
             <TextBlock Text="Stream" FontWeight="SemiBold" />
           </StackPanel>
         </Button>
-        <Button x:Name="ConvertViewButton" Margin="7,0,0,0" Style="{StaticResource DenseGhostButton}" Padding="14,7" Click="ShowConvertR1626_Click" IsEnabled="False" ToolTip="Convert is available after MediaDock license activation. Disabled during trial.">
+        <Button x:Name="ConvertViewButton" Margin="7,0,0,0" Style="{StaticResource DenseGhostButton}" Padding="14,7" Click="ShowConvertR1626_Click" IsEnabled="{Binding PremiumWorkspacesEnabled}" ToolTip="{Binding PremiumConvertNavigationHintR1641}" ToolTipService.ShowOnDisabled="True">
           <StackPanel Orientation="Horizontal">
             <Viewbox Width="14" Height="14" Margin="0,0,6,0">
               <Path Data="{StaticResource IconConvert}" Stroke="{DynamicResource ThemeAccentBrush}" StrokeThickness="1.6" Fill="Transparent" />
@@ -565,7 +565,7 @@
         <Button Style="{StaticResource TitleBarButton}" Click="Minimize_Click">
           <Path Width="16" Height="16" Stretch="Uniform" Stroke="{DynamicResource ThemePrimaryTextBrush}" StrokeThickness="1.5" Data="M 2,8 L 14,8" />
         </Button>
-        <Button Style="{StaticResource TitleBarButton}" Click="MaximizeRestore_Click" Visibility="Collapsed">
+        <Button Style="{StaticResource TitleBarButton}" Click="MaximizeRestore_Click">
           <Path Width="16" Height="16" Stretch="Uniform" Stroke="{DynamicResource ThemePrimaryTextBrush}" StrokeThickness="1.5" Data="M 2,2 L 14,2 L 14,14 L 2,14 Z" />
         </Button>
         <Button Style="{StaticResource TitleBarCloseButton}" Click="Close_Click" ToolTip="Close MediaDock">
@@ -1135,14 +1135,15 @@
                     <WrapPanel x:Name="QueueWorkspaceBulkActionsR1629"
                                Grid.Column="2"
                                HorizontalAlignment="Right">
-                        <Button Style="{StaticResource DenseGhostButton}" Padding="9,5" Click="QueueWorkspaceDownloadSelectedR1629_Click" Content="Download Selected"/>
-                        <Button Margin="5,0,0,0" Style="{StaticResource DenseGhostButton}" Padding="9,5" Click="QueueWorkspaceDeleteSelectedR1629_Click" Content="Delete Selected"/>
-                        <Button Margin="5,0,0,0" Style="{StaticResource DenseGhostButton}" Padding="9,5" Click="QueueWorkspaceDeleteCompletedR1629_Click" Content="Delete Completed"/>
-                        <Button Margin="5,0,0,0" Style="{StaticResource DenseGhostButton}" Padding="9,5" Click="QueueWorkspaceDeleteAllR1629_Click" Content="Delete All"/>
+                        <Button Style="{StaticResource DenseGhostButton}" Padding="9,5" Click="QueueWorkspaceDownloadSelectedR1641_Click" Content="Download Selected"/>
+                        <Button Margin="5,0,0,0" Style="{StaticResource DenseGhostButton}" Padding="9,5" Click="QueueWorkspaceDeleteSelectedR1641_Click" Content="Delete Selected"/>
+                        <Button Margin="5,0,0,0" Style="{StaticResource DenseGhostButton}" Padding="9,5" Click="QueueWorkspaceDeleteCompletedR1641_Click" Content="Delete Completed"/>
+                        <Button Margin="5,0,0,0" Style="{StaticResource DenseGhostButton}" Padding="9,5" Click="QueueWorkspaceDeleteAllR1641_Click" Content="Delete All"/>
                     </WrapPanel>
                 </Grid>
 
-                                <!-- MEDIADOCK_QUEUE_RESPONSIVE_REFRESH_R1640 -->
+                                <!-- MEDIADOCK_FUNCTIONAL_GUI_XAML_R1641 -->
+                <!-- MEDIADOCK_QUEUE_RESPONSIVE_REFRESH_R1640 -->
                 <!-- MEDIADOCK_QUEUE_COMPACT_ICON_ACTIONS_R1631 -->
                 <Border Grid.Row="6"
                         Background="{DynamicResource ThemePanelBackgroundBrush}"
@@ -1164,11 +1165,11 @@
                         </Grid.ColumnDefinitions>
                         <CheckBox Margin="9,0,0,0"
                                   VerticalAlignment="Center"
-                                  Click="QueueSelectAllR1629_Click"
+                                  Click="QueueSelectAllR1641_Click"
                                   ToolTip="Select all queue items"/>
                         <TextBlock Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center" Text="Thumbnail" Foreground="{DynamicResource ThemeSecondaryTextBrush}" FontSize="9"/>
                         <TextBlock Grid.Column="2" Margin="7,0" VerticalAlignment="Center" Text="Title / Video Source" Foreground="{DynamicResource ThemeSecondaryTextBrush}" FontSize="9"/>
-                        <TextBlock Grid.Column="3" VerticalAlignment="Center" Text="Download Format" Foreground="{DynamicResource ThemeSecondaryTextBrush}" FontSize="9"/>
+                        <TextBlock Grid.Column="3" VerticalAlignment="Center" Text="Format" Foreground="{DynamicResource ThemeSecondaryTextBrush}" FontSize="9"/>
                         <TextBlock Grid.Column="4" VerticalAlignment="Center" Text="Quality" Foreground="{DynamicResource ThemeSecondaryTextBrush}" FontSize="9"/>
                         <TextBlock Grid.Column="5" VerticalAlignment="Center" Text="Audio / Dub" Foreground="{DynamicResource ThemeSecondaryTextBrush}" FontSize="9"/>
                         <TextBlock Grid.Column="6" VerticalAlignment="Center" Text="Clip Range" Foreground="{DynamicResource ThemeSecondaryTextBrush}" FontSize="9"/>
@@ -1261,48 +1262,29 @@
                                                                ToolTip="{Binding Source}"/>
                                                 </StackPanel>
 
-                                                <ComboBox Grid.Column="3"
+                                                                                                <ComboBox Grid.Column="3"
                                                           Margin="4,0,7,0"
                                                           VerticalAlignment="Center"
                                                           Style="{StaticResource DarkComboBox}"
-                                                          IsEnabled="{Binding CanStart}"
                                                           MinHeight="32"
                                                           Padding="7,4"
-                                                          SelectedValuePath="Content"
-                                                          SelectedValue="{Binding SelectedFormatR1629, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                                                    <ComboBoxItem Content="MP4"/>
-                                                    <ComboBoxItem Content="MP3"/>
-                                                    <ComboBoxItem Content="M4A"/>
-                                                    <ComboBoxItem Content="FLAC"/>
-                                                </ComboBox>
+                                                          ItemsSource="{Binding AvailableOutputFormatsR1641}"
+                                                          SelectedItem="{Binding SelectedFormatR1641, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                          IsEnabled="{Binding CanEditQueuedOptionsR1641}"
+                                                          ToolTip="{Binding QueueInteractionHintR1641}"
+                                                          ToolTipService.ShowOnDisabled="True"/>
 
-                                                <ComboBox Grid.Column="4"
+                                                                                                <ComboBox Grid.Column="4"
                                                           Margin="0,0,7,0"
                                                           VerticalAlignment="Center"
+                                                          Style="{StaticResource DarkComboBox}"
                                                           MinHeight="32"
                                                           Padding="7,4"
-                                                          SelectedValuePath="Content"
-                                                          SelectedValue="{Binding SelectedQualityR1629, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                                                    <ComboBox.Style>
-                                                        <Style TargetType="ComboBox" BasedOn="{StaticResource DarkComboBox}">
-                                                            <Style.Triggers>
-                                                                <DataTrigger Binding="{Binding CanStart}" Value="False">
-                                                                    <Setter Property="IsEnabled" Value="False"/>
-                                                                </DataTrigger>
-                                                                <DataTrigger Binding="{Binding SelectedFormatR1629}" Value="MP3">
-                                                                    <Setter Property="IsEnabled" Value="False"/>
-                                                                </DataTrigger>
-                                                            </Style.Triggers>
-                                                        </Style>
-                                                    </ComboBox.Style>
-                                                    <ComboBoxItem Content="Highest"/>
-                                                    <ComboBoxItem Content="2160p"/>
-                                                    <ComboBoxItem Content="1440p"/>
-                                                    <ComboBoxItem Content="1080p"/>
-                                                    <ComboBoxItem Content="720p"/>
-                                                    <ComboBoxItem Content="480p"/>
-                                                    <ComboBoxItem Content="360p"/>
-                                                </ComboBox>
+                                                          ItemsSource="{Binding AvailableQualityOptionsR1641}"
+                                                          SelectedItem="{Binding SelectedQualityR1641, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                          IsEnabled="{Binding CanEditQueuedOptionsR1641}"
+                                                          ToolTip="{Binding QueueInteractionHintR1641}"
+                                                          ToolTipService.ShowOnDisabled="True"/>
 
                                                 <ComboBox Grid.Column="5"
                                                           Margin="4,0,7,0"
@@ -1316,12 +1298,36 @@
                                                           IsEnabled="{Binding CanChooseAudioR1638}"
                                                           ToolTip="{Binding AudioDisplayTextR1638}"/>
 
-                                                <StackPanel Grid.Column="6" Margin="0,3,7,3" VerticalAlignment="Center">
-                                                    <TextBlock Text="{Binding DurationDisplayText}"
-                                                               Foreground="{DynamicResource ThemeMutedTextBrush}"
-                                                               FontSize="7.8"
-                                                               HorizontalAlignment="Center"/>
-                                                    <StackPanel Margin="0,3,0,0" Orientation="Horizontal" HorizontalAlignment="Center">
+                                                <StackPanel Grid.Column="6" Margin="0,2,7,2" VerticalAlignment="Center">
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <ComboBox Width="58"
+                                                                  HorizontalAlignment="Left"
+                                                                  MinHeight="23"
+                                                                  Padding="5,2"
+                                                                  Style="{StaticResource DarkComboBox}"
+                                                                  IsEnabled="{Binding CanEditQueuedOptionsR1641}"
+                                                                  SelectedValuePath="Content"
+                                                                  SelectedValue="{Binding SelectedClipModeR1641, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                                  ToolTip="{Binding QueueInteractionHintR1641}"
+                                                                  ToolTipService.ShowOnDisabled="True">
+                                                            <ComboBoxItem Content="Full"/>
+                                                            <ComboBoxItem Content="Custom"/>
+                                                        </ComboBox>
+                                                        <TextBlock Grid.Column="1"
+                                                                   Margin="4,0,0,0"
+                                                                   Text="{Binding DurationText}"
+                                                                   Foreground="{DynamicResource ThemeMutedTextBrush}"
+                                                                   FontSize="7.8"
+                                                                   VerticalAlignment="Center"/>
+                                                    </Grid>
+                                                    <StackPanel Margin="0,3,0,0"
+                                                                Orientation="Horizontal"
+                                                                HorizontalAlignment="Center"
+                                                                IsEnabled="{Binding IsCustomClipR1641}">
                                                         <TextBox Width="39"
                                                                  Style="{StaticResource QueueTitleTextBox}"
                                                                  FontSize="8.5"
@@ -1329,9 +1335,8 @@
                                                                  Background="{DynamicResource ThemeInputBackgroundBrush}"
                                                                  BorderBrush="{DynamicResource ThemeBorderBrush}"
                                                                  TextAlignment="Center"
-                                                                 IsEnabled="{Binding CanStart}"
                                                                  Text="{Binding ClipStartText, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
-                                                                 ToolTip="Start time (mm:ss or hh:mm:ss)"/>
+                                                                 ToolTip="Custom clip start (mm:ss or hh:mm:ss)"/>
                                                         <TextBlock Margin="4,0" Text="→" VerticalAlignment="Center" Foreground="{DynamicResource ThemeMutedTextBrush}" FontSize="8"/>
                                                         <TextBox Width="39"
                                                                  Style="{StaticResource QueueTitleTextBox}"
@@ -1340,9 +1345,8 @@
                                                                  Background="{DynamicResource ThemeInputBackgroundBrush}"
                                                                  BorderBrush="{DynamicResource ThemeBorderBrush}"
                                                                  TextAlignment="Center"
-                                                                 IsEnabled="{Binding CanStart}"
                                                                  Text="{Binding ClipEndText, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
-                                                                 ToolTip="End time; defaults to the detected full video length"/>
+                                                                 ToolTip="Custom clip end (mm:ss or hh:mm:ss)"/>
                                                     </StackPanel>
                                                 </StackPanel>
 
@@ -1370,73 +1374,74 @@
                                                                FontSize="9"
                                                                TextTrimming="CharacterEllipsis"/>
                                                     <TextBlock Margin="0,3,0,0"
-                                                               Text="{Binding SpeedText}"
+                                                               Text="{Binding StatusDetailTextR1641}"
                                                                Foreground="{DynamicResource ThemeAccentBrush}"
                                                                FontSize="8"
                                                                TextTrimming="CharacterEllipsis"/>
                                                 </StackPanel>
 
-                                                <StackPanel Grid.Column="9"
+                                                                                                <StackPanel Grid.Column="9"
                                                             Orientation="Horizontal"
                                                             HorizontalAlignment="Center"
                                                             VerticalAlignment="Center">
-                                                    <Button Width="24" Height="24" Margin="1"
+                                                    <Button Width="28" Height="28" Margin="1"
                                                             Style="{StaticResource QueueActionButtonR1638}"
-                                                            Padding="3"
-                                                            IsEnabled="{Binding CanStart}"
-                                                            Click="QueueRowDownloadR1631_Click"
-                                                            ToolTip="Download"
-                                                            ToolTipService.ShowOnDisabled="True">
+                                                            Padding="4"
+                                                            Click="QueueRowDownloadR1641_Click"
+                                                            Visibility="{Binding CanStart, Converter={StaticResource BoolToVisibility}}"
+                                                            ToolTip="{Binding QueueInteractionHintR1641}">
                                                         <Viewbox Width="13" Height="13"><Path Data="{StaticResource IconDownload}" Stroke="{DynamicResource ThemeAccentBrush}" StrokeThickness="1.6" Fill="Transparent"/></Viewbox>
                                                     </Button>
-                                                    <Button Width="24" Height="24" Margin="1"
+                                                    <Button Width="28" Height="28" Margin="1"
                                                             Style="{StaticResource QueueActionButtonR1638}"
-                                                            Padding="3"
-                                                            Click="QueueRowSubtitlesR1631_Click"
-                                                            ToolTip="Download subtitles"
-                                                            ToolTipService.ShowOnDisabled="True">
+                                                            Padding="4"
+                                                            Click="QueueRowSubtitlesR1641_Click"
+                                                            ToolTip="Download subtitles for this source">
                                                         <Viewbox Width="13" Height="13"><Path Data="{StaticResource IconLibrary}" Stroke="{DynamicResource ThemePrimaryTextBrush}" StrokeThickness="1.5" Fill="Transparent"/></Viewbox>
                                                     </Button>
-                                                    <Button Width="24" Height="24" Margin="1"
+                                                    <Button Width="28" Height="28" Margin="1"
                                                             Style="{StaticResource QueueActionButtonR1638}"
-                                                            Padding="3"
-                                                            Click="QueueRowSourceLinkR1631_Click"
-                                                            ToolTip="Copy source link"
-                                                            ToolTipService.ShowOnDisabled="True">
+                                                            Padding="4"
+                                                            Click="QueueRowSourceLinkR1641_Click"
+                                                            ToolTip="Copy source link">
                                                         <Viewbox Width="13" Height="13"><Path Data="{StaticResource IconLink}" Stroke="{DynamicResource ThemePrimaryTextBrush}" StrokeThickness="1.5" Fill="Transparent"/></Viewbox>
                                                     </Button>
-                                                    <Button Width="24" Height="24" Margin="1"
+                                                    <Button Width="28" Height="28" Margin="1"
                                                             Style="{StaticResource QueueActionButtonR1638}"
-                                                            Padding="3"
-                                                            IsEnabled="{Binding CanConvertToMp3}"
-                                                            Click="QueueRowConvertMp3R1631_Click"
-                                                            ToolTip="Convert to MP3"
-                                                            ToolTipService.ShowOnDisabled="True">
+                                                            Padding="4"
+                                                            Click="QueueRowOpenFileR1641_Click"
+                                                            Visibility="{Binding CanOpenFile, Converter={StaticResource BoolToVisibility}}"
+                                                            ToolTip="Open downloaded file">
+                                                        <Viewbox Width="13" Height="13"><Path Data="{StaticResource IconOpenFile}" Stroke="{DynamicResource ThemeSuccessBrush}" StrokeThickness="1.5" Fill="Transparent"/></Viewbox>
+                                                    </Button>
+                                                    <Button Width="28" Height="28" Margin="1"
+                                                            Style="{StaticResource QueueActionButtonR1638}"
+                                                            Padding="4"
+                                                            Click="QueueRowConvertMp3R1641_Click"
+                                                            Visibility="{Binding CanConvertToMp3, Converter={StaticResource BoolToVisibility}}"
+                                                            ToolTip="Convert downloaded video to MP3">
                                                         <Viewbox Width="13" Height="13"><Path Data="{StaticResource IconAudio}" Stroke="{DynamicResource ThemePrimaryTextBrush}" StrokeThickness="1.4" Fill="Transparent"/></Viewbox>
                                                     </Button>
-                                                    <Button Width="24" Height="24" Margin="1"
+                                                    <Button Width="28" Height="28" Margin="1"
                                                             Style="{StaticResource QueueActionButtonR1638}"
-                                                            Padding="3"
-                                                            IsEnabled="{Binding CanRedownloadAsMp4}"
-                                                            Click="QueueRowConvertMp4R1631_Click"
-                                                            ToolTip="Download as MP4"
-                                                            ToolTipService.ShowOnDisabled="True">
+                                                            Padding="4"
+                                                            Click="QueueRowConvertMp4R1641_Click"
+                                                            Visibility="{Binding CanRedownloadAsMp4, Converter={StaticResource BoolToVisibility}}"
+                                                            ToolTip="Download this source as MP4">
                                                         <Viewbox Width="13" Height="13"><Path Data="{StaticResource IconScreen}" Stroke="{DynamicResource ThemePrimaryTextBrush}" StrokeThickness="1.5" Fill="Transparent"/></Viewbox>
                                                     </Button>
-                                                                                                        <Button Width="24" Height="24" Margin="1"
+                                                    <Button Width="28" Height="28" Margin="1"
                                                             Style="{StaticResource QueueActionButtonR1638}"
-                                                            Padding="3"
-                                                            Click="QueueRowRefreshR1640_Click"
-                                                            ToolTip="Refresh file status"
-                                                            ToolTipService.ShowOnDisabled="True">
+                                                            Padding="4"
+                                                            Click="QueueRowRefreshR1641_Click"
+                                                            ToolTip="Refresh downloaded / converted file status">
                                                         <Viewbox Width="12" Height="12"><Path Data="{StaticResource IconRefresh}" Stroke="{DynamicResource ThemeAccentBrush}" StrokeThickness="1.5" Fill="Transparent"/></Viewbox>
                                                     </Button>
-<Button Width="24" Height="24" Margin="1"
+                                                    <Button Width="28" Height="28" Margin="1"
                                                             Style="{StaticResource QueueActionButtonR1638}"
-                                                            Padding="3"
-                                                            Click="QueueRowDeleteR1631_Click"
-                                                            ToolTip="Remove from MediaDock or delete the downloaded file"
-                                                            ToolTipService.ShowOnDisabled="True">
+                                                            Padding="4"
+                                                            Click="QueueRowDeleteR1641_Click"
+                                                            ToolTip="Remove from MediaDock or delete the downloaded file">
                                                         <Viewbox Width="13" Height="13"><Path Data="{StaticResource IconTrash}" Stroke="{DynamicResource ThemePrimaryTextBrush}" StrokeThickness="1.5" Fill="Transparent"/></Viewbox>
                                                     </Button>
                                                 </StackPanel>
@@ -1449,14 +1454,15 @@
                     </ScrollViewer>
                 </Border>
 
-                                <Button x:Name="QueueWorkspaceDownloadReadyR1629"
+                                                <!-- MEDIADOCK_START_QUEUE_ENABLEMENT_R1641 -->
+                <Button x:Name="QueueWorkspaceDownloadReadyR1629"
                         Grid.Row="9"
                         HorizontalAlignment="Right"
                         MinWidth="132"
                         Padding="14,7"
-                        Click="QueueWorkspaceDownloadReadyR1629_Click"
-                        Content="Download Ready"
-                        ToolTip="Available when the queue has items and MediaDock is idle."
+                        Click="QueueWorkspaceStartR1641_Click"
+                        Content="Start Queue"
+                        ToolTip="Starts selected ready items when any are selected; otherwise starts all ready items."
                         ToolTipService.ShowOnDisabled="True">
                     <Button.Style>
                         <Style TargetType="Button" BasedOn="{StaticResource NeonPrimaryButton}">

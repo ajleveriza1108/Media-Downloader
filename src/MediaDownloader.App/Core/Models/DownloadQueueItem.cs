@@ -2,7 +2,7 @@ using MediaDownloader.Infrastructure;
 
 namespace MediaDownloader.Core.Models;
 
-public sealed class DownloadQueueItem : ObservableObject
+public sealed partial class DownloadQueueItem : ObservableObject
 {
     private string _title;
     private double _progressPercent;
@@ -284,7 +284,13 @@ public sealed class DownloadQueueItem : ObservableObject
     public bool IsSelected
     {
         get => _isSelected;
-        set => SetProperty(ref _isSelected, value);
+        set
+        {
+            if (SetProperty(ref _isSelected, value))
+            {
+                OnPropertyChanged(nameof(IsSelectedR1629));
+            }
+        }
     }
 
     public string Quality
@@ -308,6 +314,10 @@ public sealed class DownloadQueueItem : ObservableObject
             {
                 OnPropertyChanged(nameof(CanConvertToMp3));
                 OnPropertyChanged(nameof(CanRedownloadAsMp4));
+                OnPropertyChanged(nameof(SelectedFormatR1641));
+                OnPropertyChanged(nameof(AvailableQualityOptionsR1641));
+                OnPropertyChanged(nameof(SelectedQualityR1641));
+                OnPropertyChanged(nameof(QueueInteractionHintR1641));
             }
         }
     }
@@ -315,7 +325,13 @@ public sealed class DownloadQueueItem : ObservableObject
     public int Mp3BitrateKbps
     {
         get => _mp3BitrateKbps;
-        set => SetProperty(ref _mp3BitrateKbps, value);
+        set
+        {
+            if (SetProperty(ref _mp3BitrateKbps, value))
+            {
+                OnPropertyChanged(nameof(SelectedQualityR1641));
+            }
+        }
     }
 
     public QualityChoice? QualityChoice
@@ -389,7 +405,14 @@ public sealed class DownloadQueueItem : ObservableObject
     public MediaInfo? MediaSnapshot
     {
         get => _mediaSnapshot;
-        set => SetProperty(ref _mediaSnapshot, value);
+        set
+        {
+            if (SetProperty(ref _mediaSnapshot, value))
+            {
+                OnPropertyChanged(nameof(AvailableQualityOptionsR1641));
+                OnPropertyChanged(nameof(SelectedQualityR1641));
+            }
+        }
     }
 
     public double ProgressPercent
@@ -407,6 +430,9 @@ public sealed class DownloadQueueItem : ObservableObject
             {
                 OnPropertyChanged(nameof(CanStart));
                 OnPropertyChanged(nameof(CanChooseAudioR1638));
+                OnPropertyChanged(nameof(CanEditQueuedOptionsR1641));
+                OnPropertyChanged(nameof(QueueInteractionHintR1641));
+                OnPropertyChanged(nameof(StatusDetailTextR1641));
             }
         }
     }
@@ -420,7 +446,13 @@ public sealed class DownloadQueueItem : ObservableObject
     public string SpeedText
     {
         get => _speedText;
-        set => SetProperty(ref _speedText, value);
+        set
+        {
+            if (SetProperty(ref _speedText, value))
+            {
+                OnPropertyChanged(nameof(StatusDetailTextR1641));
+            }
+        }
     }
 
     public string OutputPath
@@ -432,6 +464,7 @@ public sealed class DownloadQueueItem : ObservableObject
             {
                 OnPropertyChanged(nameof(CanConvertToMp3));
                 OnPropertyChanged(nameof(CanRedownloadAsMp4));
+                OnPropertyChanged(nameof(StatusDetailTextR1641));
             }
         }
     }
@@ -447,6 +480,9 @@ public sealed class DownloadQueueItem : ObservableObject
                 OnPropertyChanged(nameof(CanOpenFile));
                 OnPropertyChanged(nameof(CanConvertToMp3));
                 OnPropertyChanged(nameof(CanRedownloadAsMp4));
+                OnPropertyChanged(nameof(CanEditQueuedOptionsR1641));
+                OnPropertyChanged(nameof(QueueInteractionHintR1641));
+                OnPropertyChanged(nameof(StatusDetailTextR1641));
             }
         }
     }
@@ -492,22 +528,25 @@ public sealed class DownloadQueueItem : ObservableObject
     public bool CanStart => !Completed &&
         (string.Equals(Status, "Ready", StringComparison.OrdinalIgnoreCase) ||
          string.Equals(Status, "Missing", StringComparison.OrdinalIgnoreCase) ||
-         string.Equals(Status, "Partial found", StringComparison.OrdinalIgnoreCase));
-    public bool CanConvertToMp3 => Completed && OutputKind == OutputFormatKind.Mp4 &&
+         string.Equals(Status, "Partial found", StringComparison.OrdinalIgnoreCase) ||
+         string.Equals(Status, "Failed", StringComparison.OrdinalIgnoreCase));
+    public bool CanConvertToMp3 => Completed && (OutputKind is OutputFormatKind.Mp4 or OutputFormatKind.Mkv) &&
         !string.IsNullOrWhiteSpace(OutputPath) && !HasDownloadedMp3Counterpart;
-    public bool CanRedownloadAsMp4 => Completed && (OutputKind is OutputFormatKind.Mp3 or OutputFormatKind.M4a or OutputFormatKind.Flac) &&
+    public bool CanRedownloadAsMp4 => Completed &&
+        (OutputKind is OutputFormatKind.Mp3 or OutputFormatKind.M4a or OutputFormatKind.Flac) &&
         !string.IsNullOrWhiteSpace(SourceUrl) && !HasDownloadedMp4Counterpart;
 
+    // MEDIADOCK_FUNCTIONAL_GUI_MODEL_HOOKS_R1641
     // MEDIADOCK_QUEUE_ROW_STATE_R1629
-    private bool _isSelectedR1629;
+
     private string _selectedFormatR1629 = string.Empty;
     private string _selectedQualityR1629 = string.Empty;
 
     [System.Text.Json.Serialization.JsonIgnore]
     public bool IsSelectedR1629
     {
-        get => _isSelectedR1629;
-        set => SetProperty(ref _isSelectedR1629, value);
+        get => IsSelected;
+        set => IsSelected = value;
     }
 
     [System.Text.Json.Serialization.JsonIgnore]
