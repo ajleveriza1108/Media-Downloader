@@ -7,10 +7,10 @@
     <RootNamespace>MediaDownloader</RootNamespace>
     <ApplicationIcon>Assets\MediaDock.ico</ApplicationIcon>
     <NoWarn>$(NoWarn);WPF0001</NoWarn>
-      <Version>1.6.41</Version>
-      <AssemblyVersion>1.6.41.0</AssemblyVersion>
-      <FileVersion>1.6.41.0</FileVersion>
-      <InformationalVersion>R1.6.41</InformationalVersion>
+      <Version>1.6.44</Version>
+      <AssemblyVersion>1.6.44.0</AssemblyVersion>
+      <FileVersion>1.6.44.0</FileVersion>
+      <InformationalVersion>R1.6.44</InformationalVersion>
       <Features>$(Features);experimental-data-section-string-literals=100</Features>
   </PropertyGroup>
   <ItemGroup>
@@ -23,5 +23,8 @@
     <Content Include="Assets\MediaDock-logo.svg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="MonoTorrent" Version="3.0.2" />
   </ItemGroup>
 </Project>

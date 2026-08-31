@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2172" height="724" viewBox="0 0 2172 724" fill="none">
+  <defs>
+    <linearGradient id="hexStroke" x1="88" y1="72" x2="514" y2="648" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#37E6FF"/>
+      <stop offset="1" stop-color="#1958FF"/>
+    </linearGradient>
+    <linearGradient id="blueGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#2DE2FF"/>
+      <stop offset="1" stop-color="#155DFF"/>
+    </linearGradient>
+    <linearGradient id="dockGrad" x1="168" y1="430" x2="452" y2="590" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#8AF4FF"/>
+      <stop offset="0.45" stop-color="#32D0FF"/>
+      <stop offset="1" stop-color="#1766FF"/>
+    </linearGradient>
+    <linearGradient id="sheetGrad" x1="234" y1="170" x2="430" y2="354" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#32E5FF"/>
+      <stop offset="1" stop-color="#165FFF"/>
+    </linearGradient>
+    <linearGradient id="arrowGrad" x1="275" y1="360" x2="365" y2="500" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#54EEFF"/>
+      <stop offset="1" stop-color="#1670FF"/>
+    </linearGradient>
+    <filter id="softShadow" x="0" y="0" width="640" height="724" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="8" stdDeviation="16" flood-color="#0B1C46" flood-opacity="0.35"/>
+    </filter>
+    <filter id="textShadow" x="0" y="0" width="2172" height="724" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#08142F" flood-opacity="0.22"/>
+    </filter>
+    <style>
+      .brand { font-family: Inter, Segoe UI, Arial, sans-serif; font-weight: 800; }
+      .tag { font-family: Inter, Segoe UI, Arial, sans-serif; font-weight: 600; }
+    </style>
+  </defs>
+
+  <g filter="url(#softShadow)">
+    <path d="M353 63C368 63 382 67 394 75L515 145C541 160 557 187 557 217V507C557 537 541 564 515 579L394 649C382 657 368 661 353 661H344C330 661 315 657 304 649L183 579C157 564 141 537 141 507V217C141 187 157 160 183 145L304 75C315 67 330 63 344 63H353Z" fill="#071B48" stroke="url(#hexStroke)" stroke-width="18"/>
+
+    <rect x="245" y="183" width="204" height="204" rx="30" fill="url(#sheetGrad)" stroke="#77F3FF" stroke-opacity="0.7" stroke-width="3"/>
+    <path d="M391 183L449 241H413C401 241 391 231 391 219V183Z" fill="#D8FBFF" fill-opacity="0.65"/>
+    <path d="M319 247C319 240 327 236 333 240L379 271C385 275 385 285 379 289L333 320C327 324 319 320 319 313V247Z" fill="#F8FCFF"/>
+    <rect x="289" y="292" width="12" height="26" rx="6" fill="#F8FCFF"/>
+    <rect x="310" y="278" width="12" height="54" rx="6" fill="#F8FCFF"/>
+    <rect x="331" y="264" width="12" height="82" rx="6" fill="#F8FCFF"/>
+    <rect x="352" y="278" width="12" height="54" rx="6" fill="#F8FCFF"/>
+    <rect x="373" y="292" width="12" height="26" rx="6" fill="#F8FCFF"/>
+
+    <path d="M192 453C192 435 206 421 224 421H283C297 421 309 432 310 446C311 458 320 468 332 468H365C377 468 386 458 387 446C388 432 400 421 414 421H473C491 421 505 435 505 453V507C505 525 491 539 473 539H224C206 539 192 525 192 507V453Z" fill="url(#dockGrad)"/>
+    <path d="M259 445L349 445" stroke="#D9FFFF" stroke-opacity="0.55" stroke-width="10" stroke-linecap="round"/>
+    <path d="M351 367C359 359 371 365 371 376V422H406C417 422 423 435 415 443L352 506C347 511 339 511 334 506L271 443C263 435 269 422 280 422H315V376C315 365 327 359 335 367L343 375L351 367Z" fill="url(#arrowGrad)"/>
+  </g>
+
+  <g filter="url(#textShadow)">
+    <text x="661" y="401" class="brand" font-size="242" fill="#F4F8FE">Media</text>
+    <text x="1410" y="401" class="brand" font-size="242" fill="url(#blueGrad)">Dock</text>
+    <circle cx="1637" cy="180" r="16" fill="#2FE4FF"/>
+
+    <line x1="670" y1="498" x2="804" y2="498" stroke="url(#blueGrad)" stroke-width="12" stroke-linecap="round"/>
+    <text x="834" y="518" class="tag" font-size="76" fill="#C7D4EA">Video &amp; Audio Downloader / Converter</text>
+    <line x1="1948" y1="498" x2="2078" y2="498" stroke="url(#blueGrad)" stroke-width="12" stroke-linecap="round"/>
+  </g>
+</svg>

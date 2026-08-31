@@ -63,17 +63,37 @@ public partial class App : Application
                 Shutdown(0);
                 return;
             }
+            var browserHandlerRequestR1643 = IsNonInteractiveSelfTest()
+                ? null
+                : BrowserHandlerRequestR1643.TryParseCommandLine(Environment.GetCommandLineArgs());
+
             if (!IsNonInteractiveSelfTest() && !AcquireInteractiveSingleInstance())
             {
+                if (browserHandlerRequestR1643 is not null)
+                {
+                    BrowserSingleInstanceBridgeR1643
+                        .TryForwardToRunningInstanceAsync(browserHandlerRequestR1643)
+                        .GetAwaiter()
+                        .GetResult();
+                }
+
                 Shutdown(0);
                 return;
             }
 
             var window = new MainWindow();
             MainWindow = window;
-            window.Show();
             if (!IsNonInteractiveSelfTest())
             {
+                BrowserSingleInstanceBridgeR1643.StartServer(window);
+            }
+
+            window.Show();
+            if (browserHandlerRequestR1643 is not null)
+            {
+                window.Dispatcher.BeginInvoke(
+                    DispatcherPriority.ApplicationIdle,
+                    new Action(() => window.AcceptBrowserHandlerRequestR1643(browserHandlerRequestR1643)));
             }
         }
         catch (Exception ex)
@@ -443,6 +463,9 @@ public partial class App : Application
         MediaDownloader.Core.Services.QueueArtifactReconciliationServiceR1640.RunSelfTestR1640();
         MediaDownloader.Core.Services.OutputFormatPolicyR1641.RunSelfTestR1641();
         MediaDownloader.Core.Models.DownloadQueueItem.RunFunctionalGuiSelfTestR1641();
+        BrowserHandlerRequestR1643.RunSelfTestR1643();
+        MediaDownloader.Core.Services.GeneralDownloadClassifierR1643.RunSelfTestR1643();
+        MediaDownloader.Core.Services.TorrentClientR1644.RunSelfTestR1644();
         MediaDownloader.ViewModels.MainWindowViewModel.RunEntitlementQueueContractSelfTestR1630();}
 
 
@@ -608,6 +631,8 @@ public partial class App : Application
 
     protected override void OnExit(ExitEventArgs e)
     {
+        BrowserSingleInstanceBridgeR1643.StopServer();
+
         try
         {
             _singleInstanceMutex?.ReleaseMutex();

@@ -524,7 +524,7 @@
         </Border>
         <StackPanel Margin="9,0,0,0" VerticalAlignment="Center">
           <TextBlock Text="MediaDock" FontWeight="SemiBold" FontSize="16" />
-          <TextBlock x:Name="ProductSubtitleText" Text="Video &amp; Audio Downloader / Converter / Streamer" Foreground="{DynamicResource ThemeMutedTextBrush}" FontSize="9" />
+          <TextBlock x:Name="ProductSubtitleText" Text="Media Library / Universal Downloader / Converter / Streamer" Foreground="{DynamicResource ThemeMutedTextBrush}" FontSize="9" />
         </StackPanel>
       </StackPanel>
       <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
@@ -533,10 +533,22 @@
             <Viewbox Width="14" Height="14" Margin="0,0,6,0">
               <Path Data="{StaticResource IconDownload}" Stroke="{DynamicResource ThemeAccentBrush}" StrokeThickness="1.6" Fill="Transparent" />
             </Viewbox>
-            <TextBlock Text="Download" FontWeight="SemiBold" />
+            <TextBlock Text="Media" FontWeight="SemiBold" />
           </StackPanel>
         </Button>
-        <Button x:Name="StreamViewButton" Margin="7,0,0,0" Style="{StaticResource DenseGhostButton}" Padding="14,7" Click="ShowStreamR1626_Click" IsEnabled="{Binding PremiumWorkspacesEnabled}" ToolTip="{Binding PremiumStreamNavigationHintR1641}" ToolTipService.ShowOnDisabled="True">
+        <Button x:Name="DownloaderViewButton" Margin="7,0,0,0" Style="{StaticResource DenseGhostButton}" Padding="14,7" Click="ShowGeneralDownloaderR1643_Click">
+          <StackPanel Orientation="Horizontal">
+            <Viewbox Width="14" Height="14" Margin="0,0,6,0">
+              <Path Data="{StaticResource IconFolderOpen}" Stroke="{DynamicResource ThemeAccentBrush}" StrokeThickness="1.6" Fill="Transparent" />
+            </Viewbox>
+            <TextBlock Text="Downloader" FontWeight="SemiBold" />
+          </StackPanel>
+        </Button>        <Button x:Name="TorrentViewButtonR1644" Margin="7,0,0,0" Style="{StaticResource DenseGhostButton}" Padding="14,7" Click="ShowTorrentR1644_Click">
+          <StackPanel Orientation="Horizontal">
+            <TextBlock Text="⇅" Foreground="{DynamicResource ThemeAccentBrush}" FontWeight="Bold" Margin="0,0,6,0" />
+            <TextBlock Text="Torrent" FontWeight="SemiBold" />
+          </StackPanel>
+        </Button>        <Button x:Name="StreamViewButton" Margin="7,0,0,0" Style="{StaticResource DenseGhostButton}" Padding="14,7" Click="ShowStreamR1626_Click" IsEnabled="{Binding PremiumWorkspacesEnabled}" ToolTip="{Binding PremiumStreamNavigationHintR1641}" ToolTipService.ShowOnDisabled="True">
           <StackPanel Orientation="Horizontal">
             <Viewbox Width="14" Height="14" Margin="0,0,6,0">
               <Path Data="{StaticResource IconStream}" Stroke="{DynamicResource ThemeAccentBrush}" StrokeThickness="1.6" Fill="Transparent" />
@@ -808,7 +820,7 @@
             </Grid>
           </Border>
         </Grid>
-        <!-- RIGHT PANEL: PLAYLIST + DOWNLOAD QUEUE -->
+        <!-- RIGHT PANEL: PLAYLIST + MEDIA QUEUE -->
         <Grid x:Name="DownloadRightPanel" Grid.Column="2">
           <Grid.RowDefinitions>
             <RowDefinition Height="0" />
@@ -888,7 +900,7 @@
                     <ColumnDefinition Width="Auto" />
                   </Grid.ColumnDefinitions>
                   <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBlock Text="DOWNLOAD QUEUE" Foreground="{DynamicResource ThemeAccentBrush}" FontWeight="SemiBold" FontSize="12" />
+                    <TextBlock Text="MEDIA QUEUE" Foreground="{DynamicResource ThemeAccentBrush}" FontWeight="SemiBold" FontSize="12" />
                     <TextBlock Margin="7,0,0,0" Text="{Binding DownloadQueue.Count, Mode=OneWay, StringFormat=({0})}" Foreground="{DynamicResource ThemeSecondaryTextBrush}" FontSize="10" />
                   </StackPanel>
                   <TextBlock Grid.Column="2" VerticalAlignment="Center" Text="{Binding QueueSelectionSummary, Mode=OneWay}" Foreground="{DynamicResource ThemeMutedTextBrush}" FontSize="8.8" />
@@ -1093,7 +1105,7 @@
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <TextBlock Text="DOWNLOAD QUEUE"
+                        <TextBlock Text="MEDIA QUEUE"
                                    Foreground="{DynamicResource ThemeAccentBrush}"
                                    FontWeight="SemiBold"
                                    FontSize="12"/>
@@ -1480,6 +1492,226 @@
                 </Button>
             </Grid></Grid>
       <!-- =======================================================
+                 DOWNLOADER: browser-intercepted and direct file transfers
+                 ======================================================= -->
+      <Grid x:Name="GeneralDownloaderWorkspace" Visibility="Collapsed">
+        <Grid.RowDefinitions>
+          <RowDefinition Height="Auto" />
+          <RowDefinition Height="10" />
+          <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Border Background="{DynamicResource ThemePanelBackgroundBrush}"
+                BorderBrush="{DynamicResource ThemeBorderBrush}"
+                BorderThickness="1"
+                CornerRadius="10"
+                Padding="12">
+          <Grid>
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="Auto" />
+              <ColumnDefinition Width="*" />
+              <ColumnDefinition Width="Auto" />
+              <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <StackPanel Margin="0,0,12,0" VerticalAlignment="Center">
+              <TextBlock Text="DOWNLOADER"
+                         Foreground="{DynamicResource ThemeAccentBrush}"
+                         FontWeight="SemiBold"
+                         FontSize="12" />
+              <TextBlock Text="{Binding GeneralDownloadSummaryR1643}"
+                         Foreground="{DynamicResource ThemeMutedTextBrush}"
+                         FontSize="9" />
+            </StackPanel>
+            <TextBox x:Name="GeneralDownloadUrlTextBoxR1643"
+                     Grid.Column="1"
+                     Margin="0,0,8,0"
+                     Style="{StaticResource DarkTextBox}"
+                     MinHeight="38"
+                     VerticalContentAlignment="Center"
+                     Text="{Binding GeneralDownloadUrlR1643, UpdateSourceTrigger=PropertyChanged}"
+                     ToolTip="Paste any direct http/https file URL" />
+            <Button Grid.Column="2"
+                    Margin="0,0,8,0"
+                    Style="{StaticResource NeonPrimaryButton}"
+                    Padding="14,8"
+                    Content="Download"
+                    Click="GeneralDownloadAddR1643_Click" />
+            <Button Grid.Column="3"
+                    Style="{StaticResource DenseGhostButton}"
+                    Padding="12,7"
+                    Content="Open Folder"
+                    Click="GeneralDownloadOpenFolderR1643_Click" />
+          </Grid>
+        </Border>
+
+        <Border Grid.Row="2"
+                Background="{DynamicResource ThemePanelBackgroundBrush}"
+                BorderBrush="{DynamicResource ThemeBorderBrush}"
+                BorderThickness="1"
+                CornerRadius="10"
+                Padding="8">
+          <Grid>
+            <TextBlock HorizontalAlignment="Center"
+                       VerticalAlignment="Center"
+                       Text="No file downloads yet. Browser-intercepted downloads and direct URLs will appear here."
+                       Foreground="{DynamicResource ThemeMutedTextBrush}"
+                       FontSize="11">
+              <TextBlock.Style>
+                <Style TargetType="TextBlock">
+                  <Setter Property="Visibility" Value="Collapsed" />
+                  <Style.Triggers>
+                    <DataTrigger Binding="{Binding GeneralDownloadsR1643.Count}" Value="0">
+                      <Setter Property="Visibility" Value="Visible" />
+                    </DataTrigger>
+                  </Style.Triggers>
+                </Style>
+              </TextBlock.Style>
+            </TextBlock>
+
+            <ScrollViewer VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled">
+              <ItemsControl ItemsSource="{Binding GeneralDownloadsR1643}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate>
+                    <Border Margin="0,0,0,7"
+                            Padding="10"
+                            Background="{DynamicResource ThemeSurfaceBrush}"
+                            BorderBrush="{DynamicResource ThemeBorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="8">
+                      <Grid>
+                        <Grid.ColumnDefinitions>
+                          <ColumnDefinition Width="*" />
+                          <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                          <RowDefinition Height="Auto" />
+                          <RowDefinition Height="Auto" />
+                          <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <StackPanel Grid.Row="0">
+                          <TextBlock Text="{Binding FileName}"
+                                     FontWeight="SemiBold"
+                                     FontSize="11.5"
+                                     Foreground="{DynamicResource ThemePrimaryTextBrush}"
+                                     TextTrimming="CharacterEllipsis" />
+                          <TextBlock Margin="0,2,0,0"
+                                     Text="{Binding Url}"
+                                     FontSize="9"
+                                     Foreground="{DynamicResource ThemeMutedTextBrush}"
+                                     TextTrimming="CharacterEllipsis" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="0"
+                                    Grid.Column="1"
+                                    Margin="12,0,0,0"
+                                    Orientation="Horizontal"
+                                    VerticalAlignment="Center">
+                          <Button Margin="0,0,5,0"
+                                  Style="{StaticResource DenseGhostButton}"
+                                  Padding="8,4"
+                                  Content="Start / Resume"
+                                  Tag="{Binding}"
+                                  IsEnabled="{Binding CanStartR1643}"
+                                  Click="GeneralDownloadStartR1643_Click" />
+                          <Button Margin="0,0,5,0"
+                                  Style="{StaticResource DenseGhostButton}"
+                                  Padding="8,4"
+                                  Content="Cancel"
+                                  Tag="{Binding}"
+                                  IsEnabled="{Binding CanCancelR1643}"
+                                  Click="GeneralDownloadCancelR1643_Click" />
+                          <Button Style="{StaticResource DenseGhostButton}"
+                                  Padding="8,4"
+                                  Content="Open"
+                                  Tag="{Binding}"
+                                  IsEnabled="{Binding CanOpenR1643}"
+                                  Click="GeneralDownloadOpenR1643_Click" />
+                        </StackPanel>
+
+                        <ProgressBar Grid.Row="1"
+                                     Grid.ColumnSpan="2"
+                                     Margin="0,8,0,0"
+                                     Style="{StaticResource QueueProgressBar}"
+                                     Maximum="100"
+                                     Value="{Binding ProgressPercent}" />
+
+                        <Grid Grid.Row="2"
+                              Grid.ColumnSpan="2"
+                              Margin="0,5,0,0">
+                          <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                          </Grid.ColumnDefinitions>
+                          <TextBlock Text="{Binding StatusText}"
+                                     FontSize="9.5"
+                                     Foreground="{DynamicResource ThemeSecondaryTextBrush}" />
+                          <TextBlock Grid.Column="1"
+                                     Margin="12,0,0,0"
+                                     Text="{Binding SizeTextR1643}"
+                                     FontSize="9.5"
+                                     Foreground="{DynamicResource ThemeMutedTextBrush}" />
+                          <TextBlock Grid.Column="2"
+                                     Margin="12,0,0,0"
+                                     Text="{Binding SpeedText}"
+                                     FontSize="9.5"
+                                     Foreground="{DynamicResource ThemeAccentBrush}" />
+                        </Grid>
+                      </Grid>
+                    </Border>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </ScrollViewer>
+          </Grid>
+        </Border>
+      </Grid>      <!-- MEDIADOCK_TORRENT_WORKSPACE_R1644 -->
+      <Grid x:Name="TorrentWorkspaceR1644" Visibility="Collapsed">
+        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="10"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+        <Border Background="{DynamicResource ThemePanelBackgroundBrush}" BorderBrush="{DynamicResource ThemeBorderBrush}" BorderThickness="1" CornerRadius="10" Padding="12">
+          <Grid>
+            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+            <TextBox x:Name="TorrentSourceTextBoxR1644" Text="{Binding TorrentSourceR1644, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource UrlTextBox}" Padding="8,0" ToolTip="Paste magnet link or https .torrent URL"/>
+            <Button Grid.Column="1" Margin="8,0,0,0" Style="{StaticResource DenseGhostButton}" Padding="12,6" Content="Add Magnet / URL" Click="TorrentAddMagnetR1644_Click"/>
+            <Button Grid.Column="2" Margin="8,0,0,0" Style="{StaticResource DenseGhostButton}" Padding="12,6" Content="Open .torrent" Click="TorrentAddFileR1644_Click"/>
+          </Grid>
+        </Border>
+        <Border Grid.Row="2" Background="{DynamicResource ThemeSurfaceBrush}" BorderBrush="{DynamicResource ThemeBorderBrush}" BorderThickness="1" CornerRadius="10" Padding="10">
+          <Grid>
+            <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="8"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+            <Grid>
+              <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+              <StackPanel Orientation="Horizontal"><TextBlock Text="TORRENTS" Foreground="{DynamicResource ThemeAccentBrush}" FontWeight="SemiBold"/><TextBlock Margin="12,0,0,0" Text="DHT • PEX • fast resume • UPnP/NAT-PMP • selective files • streaming" Foreground="{DynamicResource ThemeMutedTextBrush}" FontSize="9"/></StackPanel>
+              <TextBlock Grid.Column="1" Text="{Binding TorrentStatusR1644}" Foreground="{DynamicResource ThemeSecondaryTextBrush}" FontSize="9"/>
+            </Grid>
+            <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+              <ItemsControl ItemsSource="{Binding TorrentsR1644}">
+                <ItemsControl.ItemTemplate><DataTemplate>
+                  <Border Margin="0,0,0,7" Padding="10" Background="{DynamicResource ThemePanelBackgroundBrush}" BorderBrush="{DynamicResource ThemeBorderBrush}" BorderThickness="1" CornerRadius="8">
+                    <Grid>
+                      <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                      <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                      <StackPanel><TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/><TextBlock Margin="0,2,0,0" Text="{Binding Source}" FontSize="8.5" Foreground="{DynamicResource ThemeMutedTextBrush}" TextTrimming="CharacterEllipsis"/></StackPanel>
+                      <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="12,0,0,0">
+                        <Button Margin="2" Style="{StaticResource DenseGhostButton}" Padding="7,4" Content="Start" Tag="{Binding}" Click="TorrentStartR1644_Click"/>
+                        <Button Margin="2" Style="{StaticResource DenseGhostButton}" Padding="7,4" Content="Pause" Tag="{Binding}" Click="TorrentPauseR1644_Click"/>
+                        <Button Margin="2" Style="{StaticResource DenseGhostButton}" Padding="7,4" Content="Stop" Tag="{Binding}" Click="TorrentStopR1644_Click"/>
+                        <Button Margin="2" Style="{StaticResource DenseGhostButton}" Padding="7,4" Content="Files" Tag="{Binding}" Click="TorrentFilesR1644_Click"/>
+                        <Button Margin="2" Style="{StaticResource DenseGhostButton}" Padding="7,4" Content="Recheck" Tag="{Binding}" Click="TorrentRecheckR1644_Click"/>
+                        <Button Margin="2" Style="{StaticResource DenseGhostButton}" Padding="7,4" Content="Stream" Tag="{Binding}" Click="TorrentStreamR1644_Click"/>
+                      </StackPanel>
+                      <ProgressBar Grid.Row="1" Grid.ColumnSpan="2" Margin="0,8,0,0" Style="{StaticResource QueueProgressBar}" Maximum="100" Value="{Binding Progress}"/>
+                      <Grid Grid.Row="2" Grid.ColumnSpan="2" Margin="0,5,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock Text="{Binding Status}" FontSize="9"/><TextBlock Grid.Column="1" Margin="12,0,0,0" Text="{Binding Peers}" FontSize="9" Foreground="{DynamicResource ThemeMutedTextBrush}"/><TextBlock Grid.Column="2" Margin="12,0,0,0" Text="{Binding DownloadRate}" FontSize="9" Foreground="{DynamicResource ThemeAccentBrush}"/><TextBlock Grid.Column="3" Margin="12,0,0,0" Text="{Binding UploadRate}" FontSize="9" Foreground="{DynamicResource ThemeSecondaryTextBrush}"/></Grid>
+                    </Grid>
+                  </Border>
+                </DataTemplate></ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </ScrollViewer>
+          </Grid>
+        </Border>
+      </Grid>      <!-- =======================================================
                  STREAM: resolve media inside a page/link, then play the
                  direct media URL without opening the source webpage.
                  ======================================================= -->
@@ -1587,14 +1819,17 @@
                   </Grid>
                 </Grid>
               </Border>
-              <Button Grid.Row="6" Height="42" Style="{StaticResource DenseGhostButton}" Click="StreamDetectPlay_Click">
+              <Grid Grid.Row="6"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                <Button Height="42" Style="{StaticResource DenseGhostButton}" Click="StreamDetectPlay_Click">
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                   <Viewbox Width="15" Height="15" Margin="0,0,7,0">
                     <Path Data="{StaticResource IconStream}" Stroke="{DynamicResource ThemeAccentBrush}" StrokeThickness="1.6" Fill="Transparent" />
                   </Viewbox>
                   <TextBlock Text="Detect &amp; Play" FontWeight="SemiBold" />
                 </StackPanel>
-              </Button>
+                </Button>
+                <Button Grid.Column="2" Height="42" Padding="12,6" Style="{StaticResource DenseGhostButton}" Click="StreamTorrentR1644_Click" ToolTip="Stream from magnet link or .torrent file"><TextBlock Text="Torrent / Magnet" FontWeight="SemiBold"/></Button>
+              </Grid>
             </Grid>
           </Border>
           <Border x:Name="StreamPlayerCard" Grid.Column="2" Style="{StaticResource ReferenceCard}">

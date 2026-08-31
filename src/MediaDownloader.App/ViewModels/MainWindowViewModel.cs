@@ -172,6 +172,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
         }
 
         RefreshQueuePage();
+        InitializeGeneralDownloaderR1643();
+        InitializeTorrentR1644();
 
         // MEDIADOCK_SUBTITLE_COMMAND_R1628
         DownloadSubtitlesCommand =

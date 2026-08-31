@@ -1,0 +1,3 @@
+Load this exact folder with Chrome/Edge/Brave Developer mode -> Load unpacked.
+MediaDock R1.6.44 Browser Handler + Torrent handoff.
+Expected extension ID: mgknjickielihcigpanjhhpbaldcpolf
