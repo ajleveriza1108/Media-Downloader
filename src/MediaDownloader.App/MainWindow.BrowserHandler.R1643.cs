@@ -1,3 +1,4 @@
+using System;
 using System.Windows;
 using MediaDownloader.Core.Services;
 
@@ -29,6 +30,19 @@ public partial class MainWindow
             {
                 ShowGeneralDownloaderWorkspaceR1643();
                 Activate();
+
+                var isGrabberBatch = request.Source.Contains(
+                    "floating-media-grabber-batch",
+                    StringComparison.OrdinalIgnoreCase);
+
+                if (isGrabberBatch)
+                {
+                    await _viewModel.QueueGeneralDownloadR1643Async(
+                        request,
+                        autoStart: true);
+                    GeneralDownloadUrlTextBoxR1643.Focus();
+                    return;
+                }
 
                 var choice = DownloadFileDialogR1643.ShowFor(
                     this,

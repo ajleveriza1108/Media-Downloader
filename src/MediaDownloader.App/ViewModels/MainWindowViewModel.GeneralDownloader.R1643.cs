@@ -107,13 +107,30 @@ public sealed partial class MainWindowViewModel
             return;
         }
 
-        var activeDuplicate = GeneralDownloadsR1643.FirstOrDefault(item =>
+        var existingDuplicate = GeneralDownloadsR1643.FirstOrDefault(item =>
             string.Equals(item.Url, normalizedUrl, StringComparison.OrdinalIgnoreCase) &&
-            (item.State is GeneralDownloadStateR1643.Queued or GeneralDownloadStateR1643.Downloading));
+            (item.State is GeneralDownloadStateR1643.Ready
+                or GeneralDownloadStateR1643.Queued
+                or GeneralDownloadStateR1643.Downloading
+                or GeneralDownloadStateR1643.Paused ||
+             (item.State == GeneralDownloadStateR1643.Completed && item.CanOpenR1643)));
 
-        if (activeDuplicate is not null)
+        if (existingDuplicate is not null)
         {
-            Status = $"Already downloading: {activeDuplicate.FileName}";
+            if (existingDuplicate.State == GeneralDownloadStateR1643.Completed && existingDuplicate.CanOpenR1643)
+            {
+                Status = $"Already downloaded: {existingDuplicate.FileName}";
+                return;
+            }
+
+            if (autoStart && existingDuplicate.CanStartR1643)
+            {
+                Status = $"Already queued; starting: {existingDuplicate.FileName}";
+                await StartGeneralDownloadR1643Async(existingDuplicate);
+                return;
+            }
+
+            Status = $"Already in Downloader queue: {existingDuplicate.FileName}";
             return;
         }
 
@@ -137,10 +154,10 @@ public sealed partial class MainWindowViewModel
         };
 
         AttachGeneralDownloadItemR1643(item);
-        GeneralDownloadsR1643.Insert(0, item);
+        GeneralDownloadsR1643.Add(item);
         GeneralDownloadUrlR1643 = string.Empty;
         SaveGeneralDownloadsR1643();
-        Status = $"Added to Downloader: {item.FileName}";
+        Status = $"Queued in Downloader: {item.FileName}";
 
         if (autoStart)
         {

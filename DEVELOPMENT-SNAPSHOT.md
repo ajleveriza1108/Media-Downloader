@@ -1,16 +1,13 @@
-# MediaDock R1.6.44 development snapshot
+# MediaDock R1.6.45 development snapshot
 
-Status: customer/private Windows build and runtime candidate validated by the guarded R1.6.44 developer pipeline. The public source remains intentionally sanitized of commercial/private implementations and is compiler-delta validated against the verified R1.6.41 public baseline before publication.
+R1.6.45 focuses on torrent reliability and keeps the existing Media, universal Downloader, converter, streamer, native browser messaging and persistent floating extension integration.
 
-R1.6.44:
-- Renames the former Download workspace to Media for the media queue/library workflow.
-- Adds a universal Downloader for browser-intercepted and pasted direct files.
-- Adds an IDM-style Download File dialog with category, filename, destination, remembered category folder, Download Later, Start Download, and Cancel.
-- Supports resumable HTTP Range transfers through .mediadock.part files and up to four concurrent general downloads.
-- Adds Chrome/Edge/Brave Manifest V3 native messaging, ordinary download interception, and the floating media grabber.
-- Keeps media-engine analysis for page/media URLs and separates general file transfers from the Media queue.
-- Publishes the developer extension under browser-extension/MediaDock.
-- Adds a dedicated Torrent workspace powered by MonoTorrent 3.0.2 with magnet/.torrent support, DHT/PEX, fast resume, UPnP/NAT-PMP, pause/resume/stop/recheck, file selection/priorities, peer/rate/progress telemetry, and local HTTP streaming.
-- Stream workspace accepts magnet links or .torrent files through the Torrent / Magnet action and plays the selected torrent media inside MediaDock.
+Torrent changes:
+- Isolated TorrentHost upgraded to MonoTorrent 3.9 alpha, whose June 2026 release improves DHT bootstrapping performance/reliability.
+- Explicit BitTorrent/uTorrent/Transmission/Aelitis/BitComet/libtorrent DHT bootstrap routers.
+- Early forced tracker announces during peer recovery, then normal tracker cadence.
+- Mixed HTTPS + UDP tracker fallback for public torrents.
+- DHT-ready/node telemetry, tracker count, persistent torrent queue/order/settings, selective files, queue priority and streaming.
+- Fast resume and stable DHT cache retained.
 
-Commercial/private licensing, trial, entitlement, updater implementation, backend secrets, customer state, and installer implementation remain excluded from the public source repository.
+Commercial/private licensing, trial, entitlement, updater implementation, backend secrets, customer state and installer implementation remain excluded from this public source repository.

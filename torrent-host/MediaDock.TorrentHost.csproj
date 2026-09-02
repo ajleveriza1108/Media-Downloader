@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>MediaDock.TorrentHost</AssemblyName>
+    <RootNamespace>MediaDock.TorrentHost</RootNamespace>
+    <Version>1.6.45</Version>
+    <FileVersion>1.6.45.0</FileVersion>
+    <InformationalVersion>R1.6.45</InformationalVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="MonoTorrent" Version="3.9.0-alpha.unstable.rev0000" />
+  </ItemGroup>
+</Project>

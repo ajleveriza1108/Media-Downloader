@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Text;
 using System.Text.Json;
 
@@ -116,12 +117,68 @@ public sealed record BrowserHandlerRequestR1643(
         normalized = string.Empty;
         if (string.IsNullOrWhiteSpace(value) || value.Length > MaxUrlLength) return false;
         var trimmed = value.Trim();
-        if (trimmed.StartsWith("magnet:?", StringComparison.OrdinalIgnoreCase) && MonoTorrent.MagnetLink.TryParse(trimmed, out _))
+        if (trimmed.StartsWith("magnet:?", StringComparison.OrdinalIgnoreCase))
         {
-            normalized = trimmed;
-            return true;
+            return TryNormalizeMagnetUrl(trimmed, out normalized);
         }
         return TryNormalizeHttpUrl(trimmed, out normalized);
+    }
+
+    // The WPF/browser payload intentionally has no MonoTorrent reference.
+    // TorrentHost performs the authoritative magnet parse in the isolated process.
+    // Here we only accept a syntactically valid magnet URI containing a BitTorrent xt.
+    internal static bool TryNormalizeMagnetUrl(string? value, out string normalized)
+    {
+        normalized = string.Empty;
+        if (string.IsNullOrWhiteSpace(value) || value.Length > MaxUrlLength ||
+            !Uri.TryCreate(value.Trim(), UriKind.Absolute, out var uri) ||
+            !string.Equals(uri.Scheme, "magnet", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        var query = uri.Query;
+        if (string.IsNullOrWhiteSpace(query) || query.Length < 2)
+        {
+            return false;
+        }
+
+        foreach (var part in query[1..].Split('&', StringSplitOptions.RemoveEmptyEntries))
+        {
+            var separator = part.IndexOf('=');
+            if (separator <= 0 || !string.Equals(part[..separator], "xt", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            string topic;
+            try
+            {
+                topic = Uri.UnescapeDataString(part[(separator + 1)..]);
+            }
+            catch
+            {
+                return false;
+            }
+
+            if (topic.StartsWith("urn:btih:", StringComparison.OrdinalIgnoreCase))
+            {
+                var hash = topic[9..];
+                if ((hash.Length == 32 && hash.All(c => char.IsLetterOrDigit(c))) ||
+                    (hash.Length == 40 && hash.All(Uri.IsHexDigit)))
+                {
+                    normalized = value.Trim();
+                    return true;
+                }
+            }
+            else if (topic.StartsWith("urn:btmh:", StringComparison.OrdinalIgnoreCase) && topic.Length > 10)
+            {
+                normalized = value.Trim();
+                return true;
+            }
+        }
+
+        return false;
     }
 
     internal static bool TryNormalizeHttpUrl(string? value, out string normalized)
@@ -164,6 +221,13 @@ public sealed record BrowserHandlerRequestR1643(
         if (TryParseEncoded(Base64UrlEncode(Encoding.UTF8.GetBytes(badJson)), out _))
         {
             throw new InvalidOperationException("R1.6.43 browser-handler URL safety contract failed.");
+        }
+
+        if (!TryNormalizeBrowserUrl("magnet:?xt=urn:btih:0123456789abcdef0123456789abcdef01234567", out var magnet) ||
+            !magnet.StartsWith("magnet:?", StringComparison.OrdinalIgnoreCase) ||
+            TryNormalizeBrowserUrl("magnet:?dn=missing-infohash", out _))
+        {
+            throw new InvalidOperationException("R1.9.10 browser-handler isolated magnet validation contract failed.");
         }
     }
 

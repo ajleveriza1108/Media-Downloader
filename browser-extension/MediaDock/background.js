@@ -1,8 +1,8 @@
 const HOST = "com.ajcoder.mediadock";
 const PROTOCOL_VERSION = 2;
 const MAX_URL_LENGTH = 16384;
-const MAX_CANDIDATES_PER_TAB = 30;
-const AUTO_INTERCEPT_DEFAULT = true;
+const MAX_CANDIDATES_PER_TAB = 12;
+const AUTO_INTERCEPT_DEFAULT = false;
 
 const FILE_EXTENSIONS = new Set([
   "3g2","3gp","7z","aac","ac3","ace","aif","aiff","amr","ape","apk","appx","appxbundle","arj","asf","avi",
@@ -17,13 +17,6 @@ const FILE_EXTENSIONS = new Set([
   "ass","srt","vtt"
 ]);
 
-const MEDIA_EXTENSIONS = new Set([
-  "3g2","3gp","aac","ac3","aif","aiff","amr","ape","asf","avi","flac","flv","m2ts","m2v","m3u8","m4a",
-  "m4b","m4v","mid","midi","mka","mkv","mov","mp3","mp4","mpa","mpd","mpe","mpeg","mpg","mts","oga","ogg",
-  "ogv","opus","qt","ra","rm","rmvb","ts","vob","wav","webm","wma","wmv"
-]);
-
-const NOISY_SEGMENT_EXTENSIONS = new Set(["m4s","cmfv","cmfa"]);
 const recentIntercepts = new Map();
 const candidatesByTab = new Map();
 
@@ -32,9 +25,7 @@ function isHttpUrl(value) {
   try {
     const u = new URL(value);
     return u.protocol === "http:" || u.protocol === "https:";
-  } catch {
-    return false;
-  }
+  } catch { return false; }
 }
 
 function isSupportedUrl(value) {
@@ -48,33 +39,12 @@ function getExtension(value) {
     const path = isHttpUrl(value) ? new URL(value).pathname : value;
     const leaf = path.split(/[\\/]/).pop() || "";
     const match = leaf.toLowerCase().match(/\.([a-z0-9]{1,16})$/);
-    if (!match) return "";
-    const ext = match[1];
-    if (/^r\d{2,3}$/.test(ext)) return ext;
-    return ext;
-  } catch {
-    return "";
-  }
+    return match ? match[1] : "";
+  } catch { return ""; }
 }
 
 function isSupportedExtension(ext) {
   return FILE_EXTENSIONS.has(ext) || /^r\d{2,3}$/.test(ext);
-}
-
-function headerValue(headers, name) {
-  if (!Array.isArray(headers)) return "";
-  const hit = headers.find(h => String(h.name || "").toLowerCase() === name.toLowerCase());
-  return typeof hit?.value === "string" ? hit.value : "";
-}
-
-function filenameFromDisposition(disposition) {
-  if (!disposition) return "";
-  const star = disposition.match(/filename\*\s*=\s*UTF-8''([^;]+)/i);
-  if (star) {
-    try { return decodeURIComponent(star[1].trim().replace(/^["']|["']$/g, "")); } catch {}
-  }
-  const plain = disposition.match(/filename\s*=\s*("?)([^";]+)\1/i);
-  return plain ? plain[2].trim() : "";
 }
 
 function cleanFilename(value) {
@@ -82,37 +52,13 @@ function cleanFilename(value) {
   return value.split(/[\\/]/).pop().slice(0, 240);
 }
 
-function formatBytes(value) {
-  const n = Number(value);
-  if (!Number.isFinite(n) || n <= 0) return "";
-  const units = ["B","KB","MB","GB","TB"];
-  let size = n, i = 0;
-  while (size >= 1024 && i < units.length - 1) { size /= 1024; i++; }
-  return `${size >= 100 || i === 0 ? size.toFixed(0) : size.toFixed(1)} ${units[i]}`;
-}
-
-function inferQuality(url, filename) {
-  const text = `${url || ""} ${filename || ""}`;
-  const m = text.match(/(?:^|[^0-9])(2160|1440|1080|720|480|360|240|144)p(?:[^0-9]|$)/i);
-  return m ? `${m[1]}p` : "";
-}
-
-function looksLikeMediaMime(mime) {
-  const v = String(mime || "").toLowerCase();
-  return v.startsWith("video/") || v.startsWith("audio/") ||
-    v.includes("mpegurl") || v.includes("dash+xml") || v.includes("application/ogg");
-}
-
 function looksLikeDownloadMime(mime) {
   const v = String(mime || "").toLowerCase();
   if (!v) return false;
-  return looksLikeMediaMime(v) ||
-    v === "application/pdf" ||
-    v === "application/zip" ||
-    v === "application/x-7z-compressed" ||
-    v === "application/x-rar-compressed" ||
-    v === "application/octet-stream" ||
-    v.includes("application/vnd.android.package-archive");
+  return v.startsWith("video/") || v.startsWith("audio/") ||
+    v === "application/pdf" || v === "application/zip" ||
+    v === "application/x-7z-compressed" || v === "application/x-rar-compressed" ||
+    v === "application/octet-stream" || v.includes("application/vnd.android.package-archive");
 }
 
 function normalizeCandidate(raw) {
@@ -122,6 +68,8 @@ function normalizeCandidate(raw) {
   const ext = getExtension(fileName) || getExtension(url);
   const mimeType = String(raw?.mimeType || raw?.mime || "").slice(0, 160);
   const contentLength = Number(raw?.contentLength ?? raw?.totalBytes ?? raw?.fileSize ?? 0) || 0;
+  const candidateKind = String(raw?.candidateKind || "").slice(0, 32);
+  const handlerKind = raw?.handlerKind === "page" ? "page" : "file";
   return {
     url,
     title: String(raw?.title || fileName || "Download").slice(0, 512),
@@ -130,8 +78,10 @@ function normalizeCandidate(raw) {
     referrer: isHttpUrl(raw?.referrer || "") ? raw.referrer : "",
     contentLength,
     ext,
-    quality: inferQuality(url, fileName),
-    handlerKind: ext === "m3u8" || ext === "mpd" ? "page" : "file",
+    quality: "",
+    handlerKind,
+    candidateKind,
+    isPageFallback: !!raw?.isPageFallback,
     source: String(raw?.source || "chromium").slice(0, 128)
   };
 }
@@ -139,7 +89,7 @@ function normalizeCandidate(raw) {
 async function sendToMediaDock(raw, mode = "download", kind = "file") {
   const c = normalizeCandidate(raw);
   if (!c) throw new Error("MediaDock accepts http, https, or magnet URLs.");
-  const payload = {
+  return await chrome.runtime.sendNativeMessage(HOST, {
     version: PROTOCOL_VERSION,
     action: "send",
     mode: mode === "analyze" ? "analyze" : "download",
@@ -151,8 +101,7 @@ async function sendToMediaDock(raw, mode = "download", kind = "file") {
     referrer: c.referrer,
     contentLength: c.contentLength,
     source: c.source
-  };
-  return await chrome.runtime.sendNativeMessage(HOST, payload);
+  });
 }
 
 function createMenus() {
@@ -166,10 +115,9 @@ function createMenus() {
 
 chrome.runtime.onInstalled.addListener(async () => {
   createMenus();
-  const current = await chrome.storage.local.get({ autoIntercept: AUTO_INTERCEPT_DEFAULT });
-  if (typeof current.autoIntercept !== "boolean") {
-    await chrome.storage.local.set({ autoIntercept: AUTO_INTERCEPT_DEFAULT });
-  }
+  // R1.8 safety reset: an R1.7 profile may have automatic interception enabled.
+  // Start the performance-safe release idle; the user can re-enable interception from the popup.
+  await chrome.storage.local.set({ autoIntercept: AUTO_INTERCEPT_DEFAULT });
 });
 chrome.runtime.onStartup.addListener(createMenus);
 
@@ -192,13 +140,12 @@ chrome.commands.onCommand.addListener(async command => {
   if (command !== "send-to-mediadock") return;
   const [tab] = await chrome.tabs.query({active: true, currentWindow: true});
   if (!tab?.url) return;
-  try {
-    await sendToMediaDock({url: tab.url, title: tab.title || "", source: "keyboard"}, "download", "page");
-  } catch (e) { console.error("MediaDock keyboard handler failed", e); }
+  try { await sendToMediaDock({url: tab.url, title: tab.title || "", source: "keyboard"}, "download", "page"); }
+  catch (e) { console.error("MediaDock keyboard handler failed", e); }
 });
 
 function shouldAutoInterceptDownload(item) {
-  if (!item || item.byExtensionId && item.byExtensionId !== chrome.runtime.id) return false;
+  if (!item || (item.byExtensionId && item.byExtensionId !== chrome.runtime.id)) return false;
   const url = item.finalUrl || item.url || "";
   if (!isHttpUrl(url)) return false;
   const fileName = cleanFilename(item.filename || "");
@@ -210,13 +157,12 @@ chrome.downloads.onCreated.addListener(async item => {
   try {
     const {autoIntercept} = await chrome.storage.local.get({autoIntercept: AUTO_INTERCEPT_DEFAULT});
     if (!autoIntercept || !shouldAutoInterceptDownload(item)) return;
-
     const key = `${item.id}:${item.finalUrl || item.url}`;
     if (recentIntercepts.has(key)) return;
     recentIntercepts.set(key, Date.now());
     setTimeout(() => recentIntercepts.delete(key), 30000);
 
-    const raw = {
+    const response = await sendToMediaDock({
       url: item.finalUrl || item.url,
       fileName: item.filename || "",
       mimeType: item.mime || "",
@@ -224,72 +170,45 @@ chrome.downloads.onCreated.addListener(async item => {
       contentLength: item.fileSize > 0 ? item.fileSize : item.totalBytes,
       title: cleanFilename(item.filename || "") || "Browser download",
       source: "browser-download-intercept"
-    };
-
-    const response = await sendToMediaDock(raw, "download", "file");
+    }, "download", "file");
     if (!response?.ok) throw new Error(response?.error || "MediaDock did not accept the download.");
     await chrome.downloads.cancel(item.id);
     try { await chrome.downloads.erase({id: item.id}); } catch {}
-  } catch (e) {
-    console.error("MediaDock automatic browser download interception failed", e);
-  }
+  } catch (e) { console.error("MediaDock automatic browser download interception failed", e); }
 });
 
-function looksLikeNoisySegment(url, ext, contentLength) {
-  if (NOISY_SEGMENT_EXTENSIONS.has(ext)) return true;
-  const lower = String(url || "").toLowerCase();
-  if (/\b(segment|seg|chunk|frag|fragment)[-_]?\d+\b/.test(lower)) return true;
-  if (ext === "ts" && contentLength > 0 && contentLength < 1024 * 1024) return true;
-  return false;
-}
-
-function candidateFromResponse(details) {
-  if (details.tabId < 0 || !isHttpUrl(details.url)) return null;
-  const mimeType = headerValue(details.responseHeaders, "content-type").split(";")[0].trim().toLowerCase();
-  const disposition = headerValue(details.responseHeaders, "content-disposition");
-  const contentLength = Number(headerValue(details.responseHeaders, "content-length")) || 0;
-  const fileName = cleanFilename(filenameFromDisposition(disposition));
-  const ext = getExtension(fileName) || getExtension(details.url);
-  const media = MEDIA_EXTENSIONS.has(ext) || looksLikeMediaMime(mimeType);
-  if (!media) return null;
-  if (looksLikeNoisySegment(details.url, ext, contentLength)) return null;
-
+function pageFallbackCandidate(message, sender) {
+  const url = message?.pageUrl || sender?.tab?.url || "";
+  if (!isHttpUrl(url) || (!message?.hasVideo && !message?.hasAudio)) return null;
   return normalizeCandidate({
-    url: details.url,
-    fileName,
-    mimeType,
-    contentLength,
-    referrer: details.documentUrl || details.initiator || "",
-    title: fileName || `${ext ? ext.toUpperCase() : "Media"} media`,
-    source: "floating-media-grabber"
+    url,
+    title: String(message?.title || sender?.tab?.title || (message?.hasVideo ? "Video page" : "Audio page")),
+    mimeType: message?.hasVideo ? "video/page" : "audio/page",
+    handlerKind: "page",
+    candidateKind: "page",
+    isPageFallback: true,
+    source: "page-media-fallback"
   });
 }
 
+function candidateKey(candidate) {
+  return `page:${String(candidate?.url || "").split("#")[0]}`;
+}
+
 function addCandidate(tabId, candidate) {
-  if (!candidate) return;
+  if (!candidate || tabId < 0) return;
   const list = candidatesByTab.get(tabId) || [];
-  const oldIndex = list.findIndex(x => x.url === candidate.url);
-  if (oldIndex >= 0) {
-    list[oldIndex] = candidate;
-  } else {
-    list.unshift(candidate);
-    if (list.length > MAX_CANDIDATES_PER_TAB) list.length = MAX_CANDIDATES_PER_TAB;
-  }
+  const key = candidateKey(candidate);
+  const index = list.findIndex(x => candidateKey(x) === key);
+  if (index >= 0) list[index] = candidate; else list.unshift(candidate);
+  if (list.length > MAX_CANDIDATES_PER_TAB) list.length = MAX_CANDIDATES_PER_TAB;
   candidatesByTab.set(tabId, list);
   chrome.tabs.sendMessage(tabId, {type: "md-candidates", candidates: list}).catch(() => {});
 }
 
-chrome.webRequest.onHeadersReceived.addListener(
-  details => {
-    try { addCandidate(details.tabId, candidateFromResponse(details)); } catch (e) { console.debug("MediaDock response inspection skipped", e); }
-  },
-  {urls: ["http://*/*","https://*/*"], types: ["media","xmlhttprequest","other"]},
-  ["responseHeaders"]
-);
-
 chrome.tabs.onRemoved.addListener(tabId => candidatesByTab.delete(tabId));
 chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
-  if (changeInfo.status === "loading") candidatesByTab.delete(tabId);
+  if (changeInfo.status === "loading" || changeInfo.url) candidatesByTab.delete(tabId);
 });
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -297,34 +216,42 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     sendResponse({ok: true, candidates: candidatesByTab.get(sender.tab?.id) || []});
     return false;
   }
-
+  if (message?.type === "md-page-media-seen") {
+    if (sender.tab?.id >= 0) addCandidate(sender.tab.id, pageFallbackCandidate(message, sender));
+    sendResponse({ok: true});
+    return false;
+  }
   if (message?.type === "md-send") {
     sendToMediaDock(message.item || {url: message.url, title: message.title || "", source: message.source || "popup"},
       message.mode || "download", message.kind || "file")
-      .then(r => sendResponse(r))
-      .catch(e => sendResponse({ok:false,error:e?.message || String(e)}));
+      .then(r => sendResponse(r)).catch(e => sendResponse({ok:false,error:e?.message || String(e)}));
     return true;
   }
-
   if (message?.type === "md-send-many") {
     (async () => {
-      const items = Array.isArray(message.items) ? message.items.slice(0, 20) : [];
-      let sent = 0;
-      for (const item of items) {
-        const result = await sendToMediaDock(item, "download", item?.handlerKind || "file");
-        if (result?.ok) sent++;
-        await new Promise(resolve => setTimeout(resolve, 120));
+      const incoming = Array.isArray(message.items) ? message.items.slice(0, 20) : [];
+      const unique = [], seen = new Set();
+      for (const item of incoming) {
+        const normalized = normalizeCandidate(item);
+        if (!normalized) continue;
+        const key = candidateKey(normalized);
+        if (seen.has(key)) continue;
+        seen.add(key); unique.push(normalized);
       }
-      return {ok:true, sent};
+      let sent = 0;
+      for (const item of unique) {
+        const result = await sendToMediaDock({...item, source: "floating-media-grabber-batch"}, "download", item.handlerKind || "page");
+        if (result?.ok) sent++;
+        await new Promise(resolve => setTimeout(resolve, 180));
+      }
+      return {ok:true, sent, queued:sent};
     })().then(sendResponse).catch(e => sendResponse({ok:false,error:e?.message || String(e)}));
     return true;
   }
-
   if (message?.type === "md-get-settings") {
     chrome.storage.local.get({autoIntercept: AUTO_INTERCEPT_DEFAULT}).then(sendResponse);
     return true;
   }
-
   if (message?.type === "md-set-auto-intercept") {
     chrome.storage.local.set({autoIntercept: !!message.value}).then(() => sendResponse({ok:true}));
     return true;
