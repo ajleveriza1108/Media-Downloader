@@ -1,9 +1,9 @@
 Load this folder from Chrome/Edge/Brave Extensions > Developer mode > Load unpacked.
-MediaDock R1.6.50 Browser Handler extension 2.4.1.
+MediaDock R1.6.53 Browser Handler extension 2.4.1.
 Performance-safe event-driven persistent floating whole-media grabber + queue fix.
-R1.6.50 keeps extension runtime code unchanged; the desktop app now makes update/torrent dialogs theme-adaptive and responsive.
+R1.6.53 keeps extension runtime code unchanged; the desktop app now makes update/torrent dialogs theme-adaptive and responsive.
 Expected unpacked extension ID: mgknjickielihcigpanjhhpbaldcpolf
 
-All R1.9.10 build outputs are kept under one Desktop folder: MediaDock R1.6.50 R1.5.
+All R1.9.10 build outputs are kept under one Desktop folder: MediaDock R1.6.53 R1.5.
 
-R1.6.50 adds the desktop peer-connectivity fix plus theme-adaptive/responsive UI. Extension 2.4.1 runtime remains unchanged.
+R1.6.53 adds the desktop peer-connectivity fix plus theme-adaptive/responsive UI. Extension 2.4.1 runtime remains unchanged.

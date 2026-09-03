@@ -1,6 +1,6 @@
-# MediaDock R1.6.50 development snapshot
+# MediaDock R1.6.53 development snapshot
 
-R1.6.50 replaces the fragile multi-step BAT preflight with a persistent visible launcher console, prefers the real PowerShell 7 installation before WindowsApps/PATH fallback, and carries forward the executable identity fix plus measured live torrent speed, ETA, peers/seeds, persistent queue, peer-connectivity, and theme-adaptive fixes.
+R1.6.53 enlarges the themed Add New Torrent content selector and makes torrent persistence self-contained. MediaDock now stores canonical .torrent metadata under its persistent TorrentClient state, embeds normal-sized .torrent metadata in session.json as a recovery copy, restores the queue after the main WPF window is loaded, and migrates legacy TorrentHost metadata. It carries forward first-load start/discovery, measured live speed/ETA/peer telemetry, fast peer connectivity, the persistent visible launcher, and no-force publication safeguards.
 
 UI/theme changes:
 - The update confirmation is a MediaDock-owned WPF dialog instead of a native Windows MessageBox.

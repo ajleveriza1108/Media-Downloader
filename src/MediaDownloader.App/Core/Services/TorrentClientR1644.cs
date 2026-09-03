@@ -230,6 +230,7 @@ public sealed class TorrentItemR1644 : INotifyPropertyChanged
     public string Source { get; init; } = string.Empty;
     public string PersistentSource { get; init; } = string.Empty;
     public string SavePath { get; init; } = string.Empty;
+    public bool CreateSubfolderR1651 { get; init; } = true;
     public DateTimeOffset AddedUtc { get; init; }
     public List<TorrentFileChoiceR1644> PersistedFileChoicesR199 { get; } = [];
 
@@ -531,6 +532,7 @@ public sealed class TorrentClientR1644 : IAsyncDisposable
         string savePath,
         bool streaming,
         bool startImmediately,
+        bool createSubfolder,
         CancellationToken token)
     {
         var result = await SendAsync<HostAddResult>(
@@ -541,6 +543,7 @@ public sealed class TorrentClientR1644 : IAsyncDisposable
                 SavePath = savePath,
                 StartImmediately = startImmediately,
                 EnableStreaming = streaming,
+                CreateSubfolder = createSubfolder,
                 Files = preview.Files.Select(file => new
                 {
                     file.Index,
@@ -558,6 +561,13 @@ public sealed class TorrentClientR1644 : IAsyncDisposable
             StartError = result.StartError
         };
     }
+
+    public async Task DiscardPreparedAsync(TorrentPreviewR1644 preview)
+        => _ = await SendAsync<JsonElement>(
+            "discardprepared",
+            new { preview.PreviewId },
+            TimeSpan.FromSeconds(8),
+            CancellationToken.None);
 
     public Task<IReadOnlyList<TorrentStatusSnapshotR1644>> GetStatusAsync(CancellationToken token = default)
         => SendListAsync<TorrentStatusSnapshotR1644>("status", new { }, TimeSpan.FromSeconds(8), token);
@@ -810,7 +820,7 @@ public sealed class TorrentClientR1644 : IAsyncDisposable
 
             if (response.Data.ValueKind != JsonValueKind.Object ||
                 !response.Data.TryGetProperty("Version", out var versionElement) ||
-                !string.Equals(versionElement.GetString(), "R1.6.50", StringComparison.Ordinal))
+                !string.Equals(versionElement.GetString(), "R1.6.53", StringComparison.Ordinal))
             {
                 throw new InvalidDataException("TorrentHost startup version handshake failed.");
             }
@@ -1116,6 +1126,7 @@ public sealed class TorrentClientR1644 : IAsyncDisposable
                         download,
                         streaming: false,
                         startImmediately: true,
+                        createSubfolder: true,
                         CancellationToken.None)
                     .GetAwaiter()
                     .GetResult();

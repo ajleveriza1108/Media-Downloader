@@ -1,11 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using MediaDownloader.Core.Services;
+using Microsoft.Win32;
 
 namespace MediaDownloader;
 
@@ -119,6 +121,351 @@ internal static class TorrentDialogThemeR194
         trigger.Setters.Add(new Setter(Control.FontWeightProperty, FontWeights.SemiBold));
         itemStyle.Triggers.Add(trigger);
         tabs.ItemContainerStyle = itemStyle;
+    }
+}
+
+// MEDIADOCK_ADD_TORRENT_DIALOG_R1651
+// Theme-matched pre-add dialog. A .torrent is only committed to TorrentHost after
+// the user chooses the destination, file selection, containing-folder behavior,
+// and whether the transfer should start immediately.
+public sealed class TorrentAddDialogR1651 : Window
+{
+    private readonly TorrentPreviewR1644 _preview;
+    private readonly TextBox _savePath;
+    private readonly CheckBox _createSubfolder;
+    private readonly CheckBox _startTorrent;
+    private readonly TextBlock _selectionSummary;
+
+    public string SavePath => _savePath.Text.Trim();
+    public bool CreateSubfolder => _createSubfolder.IsChecked == true;
+    public bool StartImmediately => _startTorrent.IsChecked == true;
+
+    public TorrentAddDialogR1651(
+        Window owner,
+        TorrentPreviewR1644 preview,
+        string defaultSavePath,
+        bool defaultStartImmediately)
+    {
+        _preview = preview;
+        Owner = owner;
+        Title = $"Add New Torrent - {preview.Name}";
+        // MEDIADOCK_ADD_TORRENT_CONTENT_SPACE_R1653
+        // Give the file selector the majority of the dialog on normal laptop displays.
+        // The window remains resizable and bounded to the usable work area.
+        var size = ThemeUiR1646.ResponsiveSize(owner, 0.84, 0.90, 820, 650, 1280, 940);
+        Width = size.Width;
+        Height = size.Height;
+        MinWidth = 780;
+        MinHeight = 620;
+        MaxWidth = Math.Max(MinWidth, SystemParameters.WorkArea.Width - 24);
+        MaxHeight = Math.Max(MinHeight, SystemParameters.WorkArea.Height - 20);
+        ResizeMode = ResizeMode.CanResize;
+        WindowStartupLocation = WindowStartupLocation.CenterOwner;
+        TorrentDialogThemeR194.Apply(this, owner);
+
+        var primary = ThemeUiR1646.ResolveBrush(owner, "ThemePrimaryTextBrush");
+        var secondary = ThemeUiR1646.ResolveBrush(owner, "ThemeSecondaryTextBrush");
+        var border = ThemeUiR1646.ResolveBrush(owner, "ThemeBorderBrush");
+        var panel = ThemeUiR1646.ResolveBrush(owner, "ThemePanelBackgroundBrush");
+        var surface = ThemeUiR1646.ResolveBrush(owner, "ThemeSurfaceBrush");
+
+        var root = new Grid { Margin = new Thickness(16) };
+        root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+        root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+
+        var heading = new StackPanel { Margin = new Thickness(0, 0, 0, 12) };
+        heading.Children.Add(new TextBlock
+        {
+            Text = "Add New Torrent",
+            Foreground = primary,
+            FontSize = 21,
+            FontWeight = FontWeights.SemiBold
+        });
+        heading.Children.Add(new TextBlock
+        {
+            Text = preview.Name,
+            Foreground = secondary,
+            Margin = new Thickness(0, 4, 0, 0),
+            TextWrapping = TextWrapping.Wrap
+        });
+        heading.Children.Add(new TextBlock
+        {
+            Text = $"{preview.TotalSizeText} • {(preview.IsMagnet ? "Magnet metadata" : ".torrent metadata loaded")}",
+            Foreground = secondary,
+            Margin = new Thickness(0, 3, 0, 0)
+        });
+        Grid.SetRow(heading, 0);
+        root.Children.Add(heading);
+
+        var saveBorder = new Border
+        {
+            Background = panel,
+            BorderBrush = border,
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(8),
+            Padding = new Thickness(12),
+            Margin = new Thickness(0, 0, 0, 10)
+        };
+        var saveGrid = new Grid();
+        saveGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        saveGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        saveGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        saveGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+
+        var saveLabel = new TextBlock
+        {
+            Text = "Save in",
+            Foreground = primary,
+            FontWeight = FontWeights.SemiBold,
+            Margin = new Thickness(0, 0, 0, 6)
+        };
+        Grid.SetColumnSpan(saveLabel, 2);
+        saveGrid.Children.Add(saveLabel);
+
+        _savePath = new TextBox
+        {
+            Text = defaultSavePath,
+            MinHeight = 36,
+            VerticalContentAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(0, 0, 8, 0)
+        };
+        ThemeUiR1646.ApplyTextBox(_savePath, owner);
+        Grid.SetRow(_savePath, 1);
+        saveGrid.Children.Add(_savePath);
+
+        var browse = ThemeUiR1646.MakeButton(owner, "Browse…", false, 96, 36);
+        browse.Click += (_, _) =>
+        {
+            var folderDialog = new OpenFolderDialog
+            {
+                Title = "Choose where MediaDock should save this torrent",
+                Multiselect = false,
+                InitialDirectory = Directory.Exists(SavePath) ? SavePath : defaultSavePath
+            };
+            if (folderDialog.ShowDialog(this) == true && !string.IsNullOrWhiteSpace(folderDialog.FolderName))
+            {
+                _savePath.Text = folderDialog.FolderName;
+            }
+        };
+        Grid.SetRow(browse, 1);
+        Grid.SetColumn(browse, 1);
+        saveGrid.Children.Add(browse);
+        saveBorder.Child = saveGrid;
+        Grid.SetRow(saveBorder, 1);
+        root.Children.Add(saveBorder);
+
+        var optionPanel = new WrapPanel { Margin = new Thickness(2, 0, 0, 10) };
+        _createSubfolder = new CheckBox
+        {
+            Content = "Create containing subfolder",
+            IsChecked = true,
+            Foreground = primary,
+            Margin = new Thickness(0, 0, 24, 0),
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        _startTorrent = new CheckBox
+        {
+            Content = "Start torrent immediately",
+            IsChecked = defaultStartImmediately,
+            Foreground = primary,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        optionPanel.Children.Add(_createSubfolder);
+        optionPanel.Children.Add(_startTorrent);
+        Grid.SetRow(optionPanel, 2);
+        root.Children.Add(optionPanel);
+
+        var contentsBorder = new Border
+        {
+            Background = surface,
+            BorderBrush = border,
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(8),
+            Padding = new Thickness(10),
+            MinHeight = 340
+        };
+        var contents = new DockPanel();
+
+        var contentsHeader = new Grid { Margin = new Thickness(0, 0, 0, 8) };
+        contentsHeader.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        contentsHeader.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+        var headerText = new StackPanel();
+        headerText.Children.Add(new TextBlock
+        {
+            Text = "Torrent contents",
+            Foreground = primary,
+            FontWeight = FontWeights.SemiBold
+        });
+        _selectionSummary = new TextBlock
+        {
+            Foreground = secondary,
+            Margin = new Thickness(0, 2, 0, 0)
+        };
+        headerText.Children.Add(_selectionSummary);
+        contentsHeader.Children.Add(headerText);
+
+        var selectionButtons = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            HorizontalAlignment = HorizontalAlignment.Right
+        };
+        var selectAll = ThemeUiR1646.MakeButton(owner, "Select All", false, 92, 32);
+        var selectNone = ThemeUiR1646.MakeButton(owner, "Select None", false, 96, 32);
+        selectAll.Click += (_, _) =>
+        {
+            foreach (var file in _preview.Files) file.Selected = true;
+            UpdateSelectionSummaryR1651();
+        };
+        selectNone.Click += (_, _) =>
+        {
+            foreach (var file in _preview.Files) file.Selected = false;
+            UpdateSelectionSummaryR1651();
+        };
+        selectionButtons.Children.Add(selectAll);
+        selectionButtons.Children.Add(selectNone);
+        Grid.SetColumn(selectionButtons, 1);
+        contentsHeader.Children.Add(selectionButtons);
+        DockPanel.SetDock(contentsHeader, Dock.Top);
+        contents.Children.Add(contentsHeader);
+
+        if (preview.Files.Count > 0)
+        {
+            foreach (var file in preview.Files)
+            {
+                file.PropertyChanged += (_, args) =>
+                {
+                    if (args.PropertyName == nameof(TorrentPreviewFileR1644.Selected))
+                    {
+                        UpdateSelectionSummaryR1651();
+                    }
+                };
+            }
+
+            var fileGrid = new DataGrid
+            {
+                AutoGenerateColumns = false,
+                CanUserAddRows = false,
+                ItemsSource = preview.Files,
+                SelectionMode = DataGridSelectionMode.Single,
+                MinHeight = 300,
+                RowHeight = 34,
+                ColumnHeaderHeight = 34
+            };
+            TorrentDialogThemeR194.ApplyGrid(fileGrid, owner);
+            fileGrid.Columns.Add(new DataGridCheckBoxColumn
+            {
+                Header = "Download",
+                Binding = new System.Windows.Data.Binding(nameof(TorrentPreviewFileR1644.Selected))
+                {
+                    Mode = System.Windows.Data.BindingMode.TwoWay,
+                    UpdateSourceTrigger = System.Windows.Data.UpdateSourceTrigger.PropertyChanged
+                },
+                Width = 84
+            });
+            fileGrid.Columns.Add(TorrentDialogThemeR194.CreateTextColumn(
+                owner, "Name", nameof(TorrentPreviewFileR1644.Path),
+                new DataGridLength(1, DataGridLengthUnitType.Star)));
+            fileGrid.Columns.Add(TorrentDialogThemeR194.CreateTextColumn(
+                owner, "Size", nameof(TorrentPreviewFileR1644.SizeText),
+                new DataGridLength(110), secondary: true));
+            contents.Children.Add(fileGrid);
+        }
+        else
+        {
+            selectAll.IsEnabled = false;
+            selectNone.IsEnabled = false;
+            contents.Children.Add(new TextBlock
+            {
+                Text = "File list will become available after magnet metadata is received. All files will be enabled initially.",
+                Foreground = secondary,
+                TextWrapping = TextWrapping.Wrap,
+                Margin = new Thickness(4, 12, 4, 12)
+            });
+        }
+
+        contentsBorder.Child = contents;
+        Grid.SetRow(contentsBorder, 3);
+        root.Children.Add(contentsBorder);
+
+        var footer = new Grid { Margin = new Thickness(0, 12, 0, 0) };
+        footer.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        footer.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+        var hint = new TextBlock
+        {
+            Text = "Nothing is added until you choose Add Torrent.",
+            Foreground = secondary,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        footer.Children.Add(hint);
+
+        var footerButtons = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            HorizontalAlignment = HorizontalAlignment.Right
+        };
+        var cancel = ThemeUiR1646.MakeButton(owner, "Cancel", false, 92, 36);
+        var add = ThemeUiR1646.MakeButton(owner, "Add Torrent", true, 112, 36);
+        add.IsDefault = true;
+        cancel.IsCancel = true;
+        cancel.Click += (_, _) => { DialogResult = false; Close(); };
+        add.Click += (_, _) =>
+        {
+            if (string.IsNullOrWhiteSpace(SavePath))
+            {
+                ThemedMessageBoxR1646.Show(this, "Choose a save folder first.", "MediaDock Torrent",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            try
+            {
+                _ = Path.GetFullPath(SavePath);
+            }
+            catch
+            {
+                ThemedMessageBoxR1646.Show(this, "The selected save folder is not valid.", "MediaDock Torrent",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            if (_preview.Files.Count > 0 && !_preview.Files.Any(file => file.Selected))
+            {
+                ThemedMessageBoxR1646.Show(this, "Select at least one file to download.", "MediaDock Torrent",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            DialogResult = true;
+            Close();
+        };
+        footerButtons.Children.Add(cancel);
+        footerButtons.Children.Add(add);
+        Grid.SetColumn(footerButtons, 1);
+        footer.Children.Add(footerButtons);
+        Grid.SetRow(footer, 4);
+        root.Children.Add(footer);
+
+        Content = root;
+        UpdateSelectionSummaryR1651();
+    }
+
+    private void UpdateSelectionSummaryR1651()
+    {
+        if (_preview.Files.Count == 0)
+        {
+            _selectionSummary.Text = "Metadata pending";
+            return;
+        }
+
+        var selected = _preview.Files.Where(file => file.Selected).ToArray();
+        var selectedBytes = selected.Sum(file => file.Length);
+        _selectionSummary.Text =
+            $"{selected.Length} of {_preview.Files.Count} files selected • {TorrentClientR1644.FormatSizeR1644(selectedBytes)}";
     }
 }
 

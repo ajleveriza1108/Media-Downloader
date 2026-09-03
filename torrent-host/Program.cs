@@ -252,13 +252,22 @@ internal sealed class TorrentHostRuntime : IAsyncDisposable
     public TorrentHostRuntime()
     {
         _settingsR199 = TorrentHostSettingsR199.Load();
-        _metadataDirectory = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "AJCoder",
-            "MediaDock",
-            "TorrentHost",
-            "Metadata");
+        var networkSelfTest = string.Equals(Environment.GetEnvironmentVariable("MEDIADOCK_TORRENT_SELFTEST"), "1", StringComparison.Ordinal);
+
+        // MEDIADOCK_TORRENT_CANONICAL_METADATA_STORE_R1653
+        // Keep .torrent metadata beside the persistent session, not under the disposable
+        // TorrentHost runtime/cache tree. Self-tests are redirected to their temp workspace.
+        var selfTestMetadataDirectory = Environment.GetEnvironmentVariable("MEDIADOCK_TORRENT_SELFTEST_METADATA_DIR");
+        _metadataDirectory = networkSelfTest && !string.IsNullOrWhiteSpace(selfTestMetadataDirectory)
+            ? selfTestMetadataDirectory
+            : Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "AJCoder",
+                "MediaDock",
+                "TorrentClient",
+                "Metadata");
         Directory.CreateDirectory(_metadataDirectory);
+        if (!networkSelfTest) MigrateLegacyTorrentMetadataR1653();
 
         _http = new HttpClient(new SocketsHttpHandler
         {
@@ -280,8 +289,6 @@ internal sealed class TorrentHostRuntime : IAsyncDisposable
         Directory.CreateDirectory(cacheDirectory);
 
         // MEDIADOCK_TORRENT_FAST_PEER_BOOTSTRAP_R1910
-        var networkSelfTest = string.Equals(Environment.GetEnvironmentVariable("MEDIADOCK_TORRENT_SELFTEST"), "1", StringComparison.Ordinal);
-
         var settings = new EngineSettingsBuilder
         {
             AllowHaveSuppression = true,
@@ -354,7 +361,7 @@ internal sealed class TorrentHostRuntime : IAsyncDisposable
             {
                 "ping" => new
                 {
-                    Version = "R1.6.50",
+                    Version = "R1.6.53",
                     ProcessId = Environment.ProcessId,
                     Engine = "MonoTorrent 3.9 alpha",
                     DhtState = _engine.Dht.State.ToString(),
@@ -362,6 +369,7 @@ internal sealed class TorrentHostRuntime : IAsyncDisposable
                     PeerListenerConfigured = _engine.Settings.ListenEndPoints.Count > 0
                 },
                 "prepare" => await PrepareAsync(request.Payload),
+                "discardprepared" => DiscardPrepared(request.Payload),
                 "add" => await AddAsync(request.Payload),
                 "status" => await GetStatusAsync(),
                 "start" => await StartAsync(request.Payload),
@@ -399,6 +407,38 @@ internal sealed class TorrentHostRuntime : IAsyncDisposable
         finally
         {
             _commandGate.Release();
+        }
+    }
+
+    private void MigrateLegacyTorrentMetadataR1653()
+    {
+        try
+        {
+            var legacy = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "AJCoder", "MediaDock", "TorrentHost", "Metadata");
+            if (!Directory.Exists(legacy) ||
+                string.Equals(Path.GetFullPath(legacy), Path.GetFullPath(_metadataDirectory), StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            foreach (var source in Directory.EnumerateFiles(legacy, "*.torrent", SearchOption.TopDirectoryOnly))
+            {
+                try
+                {
+                    var destination = Path.Combine(_metadataDirectory, Path.GetFileName(source));
+                    if (!File.Exists(destination)) File.Copy(source, destination, false);
+                }
+                catch (Exception ex)
+                {
+                    WriteCrashLog("MetadataMigration.R1653", ex);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            WriteCrashLog("MetadataMigration.Scan.R1653", ex);
         }
     }
 
@@ -474,12 +514,20 @@ internal sealed class TorrentHostRuntime : IAsyncDisposable
         };
     }
 
+    private object DiscardPrepared(JsonElement payload)
+    {
+        var previewId = RequiredString(payload, "PreviewId");
+        _prepared.Remove(previewId);
+        return new { Discarded = true };
+    }
+
     private async Task<object> AddAsync(JsonElement payload)
     {
         var previewId = RequiredString(payload, "PreviewId");
         var savePath = RequiredString(payload, "SavePath").Trim();
         var startImmediately = OptionalBool(payload, "StartImmediately", true);
         var enableStreaming = OptionalBool(payload, "EnableStreaming", true);
+        var createSubfolder = OptionalBool(payload, "CreateSubfolder", true);
 
         if (!_prepared.Remove(previewId, out var prepared))
         {
@@ -495,7 +543,7 @@ internal sealed class TorrentHostRuntime : IAsyncDisposable
             MaximumUploadRate = Math.Max(0, _settingsR199.MaximumUploadRateKbps) * 1024,
             AllowDht = _settingsR199.EnableDht,
             AllowPeerExchange = _settingsR199.EnablePex,
-            CreateContainingDirectory = true
+            CreateContainingDirectory = createSubfolder
         }.ToSettings();
 
         TorrentManager manager;
@@ -1055,6 +1103,22 @@ internal sealed class TorrentHostRuntime : IAsyncDisposable
         }
     }
 
+    private async Task KickInitialPeerDiscoveryR1651Async(ManagedTorrent item)
+    {
+        if (!_settingsR199.FastPeerDiscovery) return;
+        try
+        {
+            // Await enough of the first discovery cycle to guarantee that tracker/DHT/LPD
+            // work was issued, but never let a slow public tracker block Add for too long.
+            await KickPeerDiscoveryR1910Async(item, sendStartedEvent: true)
+                .WaitAsync(TimeSpan.FromSeconds(6));
+        }
+        catch (TimeoutException)
+        {
+            item.DiscoveryStatus = "Peer discovery started and is continuing in the background...";
+        }
+    }
+
     private async Task StartAndSettleAsync(ManagedTorrent item)
     {
         var manager = item.Manager;
@@ -1063,14 +1127,11 @@ internal sealed class TorrentHostRuntime : IAsyncDisposable
             string.Equals(before, "Seeding", StringComparison.OrdinalIgnoreCase) ||
             string.Equals(before, "Metadata", StringComparison.OrdinalIgnoreCase))
         {
+            await KickInitialPeerDiscoveryR1651Async(item);
             return;
         }
 
         await manager.StartAsync().WaitAsync(TimeSpan.FromSeconds(10));
-        if (_settingsR199.FastPeerDiscovery)
-        {
-            _ = KickPeerDiscoveryR1910Async(item, sendStartedEvent: true);
-        }
         var deadline = DateTime.UtcNow + StartSettleTimeout;
         while (DateTime.UtcNow < deadline)
         {
@@ -1083,6 +1144,11 @@ internal sealed class TorrentHostRuntime : IAsyncDisposable
             if (!string.Equals(state, "Starting", StringComparison.OrdinalIgnoreCase) &&
                 !string.Equals(state, "Stopping", StringComparison.OrdinalIgnoreCase))
             {
+                // MEDIADOCK_FIRST_LOAD_DISCOVERY_SETTLE_R1651
+                // Do not return from a fresh Add/Start before the first tracker/DHT/local
+                // discovery kick has actually been issued. Restore already benefited from
+                // a warm host; this makes the first load equally deterministic.
+                await KickInitialPeerDiscoveryR1651Async(item);
                 return;
             }
 
@@ -1727,6 +1793,7 @@ internal sealed class TorrentHostRuntime : IAsyncDisposable
         Directory.CreateDirectory(download);
         var torrentPath = Path.Combine(root, "saved-valid.torrent");
         await File.WriteAllBytesAsync(torrentPath, BuildSavedTorrentSelfTestBytes());
+        Environment.SetEnvironmentVariable("MEDIADOCK_TORRENT_SELFTEST_METADATA_DIR", Path.Combine(root, "metadata"));
 
         await using var runtime = new TorrentHostRuntime();
         try
@@ -1744,6 +1811,14 @@ internal sealed class TorrentHostRuntime : IAsyncDisposable
 
             var preview = JsonSerializer.SerializeToElement(prepare.Data);
             var previewId = preview.GetProperty("PreviewId").GetString()!;
+            var persistentSource = preview.GetProperty("PersistentSource").GetString() ?? string.Empty;
+            if (!File.Exists(persistentSource) ||
+                !string.Equals(Path.GetFullPath(Path.GetDirectoryName(persistentSource) ?? string.Empty),
+                    Path.GetFullPath(runtime._metadataDirectory), StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException("Canonical .torrent metadata persistence self-test failed.");
+            }
+
             var add = await runtime.HandleAsync(new TorrentHostRequest
             {
                 RequestId = "add",

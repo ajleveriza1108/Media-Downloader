@@ -27,6 +27,19 @@ public partial class MainWindow
         // Persist the torrent list here so an async Closed handler can never lose the session.
         Closing += (_, _) => _viewModel.PersistTorrentSessionOnClosingR1646();
 
+        // MEDIADOCK_TORRENT_RESTORE_AFTER_WINDOW_LOADED_R1653
+        Loaded += async (_, _) =>
+        {
+            try
+            {
+                await _viewModel.RestorePersistedTorrentsAfterLoadedR1653Async();
+            }
+            catch (Exception ex)
+            {
+                App.WriteCrashLog("Torrent.Session.LoadedRestore.R1653", ex);
+            }
+        };
+
         Closed += async (_, _) =>
         {
             try
@@ -111,9 +124,9 @@ public partial class MainWindow
         }
     }
 
-    // Normal torrent-client behavior: opening/dropping a .torrent or submitting a magnet
-    // validates metadata, adds all files to the default torrent folder, and starts immediately.
-    // File priorities can still be changed from the Files action while the torrent is running.
+    // MEDIADOCK_ADD_TORRENT_CONFIRMATION_R1651
+    // Opening/dropping a .torrent prepares metadata only. The torrent is not committed
+    // until the user confirms save location, file selection and start behavior.
     private async Task<bool> PrepareAndAddTorrentR190Async(string source)
     {
         if (string.IsNullOrWhiteSpace(source))
@@ -131,15 +144,28 @@ public partial class MainWindow
             return false;
         }
 
+        var addDialog = new TorrentAddDialogR1651(
+            this,
+            preview,
+            _viewModel.TorrentOutputDirectoryR1644,
+            _viewModel.TorrentPreferencesR199.AutoStartDownloads);
+        if (addDialog.ShowDialog() != true)
+        {
+            await _viewModel.DiscardPreparedTorrentR1651Async(preview);
+            _viewModel.SetTorrentStatusR1651("Torrent add cancelled. No download was created.");
+            return false;
+        }
+
         return await TryTorrentUiActionR1644Async(
-            "Torrent.IsolatedHost.AutoAddStart.R197",
+            "Torrent.IsolatedHost.AddFromDialog.R1651",
             async () =>
             {
                 await _viewModel.AddPreparedTorrentR1644Async(
                     preview,
-                    _viewModel.TorrentOutputDirectoryR1644,
+                    addDialog.SavePath,
                     streaming: true,
-                    startImmediately: true);
+                    startImmediately: addDialog.StartImmediately,
+                    createSubfolder: addDialog.CreateSubfolder);
             },
             title: "MediaDock Torrent");
     }
