@@ -22,6 +22,11 @@ public partial class MainWindow
         TorrentWorkspaceR1644.PreviewDragOver += TorrentWorkspaceR1644_PreviewDragOver;
         TorrentWorkspaceR1644.Drop += TorrentWorkspaceR1644_Drop;
 
+        // MEDIADOCK_TORRENT_SYNC_CLOSE_PERSIST_R1646
+        // Window.Closing is synchronous and happens before WPF can terminate the process.
+        // Persist the torrent list here so an async Closed handler can never lose the session.
+        Closing += (_, _) => _viewModel.PersistTorrentSessionOnClosingR1646();
+
         Closed += async (_, _) =>
         {
             try

@@ -1937,8 +1937,8 @@
                     <DataGridTemplateColumn.CellTemplate>
                       <DataTemplate>
                         <Grid Margin="2,8">
-                          <ProgressBar Maximum="100" Value="{Binding Progress}" Style="{StaticResource TorrentProgressBarR197}"/>
-                          <TextBlock Text="{Binding Progress, StringFormat={}{0:0.0}%}"
+                          <ProgressBar Maximum="100" Value="{Binding Progress, Mode=OneWay}" Style="{StaticResource TorrentProgressBarR197}"/>
+                          <TextBlock Text="{Binding Progress, Mode=OneWay, StringFormat={}{0:0.0}%}"
                                      Foreground="{DynamicResource ThemePrimaryTextBrush}"
                                      FontFamily="Segoe UI"
                                      FontSize="9"
@@ -1949,12 +1949,12 @@
                       </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                   </DataGridTemplateColumn>
-                  <DataGridTextColumn Header="Down" Binding="{Binding DownloadRate}" Width="88" ElementStyle="{StaticResource TorrentGridTextR198}"/>
-                  <DataGridTextColumn Header="Up" Binding="{Binding UploadRate}" Width="82" ElementStyle="{StaticResource TorrentGridSecondaryTextR198}"/>
-                  <DataGridTextColumn Header="Peers" Binding="{Binding Peers}" Width="56" ElementStyle="{StaticResource TorrentGridTextR198}"/>
-                  <DataGridTextColumn Header="Seeds" Binding="{Binding Seeds}" Width="56" ElementStyle="{StaticResource TorrentGridTextR198}"/>
-                  <DataGridTextColumn Header="ETA" Binding="{Binding Eta}" Width="76" ElementStyle="{StaticResource TorrentGridSecondaryTextR198}"/>
-                  <DataGridTextColumn Header="Ratio" Binding="{Binding Ratio}" Width="64" ElementStyle="{StaticResource TorrentGridSecondaryTextR198}"/>
+                  <DataGridTextColumn Header="Down" Binding="{Binding DownloadRate, Mode=OneWay}" Width="88" ElementStyle="{StaticResource TorrentGridTextR198}"/>
+                  <DataGridTextColumn Header="Up" Binding="{Binding UploadRate, Mode=OneWay}" Width="82" ElementStyle="{StaticResource TorrentGridSecondaryTextR198}"/>
+                  <DataGridTextColumn Header="Peers" Binding="{Binding Peers, Mode=OneWay}" Width="56" ElementStyle="{StaticResource TorrentGridTextR198}"/>
+                  <DataGridTextColumn Header="Seeds" Binding="{Binding Seeds, Mode=OneWay}" Width="56" ElementStyle="{StaticResource TorrentGridTextR198}"/>
+                  <DataGridTextColumn Header="ETA" Binding="{Binding Eta, Mode=OneWay}" Width="76" ElementStyle="{StaticResource TorrentGridSecondaryTextR198}"/>
+                  <DataGridTextColumn Header="Ratio" Binding="{Binding Ratio, Mode=OneWay}" Width="64" ElementStyle="{StaticResource TorrentGridSecondaryTextR198}"/>
                 </DataGrid.Columns>
               </DataGrid>
 
@@ -2000,7 +2000,7 @@
               <ColumnDefinition Width="*"/>
               <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
-            <TextBlock Text="{Binding TorrentStatusR1644}"
+            <TextBlock Text="{Binding TorrentStatusR1644, Mode=OneWay}"
                        Foreground="{DynamicResource ThemeSecondaryTextBrush}"
                        FontFamily="Segoe UI"
                        FontSize="10.5"

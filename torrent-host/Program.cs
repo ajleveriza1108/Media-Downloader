@@ -155,6 +155,24 @@ internal sealed class ManagedTorrent
     public string LastTrackerStatus { get; set; } = "Waiting for tracker announce";
     public string LastPeerFailure { get; set; } = string.Empty;
     public long DiscoveredPeers;
+    // MEDIADOCK_TORRENT_LIVE_TELEMETRY_R1646
+    public long LastSnapshotDownloaded;
+    public double LastSnapshotVerifiedProgress;
+    public DateTimeOffset LastTransferUtc = DateTimeOffset.MinValue;
+    public int LiveProgressBaselineGate;
+    public long LiveProgressBaselineDownloaded;
+    public double LiveProgressBaselineVerified;
+    // MEDIADOCK_TORRENT_MEASURED_RATE_R1647
+    // MonoTorrent's aggregate Monitor rate can briefly report zero while payload bytes
+    // are still advancing. Measure the transfer from DataBytesReceived/DataBytesSent
+    // over a monotonic time window and retain peer-monitor telemetry as a fallback.
+    public long RateSampleDownloaded;
+    public long RateSampleUploaded;
+    public long RateSampleTick;
+    public long LastDownloadActivityTick;
+    public long LastUploadActivityTick;
+    public long MeasuredDownloadRate;
+    public long MeasuredUploadRate;
     // MEDIADOCK_TORRENT_SOURCE_TELEMETRY_R1646
     public long TrackerPeersDiscovered;
     public long DhtPeersDiscovered;
@@ -162,6 +180,16 @@ internal sealed class ManagedTorrent
     public long LocalPeersDiscovered;
     public long OtherPeersDiscovered;
     public long ConnectionFailures;
+    // MEDIADOCK_TORRENT_HOT_STATUS_CACHE_R1646
+    // Keep the high-frequency status IPC path free of peer enumeration and tracker I/O.
+    public int CachedConnectedPeers;
+    public int CachedConnectedSeeds;
+    public long CachedPeerDownloadRate;
+    public long CachedPeerUploadRate;
+    public long LastPeerDetailRefreshTick;
+    public int PeerDetailRefreshGate;
+    public long LastTrackerScrapeAttemptTick;
+    public int TrackerScrapeGate;
     public int StartedAnnounceGate;
     public int RecoveryLoopGate;
     public int Removed;
@@ -294,7 +322,7 @@ internal sealed class TorrentHostRuntime : IAsyncDisposable
             MaximumUploadRate = Math.Max(0, _settingsR199.MaximumUploadRateKbps) * 1024,
             UsePartialFiles = true,
             // MEDIADOCK_TORRENT_VALID_TRACKER_PORT_R1646
-            // A BitTorrent tracker announce needs a real peer port. R1.6.45 disabled the
+            // A BitTorrent tracker announce needs a real peer port. R1.6.46 disabled the
             // listener whenever router-mapped incoming connections were disabled, which
             // left MonoTorrent with no actual port to report. Bind an automatic local peer
             // port in every normal run; UPnP/NAT-PMP remains opt-in through AllowPortForwarding.
@@ -326,7 +354,7 @@ internal sealed class TorrentHostRuntime : IAsyncDisposable
             {
                 "ping" => new
                 {
-                    Version = "R1.6.46",
+                    Version = "R1.6.50",
                     ProcessId = Environment.ProcessId,
                     Engine = "MonoTorrent 3.9 alpha",
                     DhtState = _engine.Dht.State.ToString(),
@@ -629,6 +657,7 @@ internal sealed class TorrentHostRuntime : IAsyncDisposable
 
         await SafeStopAsync(item.Manager);
         await item.Manager.HashCheckAsync(false).WaitAsync(TimeSpan.FromMinutes(15));
+        ResetLiveProgressBaselineR1646(item);
         item.LastError = string.Empty;
         return await BuildSnapshotAsync(item);
     }
@@ -732,6 +761,7 @@ internal sealed class TorrentHostRuntime : IAsyncDisposable
         }
 
         await ApplyFileSelectionsAsync(item.Manager, filesElement);
+        ResetLiveProgressBaselineR1646(item);
         return GetFiles(payload);
     }
 
@@ -1099,34 +1129,257 @@ internal sealed class TorrentHostRuntime : IAsyncDisposable
         }
     }
 
-    private async Task<object> BuildSnapshotAsync(ManagedTorrent item)
+    private static void ResetLiveProgressBaselineR1646(ManagedTorrent item)
     {
-        var manager = item.Manager;
-        var progress = manager.HasMetadata ? manager.PartialProgress : manager.Progress;
-        var totalSize = manager.HasMetadata ? manager.Files.Sum(file => file.Length) : 0L;
-        var downloadRate = manager.Monitor.DownloadRate;
-        var uploadRate = manager.Monitor.UploadRate;
-        var downloaded = manager.Monitor.DataBytesReceived;
-        var uploaded = manager.Monitor.DataBytesSent;
-        var peers = manager.OpenConnections;
+        item.LiveProgressBaselineDownloaded = 0;
+        item.LiveProgressBaselineVerified = 0;
+        Volatile.Write(ref item.LiveProgressBaselineGate, 0);
+    }
+
+    private static void SchedulePeerDetailRefreshR1646(ManagedTorrent item)
+    {
+        var now = Environment.TickCount64;
+        var last = Volatile.Read(ref item.LastPeerDetailRefreshTick);
+        if (last != 0 && now - last < 1000) return;
+        if (Interlocked.Exchange(ref item.PeerDetailRefreshGate, 1) != 0) return;
+        Volatile.Write(ref item.LastPeerDetailRefreshTick, now);
+
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                var peers = (await item.Manager.GetPeersAsync()).ToArray();
+                Volatile.Write(ref item.CachedConnectedPeers, peers.Length);
+                Volatile.Write(ref item.CachedConnectedSeeds, peers.Count(peer => peer.IsSeeder));
+                Volatile.Write(ref item.CachedPeerDownloadRate, peers.Sum(peer => Math.Max(0L, peer.Monitor.DownloadRate)));
+                Volatile.Write(ref item.CachedPeerUploadRate, peers.Sum(peer => Math.Max(0L, peer.Monitor.UploadRate)));
+            }
+            catch
+            {
+                // Seed detail is optional telemetry and must never stall status IPC.
+            }
+            finally
+            {
+                Volatile.Write(ref item.PeerDetailRefreshGate, 0);
+            }
+        });
+    }
+
+    private static int GetTrackerSeedCountR1646(TorrentManager manager)
+    {
         var seeds = 0;
         try
         {
-            seeds = (await manager.GetPeersAsync()).Count(peer => peer.IsSeeder);
+            foreach (var tier in manager.TrackerManager.Tiers)
+            {
+                foreach (var info in tier.ScrapeInfo.Values)
+                {
+                    seeds = Math.Max(seeds, info.Complete);
+                }
+            }
         }
         catch
         {
-            // Peer detail is optional telemetry.
+            // A tracker may not support scrape; connected-seed telemetry remains available.
+        }
+        return seeds;
+    }
+
+    private static void ScheduleTrackerScrapeR1646(ManagedTorrent item)
+    {
+        if (!item.Manager.HasMetadata || item.Manager.TrackerManager.Tiers.Count == 0) return;
+        var now = Environment.TickCount64;
+        var last = Volatile.Read(ref item.LastTrackerScrapeAttemptTick);
+        if (last != 0 && now - last < 10000) return;
+        if (Interlocked.Exchange(ref item.TrackerScrapeGate, 1) != 0) return;
+        Volatile.Write(ref item.LastTrackerScrapeAttemptTick, now);
+
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                // MonoTorrent itself enforces tracker scrape/update intervals.
+                await item.Manager.TrackerManager.ScrapeAsync(CancellationToken.None);
+            }
+            catch
+            {
+                // Tracker scrape is optional and never blocks transfer/status refresh.
+            }
+            finally
+            {
+                Volatile.Write(ref item.TrackerScrapeGate, 0);
+            }
+        });
+    }
+
+    private static long CalculateByteDeltaRateR1647(long currentBytes, long previousBytes, long elapsedMilliseconds)
+    {
+        if (elapsedMilliseconds <= 0) return 0;
+        var delta = currentBytes >= previousBytes
+            ? currentBytes - previousBytes
+            : currentBytes;
+        if (delta <= 0) return 0;
+        return Math.Max(0L, (long)Math.Round(delta * 1000d / elapsedMilliseconds));
+    }
+
+    private static (long DownloadRate, long UploadRate) MeasureTransferRatesR1647(
+        ManagedTorrent item,
+        long downloaded,
+        long uploaded,
+        long monitorDownloadRate,
+        long monitorUploadRate)
+    {
+        const long minimumSampleMilliseconds = 700;
+        const long staleRateMilliseconds = 2500;
+
+        var nowTick = Environment.TickCount64;
+        var peerDownloadRate = Math.Max(0L, Volatile.Read(ref item.CachedPeerDownloadRate));
+        var peerUploadRate = Math.Max(0L, Volatile.Read(ref item.CachedPeerUploadRate));
+
+        if (item.RateSampleTick == 0)
+        {
+            item.RateSampleDownloaded = downloaded;
+            item.RateSampleUploaded = uploaded;
+            item.RateSampleTick = nowTick;
+            item.MeasuredDownloadRate = Math.Max(Math.Max(0L, monitorDownloadRate), peerDownloadRate);
+            item.MeasuredUploadRate = Math.Max(Math.Max(0L, monitorUploadRate), peerUploadRate);
+            if (item.MeasuredDownloadRate > 0) item.LastDownloadActivityTick = nowTick;
+            if (item.MeasuredUploadRate > 0) item.LastUploadActivityTick = nowTick;
+        }
+        else
+        {
+            var elapsedMilliseconds = Math.Max(0L, nowTick - item.RateSampleTick);
+            if (elapsedMilliseconds >= minimumSampleMilliseconds)
+            {
+                var downloadedDelta = downloaded >= item.RateSampleDownloaded
+                    ? downloaded - item.RateSampleDownloaded
+                    : downloaded;
+                var uploadedDelta = uploaded >= item.RateSampleUploaded
+                    ? uploaded - item.RateSampleUploaded
+                    : uploaded;
+
+                var byteDeltaDownloadRate = CalculateByteDeltaRateR1647(
+                    downloaded,
+                    item.RateSampleDownloaded,
+                    elapsedMilliseconds);
+                var byteDeltaUploadRate = CalculateByteDeltaRateR1647(
+                    uploaded,
+                    item.RateSampleUploaded,
+                    elapsedMilliseconds);
+
+                item.MeasuredDownloadRate = Math.Max(
+                    byteDeltaDownloadRate,
+                    Math.Max(Math.Max(0L, monitorDownloadRate), peerDownloadRate));
+                item.MeasuredUploadRate = Math.Max(
+                    byteDeltaUploadRate,
+                    Math.Max(Math.Max(0L, monitorUploadRate), peerUploadRate));
+
+                // Activity lifetime is anchored to real byte movement, not a monitor
+                // fallback which could itself be stale. This guarantees a stopped
+                // transfer returns to 0 B/s after the short display grace period.
+                if (downloadedDelta > 0)
+                    item.LastDownloadActivityTick = nowTick;
+                if (uploadedDelta > 0)
+                    item.LastUploadActivityTick = nowTick;
+
+                item.RateSampleDownloaded = downloaded;
+                item.RateSampleUploaded = uploaded;
+                item.RateSampleTick = nowTick;
+            }
         }
 
-        var eta = -1d;
-        if (totalSize > 0 && downloadRate > 0 && progress < 100)
+        var downloadRate = item.MeasuredDownloadRate;
+        var uploadRate = item.MeasuredUploadRate;
+        if (item.LastDownloadActivityTick == 0 || nowTick - item.LastDownloadActivityTick > staleRateMilliseconds)
         {
-            var remaining = Math.Max(0d, totalSize * (1d - progress / 100d));
+            downloadRate = 0;
+            item.MeasuredDownloadRate = 0;
+        }
+        if (item.LastUploadActivityTick == 0 || nowTick - item.LastUploadActivityTick > staleRateMilliseconds)
+        {
+            uploadRate = 0;
+            item.MeasuredUploadRate = 0;
+        }
+
+        return (Math.Max(0L, downloadRate), Math.Max(0L, uploadRate));
+    }
+
+    private Task<object> BuildSnapshotAsync(ManagedTorrent item)
+    {
+        var manager = item.Manager;
+        var verifiedProgress = manager.HasMetadata ? manager.PartialProgress : manager.Progress;
+        var totalSize = manager.HasMetadata ? manager.Files.Sum(file => file.Length) : 0L;
+        var downloadTargetSize = manager.HasMetadata
+            ? manager.Files.Where(file => file.Priority != Priority.DoNotDownload).Sum(file => file.Length)
+            : totalSize;
+        var monitorDownloadRate = manager.Monitor.DownloadRate;
+        var monitorUploadRate = manager.Monitor.UploadRate;
+        var downloaded = manager.Monitor.DataBytesReceived;
+        var uploaded = manager.Monitor.DataBytesSent;
+
+        // Refresh peer detail asynchronously. The status request itself never waits on
+        // GetPeersAsync, but the latest peer count and per-peer rates are folded into
+        // the next live snapshot when available.
+        SchedulePeerDetailRefreshR1646(item);
+        ScheduleTrackerScrapeR1646(item);
+        var peers = Math.Max(manager.OpenConnections, Volatile.Read(ref item.CachedConnectedPeers));
+        var measuredRates = MeasureTransferRatesR1647(
+            item,
+            downloaded,
+            uploaded,
+            monitorDownloadRate,
+            monitorUploadRate);
+        var downloadRate = measuredRates.DownloadRate;
+        var uploadRate = measuredRates.UploadRate;
+
+        // MEDIADOCK_TORRENT_LIVE_PROGRESS_R1646
+        // Verified piece progress can advance only when a full piece hashes successfully.
+        // DataBytesReceived advances for each torrent-file PieceMessage payload. Blend them
+        // so the UI moves while a piece is in flight, but never claim 100% before verified
+        // piece completion reaches 100%.
+        if (Interlocked.CompareExchange(ref item.LiveProgressBaselineGate, 1, 0) == 0)
+        {
+            item.LiveProgressBaselineDownloaded = downloaded;
+            item.LiveProgressBaselineVerified = verifiedProgress;
+        }
+
+        var baselineVerifiedBytes = downloadTargetSize > 0
+            ? downloadTargetSize * Math.Clamp(item.LiveProgressBaselineVerified, 0d, 100d) / 100d
+            : 0d;
+        var payloadBytesSinceBaseline = Math.Max(0L, downloaded - item.LiveProgressBaselineDownloaded);
+        var payloadProgress = downloadTargetSize > 0
+            ? Math.Min(99.9d, (baselineVerifiedBytes + payloadBytesSinceBaseline) * 100d / downloadTargetSize)
+            : 0d;
+        var progress = verifiedProgress >= 100d
+            ? 100d
+            : Math.Max(verifiedProgress, payloadProgress);
+
+        var now = DateTimeOffset.UtcNow;
+        if (downloadRate > 0 ||
+            downloaded > item.LastSnapshotDownloaded ||
+            verifiedProgress > item.LastSnapshotVerifiedProgress)
+        {
+            item.LastTransferUtc = now;
+        }
+
+        item.LastSnapshotDownloaded = Math.Max(item.LastSnapshotDownloaded, downloaded);
+        item.LastSnapshotVerifiedProgress = Math.Max(item.LastSnapshotVerifiedProgress, verifiedProgress);
+        var liveTransferActive = item.LastTransferUtc != DateTimeOffset.MinValue &&
+                                 now - item.LastTransferUtc <= TimeSpan.FromSeconds(5);
+        // High-frequency UI snapshots stay cheap. Peer enumeration and tracker scrape
+        // are already scheduled above and never block this IPC response.
+        var seeds = Math.Max(
+            Volatile.Read(ref item.CachedConnectedSeeds),
+            GetTrackerSeedCountR1646(manager));
+
+        var eta = -1d;
+        if (downloadTargetSize > 0 && downloadRate > 0 && progress < 100)
+        {
+            var remaining = Math.Max(0d, downloadTargetSize * (1d - progress / 100d));
             eta = remaining / downloadRate;
         }
 
-        return new
+        return Task.FromResult<object>(new
         {
             Id = item.Id,
             Source = item.Source,
@@ -1135,10 +1388,16 @@ internal sealed class TorrentHostRuntime : IAsyncDisposable
             Name = SafeManagerName(manager),
             Status = !string.IsNullOrWhiteSpace(item.LastError)
                 ? "Error"
-                : manager.State == TorrentState.Downloading && downloadRate == 0 && peers == 0 && progress < 100
-                    ? Volatile.Read(ref item.DiscoveredPeers) > 0 ? "Connecting peers" : "Finding peers"
+                : manager.State == TorrentState.Downloading && progress < 100
+                    ? liveTransferActive || downloadRate > 0 || peers > 0
+                        ? "Downloading"
+                        : Volatile.Read(ref item.DiscoveredPeers) > 0
+                            ? "Connecting peers"
+                            : "Finding peers"
                     : manager.State.ToString(),
             Progress = progress,
+            VerifiedProgress = verifiedProgress,
+            LiveTransferActive = liveTransferActive,
             TotalSize = totalSize,
             DownloadRate = downloadRate,
             UploadRate = uploadRate,
@@ -1167,7 +1426,7 @@ internal sealed class TorrentHostRuntime : IAsyncDisposable
             StreamingAvailable = manager.StreamProvider is not null,
             HasMetadata = manager.HasMetadata,
             AddedUtc = item.AddedUtc
-        };
+        });
     }
 
     private ManagedTorrent RequiredManaged(JsonElement payload)
@@ -1454,6 +1713,15 @@ internal sealed class TorrentHostRuntime : IAsyncDisposable
 
     public static async Task RunSelfTestAsync()
     {
+        // MEDIADOCK_TORRENT_MEASURED_RATE_SELFTEST_R1647
+        // 716,800 bytes over 700 ms is exactly 1,024,000 B/s. This catches
+        // regressions where the UI falls back to a permanently-zero monitor rate.
+        var measuredRateSelfTest = CalculateByteDeltaRateR1647(716_800, 0, 700);
+        if (measuredRateSelfTest != 1_024_000)
+        {
+            throw new InvalidOperationException($"Measured torrent rate self-test failed: {measuredRateSelfTest} B/s");
+        }
+
         var root = Path.Combine(Path.GetTempPath(), $"MediaDock-TorrentHostSelfTest-{Guid.NewGuid():N}");
         var download = Path.Combine(root, "download");
         Directory.CreateDirectory(download);

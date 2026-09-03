@@ -15,7 +15,7 @@ public sealed partial class MainWindowViewModel
 {
     private sealed class TorrentSessionDocumentR199
     {
-        public int Version { get; set; } = 1;
+        public int Version { get; set; } = 2;
         public List<TorrentSessionEntryR199> Torrents { get; set; } = [];
     }
 
@@ -43,7 +43,7 @@ public sealed partial class MainWindowViewModel
     };
 
     private TorrentClientR1644? _torrentClientR1644;
-    private readonly DispatcherTimer _torrentRefreshTimerR1644 = new() { Interval = TimeSpan.FromMilliseconds(1500) };
+    private readonly DispatcherTimer _torrentRefreshTimerR1644 = new() { Interval = TimeSpan.FromMilliseconds(350) };
     private readonly SemaphoreSlim _torrentStateGateR199 = new(1, 1);
     private string _torrentSourceR1644 = string.Empty;
     private string _torrentStatusR1644 = "Open a .torrent or paste a magnet link. Downloads start automatically in Fast mode.";
@@ -52,6 +52,7 @@ public sealed partial class MainWindowViewModel
     private int _torrentRefreshGateR1644;
     private int _torrentQueueGateR199;
     private int _torrentRestoreGateR199;
+    private readonly List<TorrentSessionEntryR199> _retainedTorrentSessionEntriesR1646 = [];
 
     public ObservableCollection<TorrentItemR1644> TorrentsR1644 { get; } = [];
     public string TorrentSourceR1644 { get => _torrentSourceR1644; set => SetProperty(ref _torrentSourceR1644, value); }
@@ -65,6 +66,7 @@ public sealed partial class MainWindowViewModel
 
     private static string TorrentSettingsPathR199 => Path.Combine(TorrentStateRootR199, "settings.json");
     private static string TorrentSessionPathR199 => Path.Combine(TorrentStateRootR199, "session.json");
+    private static string TorrentSessionBackupPathR1646 => TorrentSessionPathR199 + ".bak";
 
     public string TorrentOutputDirectoryR1644 => string.IsNullOrWhiteSpace(TorrentPreferencesR199.DownloadDirectory)
         ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads", "MediaDock", "Torrents")
@@ -139,7 +141,7 @@ public sealed partial class MainWindowViewModel
     public async Task ApplyTorrentPreferencesR199Async(TorrentPreferencesR199 settings)
     {
         NormalizeTorrentPreferencesR199(settings);
-        var currentEntries = BuildSessionEntriesR199();
+        var currentEntries = BuildTorrentSessionDocumentR1646().Torrents;
         TorrentPreferencesR199 = settings.Clone();
         Directory.CreateDirectory(TorrentOutputDirectoryR1644);
         WriteJsonAtomicR199(TorrentSettingsPathR199, TorrentPreferencesR199);
@@ -149,7 +151,12 @@ public sealed partial class MainWindowViewModel
         }
         else
         {
-            try { if (File.Exists(TorrentSessionPathR199)) File.Delete(TorrentSessionPathR199); }
+            _retainedTorrentSessionEntriesR1646.Clear();
+            try
+            {
+                if (File.Exists(TorrentSessionPathR199)) File.Delete(TorrentSessionPathR199);
+                if (File.Exists(TorrentSessionBackupPathR1646)) File.Delete(TorrentSessionBackupPathR1646);
+            }
             catch (Exception ex) { global::MediaDownloader.App.WriteCrashLog("Torrent.Session.DisablePersistence.R199", ex); }
         }
 
@@ -191,6 +198,7 @@ public sealed partial class MainWindowViewModel
                 }
             }
             UpdateQueuePositionsR199();
+            UpdateTorrentLiveStatusR1646();
             await MaintainTorrentQueueR199Async();
         }
         catch (Exception ex)
@@ -202,6 +210,49 @@ public sealed partial class MainWindowViewModel
         {
             Volatile.Write(ref _torrentRefreshGateR1644, 0);
         }
+    }
+
+    private void UpdateTorrentLiveStatusR1646()
+    {
+        var item = SelectedTorrentR1644;
+        if (item is null)
+        {
+            return;
+        }
+
+        if (string.Equals(item.Status, "Downloading", StringComparison.OrdinalIgnoreCase))
+        {
+            // MEDIADOCK_TORRENT_STATUS_SUMMARY_R1647
+            TorrentStatusR1644 =
+                $"{item.Name}: {item.Progress:0.0}% • ↓ {item.DownloadRate} • ↑ {item.UploadRate} • " +
+                $"P:{item.Peers} • S:{item.Seeds} • ETA {item.Eta} • ratio {item.Ratio} • {item.Downloaded} received";
+            return;
+        }
+
+        if (string.Equals(item.Status, "Finding peers", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(item.Status, "Connecting peers", StringComparison.OrdinalIgnoreCase))
+        {
+            TorrentStatusR1644 = string.IsNullOrWhiteSpace(item.DiscoveryStatus)
+                ? $"{item.Name}: {item.Status}"
+                : $"{item.Name}: {item.Status} • {item.DiscoveryStatus}";
+            return;
+        }
+
+        if (string.Equals(item.Status, "Seeding", StringComparison.OrdinalIgnoreCase) ||
+            item.Progress >= 100d)
+        {
+            TorrentStatusR1644 = $"{item.Name}: complete • ratio {item.Ratio}";
+            return;
+        }
+
+        if (string.Equals(item.Status, "Error", StringComparison.OrdinalIgnoreCase) &&
+            !string.IsNullOrWhiteSpace(item.LastError))
+        {
+            TorrentStatusR1644 = $"{item.Name}: {item.LastError}";
+            return;
+        }
+
+        TorrentStatusR1644 = $"{item.Name}: {item.Status} • {item.Progress:0.0}%";
     }
 
     public async Task<TorrentPreviewR1644> PrepareTorrentR1644Async(string source)
@@ -319,6 +370,13 @@ public sealed partial class MainWindowViewModel
         TorrentsR1644.Add(item);
         SelectedTorrentR1644 = item;
         UpdateQueuePositionsR199();
+        var restoredIdentity = NormalizeTorrentSourceR1644(item.PersistentSource.Length > 0 ? item.PersistentSource : item.Source);
+        _retainedTorrentSessionEntriesR1646.RemoveAll(entry =>
+        {
+            var identity = SessionIdentityR1646(entry);
+            return !string.IsNullOrWhiteSpace(identity) &&
+                   string.Equals(NormalizeTorrentSourceR1644(identity), restoredIdentity, StringComparison.OrdinalIgnoreCase);
+        });
         if (persist) await SaveTorrentSessionR199Async();
         return item;
     }
@@ -434,6 +492,7 @@ public sealed partial class MainWindowViewModel
         try
         {
             var active = CountActiveDownloadsR199();
+            var queueChanged = false;
             foreach (var item in TorrentsR1644.Where(x => string.Equals(x.DesiredStateR199, "Queued", StringComparison.OrdinalIgnoreCase)).ToArray())
             {
                 if (active >= TorrentPreferencesR199.MaximumActiveDownloads) break;
@@ -442,13 +501,18 @@ public sealed partial class MainWindowViewModel
                     item.SetDesiredStateR199("Running");
                     item.ApplySnapshot(await GetTorrentClientR1644().StartAsync(item.Id));
                     active++;
+                    queueChanged = true;
                 }
                 catch (Exception ex)
                 {
                     item.MarkOperationError(ex.Message);
+                    queueChanged = true;
                 }
             }
-            await SaveTorrentSessionR199Async();
+            if (queueChanged)
+            {
+                await SaveTorrentSessionR199Async();
+            }
         }
         finally { Volatile.Write(ref _torrentQueueGateR199, 0); }
     }
@@ -518,6 +582,29 @@ public sealed partial class MainWindowViewModel
         }).ToList();
     }
 
+    private TorrentSessionDocumentR199 BuildTorrentSessionDocumentR1646()
+    {
+        var merged = BuildSessionEntriesR199();
+        foreach (var entry in _retainedTorrentSessionEntriesR1646.OrderBy(x => x.QueuePosition))
+        {
+            var key = SessionIdentityR1646(entry);
+            if (merged.Any(existing => string.Equals(SessionIdentityR1646(existing), key, StringComparison.OrdinalIgnoreCase)))
+            {
+                continue;
+            }
+            merged.Add(entry);
+        }
+
+        return new TorrentSessionDocumentR199
+        {
+            Version = 2,
+            Torrents = merged.OrderBy(x => x.QueuePosition).ToList()
+        };
+    }
+
+    // MEDIADOCK_TORRENT_PERSISTENCE_V2_R1646
+    // Session persistence is eager while MediaDock is running and synchronous during
+    // Window.Closing. A failed startup restore must never erase an unresolved torrent entry.
     private async Task SaveTorrentSessionR199Async()
     {
         if (!TorrentPreferencesR199.RememberLoadedTorrents) return;
@@ -525,10 +612,68 @@ public sealed partial class MainWindowViewModel
         try
         {
             Directory.CreateDirectory(TorrentStateRootR199);
-            WriteJsonAtomicR199(TorrentSessionPathR199, new TorrentSessionDocumentR199 { Torrents = BuildSessionEntriesR199() });
+            WriteTorrentSessionAtomicR1646(BuildTorrentSessionDocumentR1646());
         }
-        catch (Exception ex) { global::MediaDownloader.App.WriteCrashLog("Torrent.Session.Save.R199", ex); }
+        catch (Exception ex) { global::MediaDownloader.App.WriteCrashLog("Torrent.Session.Save.R1646", ex); }
         finally { _torrentStateGateR199.Release(); }
+    }
+
+    public void PersistTorrentSessionOnClosingR1646()
+    {
+        if (!TorrentPreferencesR199.RememberLoadedTorrents || Volatile.Read(ref _torrentDisposeGateR1644) != 0) return;
+
+        var entered = false;
+        try
+        {
+            entered = _torrentStateGateR199.Wait(TimeSpan.FromSeconds(3));
+            if (!entered)
+            {
+                global::MediaDownloader.App.WriteCrashLog(
+                    "Torrent.Session.Closing.R1646",
+                    new TimeoutException("Timed out waiting to persist the torrent session during Window.Closing."));
+                return;
+            }
+
+            Directory.CreateDirectory(TorrentStateRootR199);
+            WriteTorrentSessionAtomicR1646(BuildTorrentSessionDocumentR1646());
+        }
+        catch (Exception ex)
+        {
+            global::MediaDownloader.App.WriteCrashLog("Torrent.Session.Closing.R1646", ex);
+        }
+        finally
+        {
+            if (entered) _torrentStateGateR199.Release();
+        }
+    }
+
+    private async Task<TorrentSessionDocumentR199?> ReadTorrentSessionWithRecoveryR1646Async()
+    {
+        foreach (var candidate in new[] { TorrentSessionPathR199, TorrentSessionBackupPathR1646 })
+        {
+            if (!File.Exists(candidate)) continue;
+            try
+            {
+                var document = JsonSerializer.Deserialize<TorrentSessionDocumentR199>(
+                    await File.ReadAllTextAsync(candidate),
+                    TorrentJsonR199);
+                if (document is not null)
+                {
+                    document.Torrents ??= [];
+                    return document;
+                }
+            }
+            catch (Exception ex)
+            {
+                global::MediaDownloader.App.WriteCrashLog(
+                    string.Equals(candidate, TorrentSessionPathR199, StringComparison.OrdinalIgnoreCase)
+                        ? "Torrent.Session.ReadPrimary.R1646"
+                        : "Torrent.Session.ReadBackup.R1646",
+                    ex);
+            }
+        }
+
+        return null;
     }
 
     private async Task RestorePersistedTorrentsR199Async()
@@ -536,29 +681,80 @@ public sealed partial class MainWindowViewModel
         if (!TorrentPreferencesR199.RememberLoadedTorrents || Interlocked.Exchange(ref _torrentRestoreGateR199, 1) != 0) return;
         try
         {
-            if (!File.Exists(TorrentSessionPathR199)) return;
-            var document = JsonSerializer.Deserialize<TorrentSessionDocumentR199>(await File.ReadAllTextAsync(TorrentSessionPathR199), TorrentJsonR199);
+            var document = await ReadTorrentSessionWithRecoveryR1646Async();
             if (document?.Torrents is not { Count: > 0 }) return;
-            await RestoreEntriesR199Async(document.Torrents.OrderBy(x => x.QueuePosition).ToList(), "Loaded torrents restored from the previous MediaDock session.");
+            await RestoreEntriesR199Async(
+                document.Torrents.OrderBy(x => x.QueuePosition).ToList(),
+                "Loaded torrents restored from the previous MediaDock session.");
         }
         catch (Exception ex)
         {
-            global::MediaDownloader.App.WriteCrashLog("Torrent.Session.Restore.R199", ex);
-            TorrentStatusR1644 = "Some saved torrents could not be restored. The session file was kept for diagnostics.";
+            global::MediaDownloader.App.WriteCrashLog("Torrent.Session.Restore.R1646", ex);
+            TorrentStatusR1644 = "Saved torrents could not be restored yet. Their session entries were preserved for the next launch.";
         }
         finally { Volatile.Write(ref _torrentRestoreGateR199, 0); }
+    }
+
+    private static string? ResolveTorrentRestoreSourceR1646(TorrentSessionEntryR199 entry)
+    {
+        foreach (var candidate in new[] { entry.PersistentSource, entry.Source })
+        {
+            if (string.IsNullOrWhiteSpace(candidate)) continue;
+            var value = candidate.Trim();
+            if (TorrentClientR1644.IsTorrentSourceR1644(value)) return value;
+        }
+        return null;
+    }
+
+    private async Task RestartTorrentClientForRestoreR1646Async()
+    {
+        var failed = _torrentClientR1644;
+        _torrentClientR1644 = null;
+        if (failed is null) return;
+        try { await failed.DisposeAsync(); }
+        catch (Exception ex) { global::MediaDownloader.App.WriteCrashLog("Torrent.Session.RestoreHostReset.R1646", ex); }
     }
 
     private async Task RestoreEntriesR199Async(IReadOnlyList<TorrentSessionEntryR199> entries, string completionMessage)
     {
         var restored = 0;
+        var retained = new List<TorrentSessionEntryR199>();
+
         foreach (var entry in entries.OrderBy(x => x.QueuePosition))
         {
-            var source = !string.IsNullOrWhiteSpace(entry.PersistentSource) ? entry.PersistentSource : entry.Source;
-            if (!TorrentClientR1644.IsTorrentSourceR1644(source)) continue;
+            var source = ResolveTorrentRestoreSourceR1646(entry);
+            if (source is null)
+            {
+                retained.Add(entry);
+                global::MediaDownloader.App.WriteCrashLog(
+                    "Torrent.Session.RestoreSourceMissing.R1646",
+                    new FileNotFoundException("Saved torrent metadata/source is temporarily unavailable.", entry.PersistentSource));
+                continue;
+            }
+
             try
             {
-                var preview = await GetTorrentClientR1644().PrepareAsync(source, CancellationToken.None);
+                TorrentPreviewR1644? preview = null;
+                Exception? prepareFailure = null;
+                for (var attempt = 0; attempt < 2 && preview is null; attempt++)
+                {
+                    try
+                    {
+                        preview = await GetTorrentClientR1644().PrepareAsync(source, CancellationToken.None);
+                    }
+                    catch (Exception ex) when (TorrentClientR1644.IsHostCommunicationFailureR196(ex) && attempt == 0)
+                    {
+                        prepareFailure = ex;
+                        await RestartTorrentClientForRestoreR1646Async();
+                        await Task.Delay(350);
+                    }
+                }
+
+                if (preview is null)
+                {
+                    throw prepareFailure ?? new InvalidOperationException("Torrent metadata could not be prepared for restore.");
+                }
+
                 var desired = string.IsNullOrWhiteSpace(entry.DesiredState) ? "Running" : entry.DesiredState;
                 var shouldRun = TorrentPreferencesR199.ResumeLoadedTorrents &&
                                 string.Equals(desired, "Running", StringComparison.OrdinalIgnoreCase) &&
@@ -567,11 +763,85 @@ public sealed partial class MainWindowViewModel
                 await AddPreparedTorrentInternalR199Async(preview, entry.SavePath, true, shouldRun, persist: false, restoredDesired, entry.Files);
                 restored++;
             }
-            catch (Exception ex) { global::MediaDownloader.App.WriteCrashLog("Torrent.Session.RestoreItem.R199", ex); }
+            catch (Exception ex)
+            {
+                retained.Add(entry);
+                global::MediaDownloader.App.WriteCrashLog("Torrent.Session.RestoreItem.R1646", ex);
+            }
         }
+
         UpdateQueuePositionsR199();
-        await SaveTorrentSessionR199Async();
-        TorrentStatusR1644 = restored > 0 ? completionMessage : "No saved torrents were restored.";
+        _retainedTorrentSessionEntriesR1646.Clear();
+        _retainedTorrentSessionEntriesR1646.AddRange(retained);
+
+        if (retained.Count == 0)
+        {
+            await SaveTorrentSessionR199Async();
+        }
+        else
+        {
+            await SaveTorrentSessionWithRetainedEntriesR1646Async(retained);
+        }
+
+        TorrentStatusR1644 = restored > 0
+            ? retained.Count == 0
+                ? completionMessage
+                : $"{completionMessage} {retained.Count} unavailable torrent(s) were kept for automatic retry next launch."
+            : retained.Count > 0
+                ? "Saved torrents are still unavailable, but MediaDock kept every session entry for automatic retry."
+                : "No saved torrents were restored.";
+    }
+
+    private async Task SaveTorrentSessionWithRetainedEntriesR1646Async(IReadOnlyList<TorrentSessionEntryR199> retained)
+    {
+        if (!TorrentPreferencesR199.RememberLoadedTorrents) return;
+        await _torrentStateGateR199.WaitAsync();
+        try
+        {
+            _retainedTorrentSessionEntriesR1646.Clear();
+            _retainedTorrentSessionEntriesR1646.AddRange(retained);
+            WriteTorrentSessionAtomicR1646(BuildTorrentSessionDocumentR1646());
+        }
+        catch (Exception ex)
+        {
+            global::MediaDownloader.App.WriteCrashLog("Torrent.Session.SaveRetained.R1646", ex);
+        }
+        finally { _torrentStateGateR199.Release(); }
+    }
+
+    private static string SessionIdentityR1646(TorrentSessionEntryR199 entry)
+        => (!string.IsNullOrWhiteSpace(entry.PersistentSource) ? entry.PersistentSource : entry.Source).Trim();
+
+    private static void WriteTorrentSessionAtomicR1646(TorrentSessionDocumentR199 document)
+    {
+        Directory.CreateDirectory(TorrentStateRootR199);
+        var temp = TorrentSessionPathR199 + ".tmp";
+        try
+        {
+            File.WriteAllText(temp, JsonSerializer.Serialize(document, TorrentJsonR199));
+            if (File.Exists(TorrentSessionPathR199))
+            {
+                try
+                {
+                    var current = JsonSerializer.Deserialize<TorrentSessionDocumentR199>(
+                        File.ReadAllText(TorrentSessionPathR199),
+                        TorrentJsonR199);
+                    if (current is not null)
+                    {
+                        File.Copy(TorrentSessionPathR199, TorrentSessionBackupPathR1646, true);
+                    }
+                }
+                catch
+                {
+                    // Preserve the previous known-good backup when the primary is corrupt.
+                }
+            }
+            File.Move(temp, TorrentSessionPathR199, true);
+        }
+        finally
+        {
+            try { if (File.Exists(temp)) File.Delete(temp); } catch { }
+        }
     }
 
     private static void WriteJsonAtomicR199<T>(string path, T value)

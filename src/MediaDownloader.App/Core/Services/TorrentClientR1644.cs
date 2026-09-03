@@ -144,6 +144,8 @@ public sealed class TorrentStatusSnapshotR1644
     public string Name { get; init; } = "Torrent";
     public string Status { get; init; } = "Stopped";
     public double Progress { get; init; }
+    public double VerifiedProgress { get; init; }
+    public bool LiveTransferActive { get; init; }
     public long TotalSize { get; init; }
     public long DownloadRate { get; init; }
     public long UploadRate { get; init; }
@@ -261,6 +263,13 @@ public sealed class TorrentItemR1644 : INotifyPropertyChanged
     {
         Name = string.IsNullOrWhiteSpace(snapshot.Name) ? Name : snapshot.Name;
         var engineStatus = string.IsNullOrWhiteSpace(snapshot.LastError) ? snapshot.Status : "Error";
+        if ((string.Equals(engineStatus, "Finding peers", StringComparison.OrdinalIgnoreCase) ||
+             string.Equals(engineStatus, "Connecting peers", StringComparison.OrdinalIgnoreCase)) &&
+            (snapshot.LiveTransferActive || snapshot.DownloadRate > 0))
+        {
+            // Never keep a discovery-only label while TorrentHost is actively receiving data.
+            engineStatus = "Downloading";
+        }
         Status = string.Equals(DesiredStateR199, "Queued", StringComparison.OrdinalIgnoreCase) &&
                  string.Equals(engineStatus, "Stopped", StringComparison.OrdinalIgnoreCase)
             ? "Queued"
@@ -280,9 +289,11 @@ public sealed class TorrentItemR1644 : INotifyPropertyChanged
         TrackerStatus = snapshot.LastTrackerStatus;
         PeerFailure = snapshot.LastPeerFailure;
         var listener = snapshot.PeerListenerConfigured ? "listener ready" : "listener unavailable";
+        var transferState = snapshot.LiveTransferActive ? "live transfer" : "idle transfer";
         NetworkHealth =
-            $"{snapshot.EngineVersion} • {listener} • DHT {snapshot.DhtState} ({snapshot.DhtNodes} nodes) • " +
-            $"{snapshot.TrackerCount} trackers • found T:{snapshot.TrackerPeersDiscovered} D:{snapshot.DhtPeersDiscovered} " +
+            $"{snapshot.EngineVersion} • {listener} • {transferState} • verified {snapshot.VerifiedProgress:0.0}% • " +
+            $"DHT {snapshot.DhtState} ({snapshot.DhtNodes} nodes) • {snapshot.TrackerCount} trackers • " +
+            $"found T:{snapshot.TrackerPeersDiscovered} D:{snapshot.DhtPeersDiscovered} " +
             $"P:{snapshot.PexPeersDiscovered} L:{snapshot.LocalPeersDiscovered} O:{snapshot.OtherPeersDiscovered} • " +
             $"connect failures {snapshot.ConnectionFailures}";
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(StatusToolTip)));
@@ -799,7 +810,7 @@ public sealed class TorrentClientR1644 : IAsyncDisposable
 
             if (response.Data.ValueKind != JsonValueKind.Object ||
                 !response.Data.TryGetProperty("Version", out var versionElement) ||
-                !string.Equals(versionElement.GetString(), "R1.6.46", StringComparison.Ordinal))
+                !string.Equals(versionElement.GetString(), "R1.6.50", StringComparison.Ordinal))
             {
                 throw new InvalidDataException("TorrentHost startup version handshake failed.");
             }
