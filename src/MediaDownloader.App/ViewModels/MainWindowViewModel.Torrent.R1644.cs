@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -16,7 +17,7 @@ public sealed partial class MainWindowViewModel
 {
     private sealed class TorrentSessionDocumentR199
     {
-        public int Version { get; set; } = 5;
+        public int Version { get; set; } = 6;
         public List<TorrentSessionEntryR199> Torrents { get; set; } = [];
     }
 
@@ -76,6 +77,9 @@ public sealed partial class MainWindowViewModel
     private static string TorrentSessionPathR199 => Path.Combine(TorrentStateRootR199, "session.json");
     private static string TorrentSessionBackupPathR1646 => TorrentSessionPathR199 + ".bak";
     private static string TorrentMetadataRootR1653 => Path.Combine(TorrentStateRootR199, "Metadata");
+    // MEDIADOCK_TORRENT_DURABLE_JOB_STORE_R1655
+    // One file per torrent eliminates session.json as a single point of failure.
+    private static string TorrentJobsRootR1655 => Path.Combine(TorrentStateRootR199, "Jobs");
     private const int MaxEmbeddedTorrentMetadataBytesR1653 = 16 * 1024 * 1024;
 
     public string TorrentOutputDirectoryR1644 => string.IsNullOrWhiteSpace(TorrentPreferencesR199.DownloadDirectory)
@@ -97,10 +101,19 @@ public sealed partial class MainWindowViewModel
     private void PrimeTorrentSessionForSafeStartupR1654()
     {
         if (IsNonInteractiveTorrentProcessR1654() ||
-            !TorrentPreferencesR199.RememberLoadedTorrents ||
             Interlocked.Exchange(ref _torrentSessionPrimeGateR1654, 1) != 0)
         {
             return;
+        }
+
+        var merged = new Dictionary<string, TorrentSessionEntryR199>(StringComparer.OrdinalIgnoreCase);
+
+        // R1.6.55 durable job files are authoritative because each torrent is committed
+        // independently at Add Torrent time and cannot be erased by one empty session write.
+        foreach (var entry in ReadDurableTorrentJobsR1655())
+        {
+            var key = SessionIdentityR1646(entry);
+            if (!string.IsNullOrWhiteSpace(key)) merged[key] = entry;
         }
 
         foreach (var candidate in new[] { TorrentSessionPathR199, TorrentSessionBackupPathR1646 })
@@ -110,16 +123,20 @@ public sealed partial class MainWindowViewModel
             {
                 var document = JsonSerializer.Deserialize<TorrentSessionDocumentR199>(
                     File.ReadAllText(candidate), TorrentJsonR199);
-                if (document?.Torrents is not { Count: > 0 }) continue;
-                _retainedTorrentSessionEntriesR1646.Clear();
-                _retainedTorrentSessionEntriesR1646.AddRange(document.Torrents.OrderBy(x => x.QueuePosition));
-                return;
+                foreach (var entry in document?.Torrents ?? [])
+                {
+                    var key = SessionIdentityR1646(entry);
+                    if (!string.IsNullOrWhiteSpace(key) && !merged.ContainsKey(key)) merged[key] = entry;
+                }
             }
             catch (Exception ex)
             {
                 global::MediaDownloader.App.WriteCrashLog("Torrent.Session.Prime.R1654", ex);
             }
         }
+
+        _retainedTorrentSessionEntriesR1646.Clear();
+        _retainedTorrentSessionEntriesR1646.AddRange(merged.Values.OrderBy(x => x.QueuePosition));
     }
 
     private TorrentClientR1644 GetTorrentClientR1644()
@@ -138,6 +155,7 @@ public sealed partial class MainWindowViewModel
         {
             Directory.CreateDirectory(TorrentStateRootR199);
             Directory.CreateDirectory(TorrentMetadataRootR1653);
+            Directory.CreateDirectory(TorrentJobsRootR1655);
             Directory.CreateDirectory(TorrentOutputDirectoryR1644);
             PrimeTorrentSessionForSafeStartupR1654();
         }
@@ -172,6 +190,10 @@ public sealed partial class MainWindowViewModel
 
     private static void NormalizeTorrentPreferencesR199(TorrentPreferencesR199 settings)
     {
+        // MEDIADOCK_TORRENT_ALWAYS_PERSIST_R1655
+        // A loaded torrent is part of the user's queue until the user explicitly removes it.
+        // Older settings which disabled persistence are upgraded automatically.
+        settings.RememberLoadedTorrents = true;
         settings.MaximumConnections = Math.Clamp(settings.MaximumConnections, 20, 2000);
         settings.MaximumPeersPerTorrent = Math.Clamp(settings.MaximumPeersPerTorrent, 10, 1000);
         settings.UploadSlotsPerTorrent = Math.Clamp(settings.UploadSlotsPerTorrent, 1, 100);
@@ -466,7 +488,14 @@ public sealed partial class MainWindowViewModel
         // MEDIADOCK_TORRENT_IMMEDIATE_COMMIT_R1654
         // Commit the row and its canonical metadata before tracker/DHT start confirmation.
         // A crash/forced close after Add Torrent can no longer lose the newly loaded job.
-        if (persist) await SaveTorrentSessionR199Async();
+        if (persist)
+        {
+            await SaveTorrentSessionR199Async();
+            if (!DurableJobExistsR1655(item))
+            {
+                throw new IOException("MediaDock could not durably save the newly added torrent job. The torrent was not allowed to appear saved when its restart record was missing.");
+            }
+        }
 
         // MEDIADOCK_FIRST_LOAD_START_CONFIRM_R1651
         // The row exists before the confirmation start. This makes a fresh add follow the
@@ -552,6 +581,8 @@ public sealed partial class MainWindowViewModel
         {
             // Row removal is still safe after an isolated worker restart.
         }
+        // Explicit Remove is the only normal action which deletes the durable job record.
+        DeleteDurableTorrentJobR1655(item);
         TorrentsR1644.Remove(item);
         if (ReferenceEquals(SelectedTorrentR1644, item)) SelectedTorrentR1644 = TorrentsR1644.FirstOrDefault();
         UpdateQueuePositionsR199();
@@ -795,7 +826,7 @@ public sealed partial class MainWindowViewModel
 
         return new TorrentSessionDocumentR199
         {
-            Version = 5,
+            Version = 6,
             Torrents = merged.OrderBy(x => x.QueuePosition).ToList()
         };
     }
@@ -805,7 +836,7 @@ public sealed partial class MainWindowViewModel
     // Window.Closing. A failed startup restore must never erase an unresolved torrent entry.
     private async Task SaveTorrentSessionR199Async()
     {
-        if (IsNonInteractiveTorrentProcessR1654() || !TorrentPreferencesR199.RememberLoadedTorrents) return;
+        if (IsNonInteractiveTorrentProcessR1654()) return;
         await _torrentStateGateR199.WaitAsync();
         try
         {
@@ -818,7 +849,7 @@ public sealed partial class MainWindowViewModel
 
     public void PersistTorrentSessionOnClosingR1646()
     {
-        if (IsNonInteractiveTorrentProcessR1654() || !TorrentPreferencesR199.RememberLoadedTorrents || Volatile.Read(ref _torrentDisposeGateR1644) != 0) return;
+        if (IsNonInteractiveTorrentProcessR1654() || Volatile.Read(ref _torrentDisposeGateR1644) != 0) return;
 
         var entered = false;
         try
@@ -851,20 +882,24 @@ public sealed partial class MainWindowViewModel
     // document and only return an empty primary/backup when neither contains jobs.
     private async Task<TorrentSessionDocumentR199?> ReadTorrentSessionWithRecoveryR1646Async()
     {
-        TorrentSessionDocumentR199? emptyFallback = null;
+        var merged = new Dictionary<string, TorrentSessionEntryR199>(StringComparer.OrdinalIgnoreCase);
+        foreach (var entry in ReadDurableTorrentJobsR1655())
+        {
+            var key = SessionIdentityR1646(entry);
+            if (!string.IsNullOrWhiteSpace(key)) merged[key] = entry;
+        }
+
         foreach (var candidate in new[] { TorrentSessionPathR199, TorrentSessionBackupPathR1646 })
         {
             if (!File.Exists(candidate)) continue;
             try
             {
                 var document = JsonSerializer.Deserialize<TorrentSessionDocumentR199>(
-                    await File.ReadAllTextAsync(candidate),
-                    TorrentJsonR199);
-                if (document is not null)
+                    await File.ReadAllTextAsync(candidate), TorrentJsonR199);
+                foreach (var entry in document?.Torrents ?? [])
                 {
-                    document.Torrents ??= [];
-                    if (document.Torrents.Count > 0) return document;
-                    emptyFallback ??= document;
+                    var key = SessionIdentityR1646(entry);
+                    if (!string.IsNullOrWhiteSpace(key) && !merged.ContainsKey(key)) merged[key] = entry;
                 }
             }
             catch (Exception ex)
@@ -877,12 +912,14 @@ public sealed partial class MainWindowViewModel
             }
         }
 
-        return emptyFallback;
+        return merged.Count == 0
+            ? null
+            : new TorrentSessionDocumentR199 { Version = 6, Torrents = merged.Values.OrderBy(x => x.QueuePosition).ToList() };
     }
 
     private async Task RestorePersistedTorrentsR199Async()
     {
-        if (IsNonInteractiveTorrentProcessR1654() || !TorrentPreferencesR199.RememberLoadedTorrents || Interlocked.Exchange(ref _torrentRestoreGateR199, 1) != 0) return;
+        if (IsNonInteractiveTorrentProcessR1654() || Interlocked.Exchange(ref _torrentRestoreGateR199, 1) != 0) return;
         try
         {
             // The synchronous startup prime is authoritative when it already found a
@@ -891,7 +928,7 @@ public sealed partial class MainWindowViewModel
                 .OrderBy(x => x.QueuePosition)
                 .ToList();
             var document = primedEntries.Count > 0
-                ? new TorrentSessionDocumentR199 { Version = 5, Torrents = primedEntries }
+                ? new TorrentSessionDocumentR199 { Version = 6, Torrents = primedEntries }
                 : await ReadTorrentSessionWithRecoveryR1646Async();
             if (document?.Torrents is not { Count: > 0 }) return;
             await RestoreEntriesR199Async(
@@ -1051,7 +1088,7 @@ public sealed partial class MainWindowViewModel
 
     private async Task SaveTorrentSessionWithRetainedEntriesR1646Async(IReadOnlyList<TorrentSessionEntryR199> retained)
     {
-        if (IsNonInteractiveTorrentProcessR1654() || !TorrentPreferencesR199.RememberLoadedTorrents) return;
+        if (IsNonInteractiveTorrentProcessR1654()) return;
         await _torrentStateGateR199.WaitAsync();
         try
         {
@@ -1069,9 +1106,110 @@ public sealed partial class MainWindowViewModel
     private static string SessionIdentityR1646(TorrentSessionEntryR199 entry)
         => (!string.IsNullOrWhiteSpace(entry.PersistentSource) ? entry.PersistentSource : entry.Source).Trim();
 
+    private static string DurableJobKeyR1655(TorrentSessionEntryR199 entry)
+    {
+        var identity = SessionIdentityR1646(entry);
+        if (string.IsNullOrWhiteSpace(identity) && !string.IsNullOrWhiteSpace(entry.MetadataBase64))
+        {
+            identity = entry.MetadataBase64;
+        }
+        if (string.IsNullOrWhiteSpace(identity)) return string.Empty;
+        return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(identity))).ToLowerInvariant();
+    }
+
+    private static string DurableJobPathR1655(TorrentSessionEntryR199 entry)
+    {
+        var key = DurableJobKeyR1655(entry);
+        return string.IsNullOrWhiteSpace(key) ? string.Empty : Path.Combine(TorrentJobsRootR1655, key + ".json");
+    }
+
+    private static List<TorrentSessionEntryR199> ReadDurableTorrentJobsR1655()
+    {
+        var result = new List<TorrentSessionEntryR199>();
+        try
+        {
+            Directory.CreateDirectory(TorrentJobsRootR1655);
+            foreach (var path in Directory.EnumerateFiles(TorrentJobsRootR1655, "*.json", SearchOption.TopDirectoryOnly))
+            {
+                try
+                {
+                    var entry = JsonSerializer.Deserialize<TorrentSessionEntryR199>(File.ReadAllText(path), TorrentJsonR199);
+                    if (entry is not null && !string.IsNullOrWhiteSpace(SessionIdentityR1646(entry))) result.Add(entry);
+                }
+                catch (Exception ex)
+                {
+                    global::MediaDownloader.App.WriteCrashLog("Torrent.Job.Read.R1655", ex);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            global::MediaDownloader.App.WriteCrashLog("Torrent.Job.Enumerate.R1655", ex);
+        }
+        return result;
+    }
+
+    private static void WriteDurableTorrentJobR1655(TorrentSessionEntryR199 entry)
+    {
+        var path = DurableJobPathR1655(entry);
+        if (string.IsNullOrWhiteSpace(path)) throw new InvalidDataException("Torrent job identity is empty.");
+        Directory.CreateDirectory(TorrentJobsRootR1655);
+        var temp = path + ".tmp";
+        var json = JsonSerializer.Serialize(entry, TorrentJsonR199);
+        try
+        {
+            using (var stream = new FileStream(temp, FileMode.Create, FileAccess.Write, FileShare.None, 32 * 1024, FileOptions.WriteThrough))
+            using (var writer = new StreamWriter(stream, new UTF8Encoding(false)))
+            {
+                writer.Write(json);
+                writer.Flush();
+                stream.Flush(true);
+            }
+            File.Move(temp, path, true);
+        }
+        finally
+        {
+            try { if (File.Exists(temp)) File.Delete(temp); } catch { }
+        }
+    }
+
+    private static void WriteDurableTorrentJobsR1655(IEnumerable<TorrentSessionEntryR199> entries)
+    {
+        foreach (var entry in entries) WriteDurableTorrentJobR1655(entry);
+    }
+
+    private static void DeleteDurableTorrentJobR1655(TorrentItemR1644 item)
+    {
+        try
+        {
+            var entry = new TorrentSessionEntryR199
+            {
+                Source = item.Source,
+                PersistentSource = item.PersistentSource,
+                SavePath = item.SavePath
+            };
+            var path = DurableJobPathR1655(entry);
+            if (!string.IsNullOrWhiteSpace(path) && File.Exists(path)) File.Delete(path);
+        }
+        catch (Exception ex)
+        {
+            global::MediaDownloader.App.WriteCrashLog("Torrent.Job.Delete.R1655", ex);
+        }
+    }
+
+    private static bool DurableJobExistsR1655(TorrentItemR1644 item)
+    {
+        var entry = new TorrentSessionEntryR199 { Source = item.Source, PersistentSource = item.PersistentSource, SavePath = item.SavePath };
+        var path = DurableJobPathR1655(entry);
+        return !string.IsNullOrWhiteSpace(path) && File.Exists(path);
+    }
+
     private static void WriteTorrentSessionAtomicR1646(TorrentSessionDocumentR199 document)
     {
         Directory.CreateDirectory(TorrentStateRootR199);
+        Directory.CreateDirectory(TorrentJobsRootR1655);
+        // Commit each torrent independently before replacing the aggregate session file.
+        WriteDurableTorrentJobsR1655(document.Torrents);
         var temp = TorrentSessionPathR199 + ".tmp";
         try
         {

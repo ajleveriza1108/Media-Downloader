@@ -189,7 +189,9 @@ public sealed class TorrentPreferencesDialogR199 : Window
     private UIElement BuildGeneral()
     {
         var panel = Page("General", "Startup, persistence and list behavior");
-        _remember = AddCheck(panel, "Keep loaded torrents in MediaDock after restart", Settings.RememberLoadedTorrents);
+        _remember = AddCheck(panel, "Keep loaded torrents in MediaDock after restart", true);
+        _remember.IsEnabled = false;
+        _remember.ToolTip = "MediaDock R1.6.55 keeps loaded torrents until you explicitly remove them.";
         _resume = AddCheck(panel, "Resume torrents that were running when MediaDock closed", Settings.ResumeLoadedTorrents);
         _autoStart = AddCheck(panel, "Start new torrents automatically", Settings.AutoStartDownloads);
         _confirmRemove = AddCheck(panel, "Confirm before removing torrents", Settings.ConfirmRemove);
@@ -220,7 +222,7 @@ public sealed class TorrentPreferencesDialogR199 : Window
         AddNumber(panel, "Peer listening port (0 = automatic)", "ListeningPort", Settings.ListeningPort);
         AddNumber(panel, "DHT UDP port (0 = automatic)", "DhtPort", Settings.DhtPort);
         _portMapping = AddCheck(panel, "Use UPnP / NAT-PMP when incoming is enabled", Settings.EnablePortMapping);
-        AddNote(panel, "R1.6.54 always binds an automatic local peer port so trackers receive a valid port and outbound connections work immediately. This toggle only enables router mapping/inbound reachability. Windows may show a one-time firewall permission prompt for TorrentHost.");
+        AddNote(panel, "R1.6.55 always binds an automatic local peer port so trackers receive a valid port and outbound connections work immediately. This toggle only enables router mapping/inbound reachability. Windows may show a one-time firewall permission prompt for TorrentHost.");
         return panel;
     }
 

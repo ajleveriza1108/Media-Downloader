@@ -1,6 +1,6 @@
-# MediaDock R1.6.54 development snapshot
+# MediaDock R1.6.55 development snapshot
 
-R1.6.54 fixes live torrent telemetry so Down/Up are driven by fresh byte deltas instead of stale monitor maxima, and hardens loaded-torrent persistence against release smoke tests, early/forced close, and startup restore races. It keeps canonical .torrent metadata, embedded session recovery, the larger Add New Torrent selector, first-load start/discovery, fast peer connectivity, the persistent visible launcher, and no-force publication safeguards.
+R1.6.55 fixes live torrent telemetry so Down/Up are driven by fresh byte deltas instead of stale monitor maxima, and hardens loaded-torrent persistence against release smoke tests, early/forced close, and startup restore races. It keeps canonical .torrent metadata, embedded session recovery, the larger Add New Torrent selector, first-load start/discovery, fast peer connectivity, the persistent visible launcher, and no-force publication safeguards.
 
 UI/theme changes:
 - The update confirmation is a MediaDock-owned WPF dialog instead of a native Windows MessageBox.
