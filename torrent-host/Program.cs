@@ -361,7 +361,7 @@ internal sealed class TorrentHostRuntime : IAsyncDisposable
             {
                 "ping" => new
                 {
-                    Version = "R1.6.53",
+                    Version = "R1.6.54",
                     ProcessId = Environment.ProcessId,
                     Engine = "MonoTorrent 3.9 alpha",
                     DhtState = _engine.Dht.State.ToString(),
@@ -1288,6 +1288,18 @@ internal sealed class TorrentHostRuntime : IAsyncDisposable
         return Math.Max(0L, (long)Math.Round(delta * 1000d / elapsedMilliseconds));
     }
 
+    // MEDIADOCK_TORRENT_MEASURED_RATE_R1647
+    // MEDIADOCK_TORRENT_TRUE_LIVE_RATE_R1654
+    // Once two byte-counter samples exist, DataBytesReceived/DataBytesSent are the source
+    // of truth. MonoTorrent/per-peer monitor rates are used only for the very first frame.
+    // This prevents a stale monitor value from pinning the UI at one apparently static rate.
+    private static long SmoothLiveRateR1654(long previousRate, long instantaneousRate)
+    {
+        if (instantaneousRate <= 0) return 0;
+        if (previousRate <= 0) return instantaneousRate;
+        return Math.Max(0L, (long)Math.Round(previousRate * 0.25d + instantaneousRate * 0.75d));
+    }
+
     private static (long DownloadRate, long UploadRate) MeasureTransferRatesR1647(
         ManagedTorrent item,
         long downloaded,
@@ -1295,8 +1307,9 @@ internal sealed class TorrentHostRuntime : IAsyncDisposable
         long monitorDownloadRate,
         long monitorUploadRate)
     {
-        const long minimumSampleMilliseconds = 700;
-        const long staleRateMilliseconds = 2500;
+        const long minimumSampleMilliseconds = 250;
+        const long displayGraceMilliseconds = 700;
+        const long staleRateMilliseconds = 1600;
 
         var nowTick = Environment.TickCount64;
         var peerDownloadRate = Math.Max(0L, Volatile.Read(ref item.CachedPeerDownloadRate));
@@ -1307,67 +1320,68 @@ internal sealed class TorrentHostRuntime : IAsyncDisposable
             item.RateSampleDownloaded = downloaded;
             item.RateSampleUploaded = uploaded;
             item.RateSampleTick = nowTick;
+
+            // First frame only: show the engine/peer hint while waiting for the first
+            // real byte-delta interval. Do not treat this hint as byte activity.
             item.MeasuredDownloadRate = Math.Max(Math.Max(0L, monitorDownloadRate), peerDownloadRate);
             item.MeasuredUploadRate = Math.Max(Math.Max(0L, monitorUploadRate), peerUploadRate);
-            if (item.MeasuredDownloadRate > 0) item.LastDownloadActivityTick = nowTick;
-            if (item.MeasuredUploadRate > 0) item.LastUploadActivityTick = nowTick;
+            return (item.MeasuredDownloadRate, item.MeasuredUploadRate);
         }
-        else
+
+        var elapsedMilliseconds = Math.Max(0L, nowTick - item.RateSampleTick);
+        if (elapsedMilliseconds >= minimumSampleMilliseconds)
         {
-            var elapsedMilliseconds = Math.Max(0L, nowTick - item.RateSampleTick);
-            if (elapsedMilliseconds >= minimumSampleMilliseconds)
+            var downloadedDelta = downloaded >= item.RateSampleDownloaded
+                ? downloaded - item.RateSampleDownloaded
+                : downloaded;
+            var uploadedDelta = uploaded >= item.RateSampleUploaded
+                ? uploaded - item.RateSampleUploaded
+                : uploaded;
+
+            var instantaneousDownloadRate = CalculateByteDeltaRateR1647(
+                downloaded,
+                item.RateSampleDownloaded,
+                elapsedMilliseconds);
+            var instantaneousUploadRate = CalculateByteDeltaRateR1647(
+                uploaded,
+                item.RateSampleUploaded,
+                elapsedMilliseconds);
+
+            if (downloadedDelta > 0)
             {
-                var downloadedDelta = downloaded >= item.RateSampleDownloaded
-                    ? downloaded - item.RateSampleDownloaded
-                    : downloaded;
-                var uploadedDelta = uploaded >= item.RateSampleUploaded
-                    ? uploaded - item.RateSampleUploaded
-                    : uploaded;
-
-                var byteDeltaDownloadRate = CalculateByteDeltaRateR1647(
-                    downloaded,
-                    item.RateSampleDownloaded,
-                    elapsedMilliseconds);
-                var byteDeltaUploadRate = CalculateByteDeltaRateR1647(
-                    uploaded,
-                    item.RateSampleUploaded,
-                    elapsedMilliseconds);
-
-                item.MeasuredDownloadRate = Math.Max(
-                    byteDeltaDownloadRate,
-                    Math.Max(Math.Max(0L, monitorDownloadRate), peerDownloadRate));
-                item.MeasuredUploadRate = Math.Max(
-                    byteDeltaUploadRate,
-                    Math.Max(Math.Max(0L, monitorUploadRate), peerUploadRate));
-
-                // Activity lifetime is anchored to real byte movement, not a monitor
-                // fallback which could itself be stale. This guarantees a stopped
-                // transfer returns to 0 B/s after the short display grace period.
-                if (downloadedDelta > 0)
-                    item.LastDownloadActivityTick = nowTick;
-                if (uploadedDelta > 0)
-                    item.LastUploadActivityTick = nowTick;
-
-                item.RateSampleDownloaded = downloaded;
-                item.RateSampleUploaded = uploaded;
-                item.RateSampleTick = nowTick;
+                item.MeasuredDownloadRate = item.LastDownloadActivityTick == 0
+                    ? instantaneousDownloadRate
+                    : SmoothLiveRateR1654(item.MeasuredDownloadRate, instantaneousDownloadRate);
+                item.LastDownloadActivityTick = nowTick;
             }
+            else if (item.LastDownloadActivityTick == 0 || nowTick - item.LastDownloadActivityTick > displayGraceMilliseconds)
+            {
+                item.MeasuredDownloadRate = 0;
+            }
+
+            if (uploadedDelta > 0)
+            {
+                item.MeasuredUploadRate = item.LastUploadActivityTick == 0
+                    ? instantaneousUploadRate
+                    : SmoothLiveRateR1654(item.MeasuredUploadRate, instantaneousUploadRate);
+                item.LastUploadActivityTick = nowTick;
+            }
+            else if (item.LastUploadActivityTick == 0 || nowTick - item.LastUploadActivityTick > displayGraceMilliseconds)
+            {
+                item.MeasuredUploadRate = 0;
+            }
+
+            item.RateSampleDownloaded = downloaded;
+            item.RateSampleUploaded = uploaded;
+            item.RateSampleTick = nowTick;
         }
 
-        var downloadRate = item.MeasuredDownloadRate;
-        var uploadRate = item.MeasuredUploadRate;
-        if (item.LastDownloadActivityTick == 0 || nowTick - item.LastDownloadActivityTick > staleRateMilliseconds)
-        {
-            downloadRate = 0;
+        if (item.LastDownloadActivityTick != 0 && nowTick - item.LastDownloadActivityTick > staleRateMilliseconds)
             item.MeasuredDownloadRate = 0;
-        }
-        if (item.LastUploadActivityTick == 0 || nowTick - item.LastUploadActivityTick > staleRateMilliseconds)
-        {
-            uploadRate = 0;
+        if (item.LastUploadActivityTick != 0 && nowTick - item.LastUploadActivityTick > staleRateMilliseconds)
             item.MeasuredUploadRate = 0;
-        }
 
-        return (Math.Max(0L, downloadRate), Math.Max(0L, uploadRate));
+        return (Math.Max(0L, item.MeasuredDownloadRate), Math.Max(0L, item.MeasuredUploadRate));
     }
 
     private Task<object> BuildSnapshotAsync(ManagedTorrent item)
@@ -1786,6 +1800,11 @@ internal sealed class TorrentHostRuntime : IAsyncDisposable
         if (measuredRateSelfTest != 1_024_000)
         {
             throw new InvalidOperationException($"Measured torrent rate self-test failed: {measuredRateSelfTest} B/s");
+        }
+        var smoothedRateSelfTestR1654 = SmoothLiveRateR1654(1_000_000, 2_000_000);
+        if (smoothedRateSelfTestR1654 != 1_750_000)
+        {
+            throw new InvalidOperationException($"Live torrent smoothing self-test failed: {smoothedRateSelfTestR1654} B/s");
         }
 
         var root = Path.Combine(Path.GetTempPath(), $"MediaDock-TorrentHostSelfTest-{Guid.NewGuid():N}");

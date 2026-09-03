@@ -220,7 +220,7 @@ public sealed class TorrentPreferencesDialogR199 : Window
         AddNumber(panel, "Peer listening port (0 = automatic)", "ListeningPort", Settings.ListeningPort);
         AddNumber(panel, "DHT UDP port (0 = automatic)", "DhtPort", Settings.DhtPort);
         _portMapping = AddCheck(panel, "Use UPnP / NAT-PMP when incoming is enabled", Settings.EnablePortMapping);
-        AddNote(panel, "R1.6.53 always binds an automatic local peer port so trackers receive a valid port and outbound connections work immediately. This toggle only enables router mapping/inbound reachability. Windows may show a one-time firewall permission prompt for TorrentHost.");
+        AddNote(panel, "R1.6.54 always binds an automatic local peer port so trackers receive a valid port and outbound connections work immediately. This toggle only enables router mapping/inbound reachability. Windows may show a one-time firewall permission prompt for TorrentHost.");
         return panel;
     }
 

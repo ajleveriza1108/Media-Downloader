@@ -1,6 +1,6 @@
-# MediaDock R1.6.53 development snapshot
+# MediaDock R1.6.54 development snapshot
 
-R1.6.53 enlarges the themed Add New Torrent content selector and makes torrent persistence self-contained. MediaDock now stores canonical .torrent metadata under its persistent TorrentClient state, embeds normal-sized .torrent metadata in session.json as a recovery copy, restores the queue after the main WPF window is loaded, and migrates legacy TorrentHost metadata. It carries forward first-load start/discovery, measured live speed/ETA/peer telemetry, fast peer connectivity, the persistent visible launcher, and no-force publication safeguards.
+R1.6.54 fixes live torrent telemetry so Down/Up are driven by fresh byte deltas instead of stale monitor maxima, and hardens loaded-torrent persistence against release smoke tests, early/forced close, and startup restore races. It keeps canonical .torrent metadata, embedded session recovery, the larger Add New Torrent selector, first-load start/discovery, fast peer connectivity, the persistent visible launcher, and no-force publication safeguards.
 
 UI/theme changes:
 - The update confirmation is a MediaDock-owned WPF dialog instead of a native Windows MessageBox.
@@ -14,9 +14,9 @@ Torrent peer connectivity changes:
 - Trackerless magnets get immediate public tracker bootstrap while metadata is pending; known private torrents never receive public fallback injection.
 - TorrentEvent.Started is emitted once per run; recovery uses normal announces and shorter non-blocking DHT waits.
 - Peer discovery telemetry identifies tracker/DHT/PEX/local sources, listener readiness and connection failures.
-- Torrent queue/session persistence is crash-resistant, restores from session backup, and never erases unresolved entries after a failed startup restore.
+- Torrent queue/session persistence is crash-resistant, restores from session backup, primes saved entries before UI restore, ignores noninteractive release smoke tests, and commits Add Torrent immediately with write-through session durability.
 - Torrent progress, speed, peers, seeds, ETA and ratio refresh on a 350 ms UI cadence; expensive peer enumeration and tracker scrape run off the hot status path.
-- Download/upload speed is measured from DataBytesReceived/DataBytesSent over a monotonic live sample window; MonoTorrent aggregate and per-peer monitor rates are fallback signals only.
+- Download/upload speed is sampled from fresh DataBytesReceived/DataBytesSent deltas every live status interval; engine/per-peer rates are first-frame hints only so stale monitor values cannot pin the UI.
 - Peer totals use the greater of current open connections and the cached background peer enumeration, preventing a valid connection from being hidden by one lagging counter.
 - ETA is calculated from the measured effective download rate, and the footer mirrors down/up, peers, seeds, ETA, ratio and received bytes from the same snapshot.
 - Isolated TorrentHost, MonoTorrent 3.9 alpha, persistent queue/settings, selective files and torrent streaming remain intact.

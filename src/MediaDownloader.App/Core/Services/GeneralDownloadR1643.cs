@@ -355,7 +355,7 @@ public sealed class GeneralDownloadServiceR1643
         CancellationToken cancellationToken)
     {
         var request = new HttpRequestMessage(HttpMethod.Get, item.Url);
-        request.Headers.UserAgent.ParseAdd("MediaDock/1.6.53");
+        request.Headers.UserAgent.ParseAdd("MediaDock/1.6.54");
         request.Headers.Accept.ParseAdd("*/*");
 
         if (existingBytes > 0)

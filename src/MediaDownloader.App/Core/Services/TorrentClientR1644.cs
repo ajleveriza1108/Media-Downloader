@@ -820,7 +820,7 @@ public sealed class TorrentClientR1644 : IAsyncDisposable
 
             if (response.Data.ValueKind != JsonValueKind.Object ||
                 !response.Data.TryGetProperty("Version", out var versionElement) ||
-                !string.Equals(versionElement.GetString(), "R1.6.53", StringComparison.Ordinal))
+                !string.Equals(versionElement.GetString(), "R1.6.54", StringComparison.Ordinal))
             {
                 throw new InvalidDataException("TorrentHost startup version handshake failed.");
             }

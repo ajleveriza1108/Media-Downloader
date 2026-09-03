@@ -241,7 +241,7 @@ internal static class ThemedMessageBoxR1646
             GetCloseResult(MessageBoxButton.YesNo) != MessageBoxResult.No ||
             GetCloseResult(MessageBoxButton.YesNoCancel) != MessageBoxResult.Cancel)
         {
-            throw new InvalidOperationException("R1.6.53 themed dialog result contract failed.");
+            throw new InvalidOperationException("R1.6.54 themed dialog result contract failed.");
         }
     }
 

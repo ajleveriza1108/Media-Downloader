@@ -6,9 +6,9 @@
     <Nullable>enable</Nullable>
     <AssemblyName>MediaDock.TorrentHost</AssemblyName>
     <RootNamespace>MediaDock.TorrentHost</RootNamespace>
-    <Version>1.6.53</Version>
-    <FileVersion>1.6.53.0</FileVersion>
-    <InformationalVersion>R1.6.53</InformationalVersion>
+    <Version>1.6.54</Version>
+    <FileVersion>1.6.54.0</FileVersion>
+    <InformationalVersion>R1.6.54</InformationalVersion>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="MonoTorrent" Version="3.9.0-alpha.unstable.rev0000" />

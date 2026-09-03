@@ -16,7 +16,7 @@ public sealed partial class MainWindowViewModel
 {
     private sealed class TorrentSessionDocumentR199
     {
-        public int Version { get; set; } = 4;
+        public int Version { get; set; } = 5;
         public List<TorrentSessionEntryR199> Torrents { get; set; } = [];
     }
 
@@ -59,6 +59,7 @@ public sealed partial class MainWindowViewModel
     private int _torrentQueueGateR199;
     private int _torrentRestoreGateR199;
     private int _torrentLoadedRestoreGateR1653;
+    private int _torrentSessionPrimeGateR1654;
     private readonly List<TorrentSessionEntryR199> _retainedTorrentSessionEntriesR1646 = [];
 
     public ObservableCollection<TorrentItemR1644> TorrentsR1644 { get; } = [];
@@ -81,6 +82,46 @@ public sealed partial class MainWindowViewModel
         ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads", "MediaDock", "Torrents")
         : TorrentPreferencesR199.DownloadDirectory;
 
+    // MEDIADOCK_TORRENT_NONINTERACTIVE_STATE_GUARD_R1654
+    // Build/engine/startup smoke tests must never read, rewrite, or clear a customer's
+    // persistent torrent queue. The release BAT invokes these modes on every update.
+    private static bool IsNonInteractiveTorrentProcessR1654()
+        => Environment.GetCommandLineArgs().Any(arg =>
+            string.Equals(arg, "--startup-smoke-test", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(arg, "--engine-contract-test", StringComparison.OrdinalIgnoreCase));
+
+    // MEDIADOCK_TORRENT_EARLY_SESSION_PRIME_R1654
+    // Load the existing session into the retained list synchronously before timers/window
+    // shutdown handlers can run. If MediaDock is closed while restore is still starting,
+    // a closing save merges these retained entries instead of overwriting session.json empty.
+    private void PrimeTorrentSessionForSafeStartupR1654()
+    {
+        if (IsNonInteractiveTorrentProcessR1654() ||
+            !TorrentPreferencesR199.RememberLoadedTorrents ||
+            Interlocked.Exchange(ref _torrentSessionPrimeGateR1654, 1) != 0)
+        {
+            return;
+        }
+
+        foreach (var candidate in new[] { TorrentSessionPathR199, TorrentSessionBackupPathR1646 })
+        {
+            if (!File.Exists(candidate)) continue;
+            try
+            {
+                var document = JsonSerializer.Deserialize<TorrentSessionDocumentR199>(
+                    File.ReadAllText(candidate), TorrentJsonR199);
+                if (document?.Torrents is not { Count: > 0 }) continue;
+                _retainedTorrentSessionEntriesR1646.Clear();
+                _retainedTorrentSessionEntriesR1646.AddRange(document.Torrents.OrderBy(x => x.QueuePosition));
+                return;
+            }
+            catch (Exception ex)
+            {
+                global::MediaDownloader.App.WriteCrashLog("Torrent.Session.Prime.R1654", ex);
+            }
+        }
+    }
+
     private TorrentClientR1644 GetTorrentClientR1644()
     {
         if (Volatile.Read(ref _torrentDisposeGateR1644) != 0)
@@ -98,6 +139,7 @@ public sealed partial class MainWindowViewModel
             Directory.CreateDirectory(TorrentStateRootR199);
             Directory.CreateDirectory(TorrentMetadataRootR1653);
             Directory.CreateDirectory(TorrentOutputDirectoryR1644);
+            PrimeTorrentSessionForSafeStartupR1654();
         }
         catch (Exception ex)
         {
@@ -420,6 +462,11 @@ public sealed partial class MainWindowViewModel
         TorrentsR1644.Add(item);
         SelectedTorrentR1644 = item;
         UpdateQueuePositionsR199();
+
+        // MEDIADOCK_TORRENT_IMMEDIATE_COMMIT_R1654
+        // Commit the row and its canonical metadata before tracker/DHT start confirmation.
+        // A crash/forced close after Add Torrent can no longer lose the newly loaded job.
+        if (persist) await SaveTorrentSessionR199Async();
 
         // MEDIADOCK_FIRST_LOAD_START_CONFIRM_R1651
         // The row exists before the confirmation start. This makes a fresh add follow the
@@ -748,7 +795,7 @@ public sealed partial class MainWindowViewModel
 
         return new TorrentSessionDocumentR199
         {
-            Version = 4,
+            Version = 5,
             Torrents = merged.OrderBy(x => x.QueuePosition).ToList()
         };
     }
@@ -758,7 +805,7 @@ public sealed partial class MainWindowViewModel
     // Window.Closing. A failed startup restore must never erase an unresolved torrent entry.
     private async Task SaveTorrentSessionR199Async()
     {
-        if (!TorrentPreferencesR199.RememberLoadedTorrents) return;
+        if (IsNonInteractiveTorrentProcessR1654() || !TorrentPreferencesR199.RememberLoadedTorrents) return;
         await _torrentStateGateR199.WaitAsync();
         try
         {
@@ -771,7 +818,7 @@ public sealed partial class MainWindowViewModel
 
     public void PersistTorrentSessionOnClosingR1646()
     {
-        if (!TorrentPreferencesR199.RememberLoadedTorrents || Volatile.Read(ref _torrentDisposeGateR1644) != 0) return;
+        if (IsNonInteractiveTorrentProcessR1654() || !TorrentPreferencesR199.RememberLoadedTorrents || Volatile.Read(ref _torrentDisposeGateR1644) != 0) return;
 
         var entered = false;
         try
@@ -798,8 +845,13 @@ public sealed partial class MainWindowViewModel
         }
     }
 
+    // MEDIADOCK_TORRENT_BACKUP_PREFERENCE_R1654
+    // An older smoke-test race could atomically write an empty primary while preserving
+    // the previous non-empty session in session.json.bak. Prefer any valid non-empty
+    // document and only return an empty primary/backup when neither contains jobs.
     private async Task<TorrentSessionDocumentR199?> ReadTorrentSessionWithRecoveryR1646Async()
     {
+        TorrentSessionDocumentR199? emptyFallback = null;
         foreach (var candidate in new[] { TorrentSessionPathR199, TorrentSessionBackupPathR1646 })
         {
             if (!File.Exists(candidate)) continue;
@@ -811,7 +863,8 @@ public sealed partial class MainWindowViewModel
                 if (document is not null)
                 {
                     document.Torrents ??= [];
-                    return document;
+                    if (document.Torrents.Count > 0) return document;
+                    emptyFallback ??= document;
                 }
             }
             catch (Exception ex)
@@ -824,15 +877,22 @@ public sealed partial class MainWindowViewModel
             }
         }
 
-        return null;
+        return emptyFallback;
     }
 
     private async Task RestorePersistedTorrentsR199Async()
     {
-        if (!TorrentPreferencesR199.RememberLoadedTorrents || Interlocked.Exchange(ref _torrentRestoreGateR199, 1) != 0) return;
+        if (IsNonInteractiveTorrentProcessR1654() || !TorrentPreferencesR199.RememberLoadedTorrents || Interlocked.Exchange(ref _torrentRestoreGateR199, 1) != 0) return;
         try
         {
-            var document = await ReadTorrentSessionWithRecoveryR1646Async();
+            // The synchronous startup prime is authoritative when it already found a
+            // non-empty primary/backup. This also repairs the old empty-primary race.
+            var primedEntries = _retainedTorrentSessionEntriesR1646
+                .OrderBy(x => x.QueuePosition)
+                .ToList();
+            var document = primedEntries.Count > 0
+                ? new TorrentSessionDocumentR199 { Version = 5, Torrents = primedEntries }
+                : await ReadTorrentSessionWithRecoveryR1646Async();
             if (document?.Torrents is not { Count: > 0 }) return;
             await RestoreEntriesR199Async(
                 document.Torrents.OrderBy(x => x.QueuePosition).ToList(),
@@ -991,7 +1051,7 @@ public sealed partial class MainWindowViewModel
 
     private async Task SaveTorrentSessionWithRetainedEntriesR1646Async(IReadOnlyList<TorrentSessionEntryR199> retained)
     {
-        if (!TorrentPreferencesR199.RememberLoadedTorrents) return;
+        if (IsNonInteractiveTorrentProcessR1654() || !TorrentPreferencesR199.RememberLoadedTorrents) return;
         await _torrentStateGateR199.WaitAsync();
         try
         {
@@ -1015,7 +1075,15 @@ public sealed partial class MainWindowViewModel
         var temp = TorrentSessionPathR199 + ".tmp";
         try
         {
-            File.WriteAllText(temp, JsonSerializer.Serialize(document, TorrentJsonR199));
+            var json = JsonSerializer.Serialize(document, TorrentJsonR199);
+            using (var stream = new FileStream(
+                temp, FileMode.Create, FileAccess.Write, FileShare.None, 64 * 1024, FileOptions.WriteThrough))
+            using (var writer = new StreamWriter(stream, new System.Text.UTF8Encoding(false)))
+            {
+                writer.Write(json);
+                writer.Flush();
+                stream.Flush(true);
+            }
             if (File.Exists(TorrentSessionPathR199))
             {
                 try
@@ -1053,7 +1121,8 @@ public sealed partial class MainWindowViewModel
     {
         if (Interlocked.Exchange(ref _torrentDisposeGateR1644, 1) != 0) return;
         _torrentRefreshTimerR1644.Stop();
-        await SaveTorrentSessionR199Async();
+        if (!IsNonInteractiveTorrentProcessR1654())
+            await SaveTorrentSessionR199Async();
         var client = _torrentClientR1644;
         _torrentClientR1644 = null;
         if (client is not null)
