@@ -1,9 +1,21 @@
-Load this folder from Chrome/Edge/Brave Extensions > Developer mode > Load unpacked.
-MediaDock R1.6.55 Browser Handler extension 2.4.1.
-Performance-safe event-driven persistent floating whole-media grabber + queue fix.
-R1.6.55 keeps extension runtime code unchanged; the desktop app now makes update/torrent dialogs theme-adaptive and responsive.
+Load this folder from Chrome / Edge / Brave > Extensions > Developer mode > Load unpacked.
+
+MediaDock R1.6.56 Browser Handler
+Extension version: 2.5.0
 Expected unpacked extension ID: mgknjickielihcigpanjhhpbaldcpolf
 
-All R1.9.10 build outputs are kept under one Desktop folder: MediaDock R1.6.55 R1.5.
+R1.6.56 browser-grabber changes:
+- The floating "Download this video" control appears only when media is detected.
+- Drag the floating control to reposition it. Its position is remembered.
+- Open the panel and resize it from the lower-right edge. Its size is remembered.
+- Detects direct MP4/WebM/audio media, HLS (.m3u8), DASH (.mpd), DOM media sources, page fetch/XHR traffic and PerformanceResourceTiming entries.
+- Detection runs inside embedded frames too, while only the top page displays the grabber.
+- Each detected item keeps the originating frame as its referrer, improving handoff on sites whose media requests depend on the embedded-player page; extensionless <video>/<audio> URLs are also recognized.
+- HLS master manifests are expanded into quality/bitrate variants when the manifest is readable.
+- Per-tab candidate state is kept in chrome.storage.session so Manifest V3 service-worker suspension does not erase the list.
+- Segment noise and duplicate URLs are filtered before display.
+- A complete-page analysis fallback remains available when MediaDock can see the player but not a stable direct stream URL.
+- No browser-wide webRequest permission is used.
 
-R1.6.55 adds the desktop peer-connectivity fix plus theme-adaptive/responsive UI. Extension 2.4.1 runtime remains unchanged.
+All build outputs are kept under one Desktop folder:
+  MediaDock R1.6.56 R1.5

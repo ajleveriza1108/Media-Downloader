@@ -1,6 +1,6 @@
-# MediaDock R1.6.55 development snapshot
+# MediaDock R1.6.56 development snapshot
 
-R1.6.55 fixes live torrent telemetry so Down/Up are driven by fresh byte deltas instead of stale monitor maxima, and hardens loaded-torrent persistence against release smoke tests, early/forced close, and startup restore races. It keeps canonical .torrent metadata, embedded session recovery, the larger Add New Torrent selector, first-load start/discovery, fast peer connectivity, the persistent visible launcher, and no-force publication safeguards.
+R1.6.56 upgrades the browser media grabber to an adjustable IDM-style detector: it captures direct media plus HLS/DASH manifests from embedded players and page fetch/XHR traffic, expands HLS master playlists into quality/bitrate variants, remembers the grabber position/size, and keeps candidates per tab across Manifest V3 service-worker suspension. Torrent persistence, true live telemetry, first-load discovery, the larger Add New Torrent selector, the persistent visible launcher, and no-force publication safeguards remain intact.
 
 UI/theme changes:
 - The update confirmation is a MediaDock-owned WPF dialog instead of a native Windows MessageBox.

@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "MediaDock Browser Handler",
-  "version": "2.4.1",
-  "description": "MediaDock performance-safe browser integration with persistent floating grabber, event-driven whole-media detection, reliable queueing, universal downloads, and torrent/magnet handoff.",
+  "version": "2.5.0",
+  "description": "MediaDock adjustable IDM-style media grabber with per-tab stream detection, HLS quality variants, embedded-player awareness, native messaging, universal downloads, and torrent/magnet handoff.",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA5oxily/QOFhCl1W9UzBonIGe1pUPJK8+WqzAVKR5ukCBCl4eDXyckqPo5Il81d3INbMQX+iYizfULMXKShJsn+KTaZnSOkolgVfPmnwOsgnFfnmHQtrXEWh9z46TGHHSso9fTjl8s8zAv8FPiuEG7Cc/NAdW4mE3H23o4kHXrvyVdgu43Qdd09Ypu3s2NpEsNuZwMcm+6llex284mcgUyivjcTwZ0gLL768YdqYSHYmPAktuDzEe5J/TOHy2r1SEWW4kG5zuFiNAnQjdVx4Fl+PRASCdUT1rsasSiHAXr4x5tjyTZUoxbXBqpbsnnqwp1Pd167h2zx5TzXPA1811pwIDAQAB",
   "permissions": [
     "activeTab",
@@ -26,9 +26,23 @@
         "https://*/*"
       ],
       "js": [
+        "page-media-hook.js"
+      ],
+      "run_at": "document_start",
+      "all_frames": true,
+      "world": "MAIN"
+    },
+    {
+      "matches": [
+        "http://*/*",
+        "https://*/*"
+      ],
+      "js": [
         "floating-grabber.js"
       ],
-      "run_at": "document_idle"
+      "run_at": "document_idle",
+      "all_frames": true,
+      "world": "ISOLATED"
     }
   ],
   "action": {

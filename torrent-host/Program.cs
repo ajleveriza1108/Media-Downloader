@@ -361,7 +361,7 @@ internal sealed class TorrentHostRuntime : IAsyncDisposable
             {
                 "ping" => new
                 {
-                    Version = "R1.6.55",
+                    Version = "R1.6.56",
                     ProcessId = Environment.ProcessId,
                     Engine = "MonoTorrent 3.9 alpha",
                     DhtState = _engine.Dht.State.ToString(),

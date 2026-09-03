@@ -13,9 +13,9 @@ public partial class MainWindow
 {
     private void InstallTorrentWorkspaceR1644()
     {
-        // MEDIADOCK_RUNTIME_IDENTITY_R1655
+        // MEDIADOCK_RUNTIME_IDENTITY_R1656
         // Make it impossible to mistake an older installed build for the package under test.
-        Title = "MediaDock R1.6.55";
+        Title = "MediaDock R1.6.56";
         DownloadViewButton.Click += ExistingWorkspaceNavigationR1644_Click;
         DownloaderViewButton.Click += ExistingWorkspaceNavigationR1644_Click;
         StreamViewButton.Click += ExistingWorkspaceNavigationR1644_Click;
