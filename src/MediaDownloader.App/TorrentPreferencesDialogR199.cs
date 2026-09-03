@@ -13,14 +13,15 @@ namespace MediaDownloader;
 // MEDIADOCK_TORRENT_SETTINGS_NAV_R1910
 public sealed class TorrentPreferencesDialogR199 : Window
 {
-    private static readonly Brush Bg = new SolidColorBrush(Color.FromRgb(15, 18, 22));
-    private static readonly Brush Panel = new SolidColorBrush(Color.FromRgb(24, 29, 35));
-    private static readonly Brush Panel2 = new SolidColorBrush(Color.FromRgb(20, 25, 31));
-    private static readonly Brush Border = new SolidColorBrush(Color.FromRgb(54, 64, 75));
-    private static readonly Brush Text = new SolidColorBrush(Color.FromRgb(240, 244, 248));
-    private static readonly Brush Muted = new SolidColorBrush(Color.FromRgb(174, 187, 201));
-    private static readonly Brush Accent = new SolidColorBrush(Color.FromRgb(54, 147, 255));
-    private static readonly Brush Selected = new SolidColorBrush(Color.FromRgb(36, 54, 74));
+    private readonly Window _themeOwner;
+    private readonly Brush Bg;
+    private readonly Brush Panel;
+    private readonly Brush Panel2;
+    private readonly Brush Border;
+    private readonly Brush Text;
+    private readonly Brush Muted;
+    private readonly Brush Accent;
+    private readonly Brush Selected;
 
     private readonly Dictionary<string, TextBox> _numbers = new(StringComparer.Ordinal);
     private readonly List<UIElement> _pages = new();
@@ -44,28 +45,42 @@ public sealed class TorrentPreferencesDialogR199 : Window
 
     public TorrentPreferencesDialogR199(Window owner, TorrentPreferencesR199 current)
     {
+        _themeOwner = owner;
+        Bg = ThemeUiR1646.ResolveBrush(owner, "ThemeWindowBackgroundBrush");
+        Panel = ThemeUiR1646.ResolveBrush(owner, "ThemePanelBackgroundBrush");
+        Panel2 = ThemeUiR1646.ResolveBrush(owner, "ThemeSurfaceBrush");
+        Border = ThemeUiR1646.ResolveBrush(owner, "ThemeBorderBrush");
+        Text = ThemeUiR1646.ResolveBrush(owner, "ThemePrimaryTextBrush");
+        Muted = ThemeUiR1646.ResolveBrush(owner, "ThemeMutedTextBrush");
+        Accent = ThemeUiR1646.ResolveBrush(owner, "ThemeAccentBrush");
+        Selected = ThemeUiR1646.ResolveBrush(owner, "ThemeAccentPanelBrush");
+
         Owner = owner;
         Settings = current.Clone();
         Title = "MediaDock Torrent Settings";
-        Width = 900;
-        Height = 650;
-        MinWidth = 820;
-        MinHeight = 590;
+        var size = ThemeUiR1646.ResponsiveSize(owner, 0.68, 0.78, 760, 520, 980, 740);
+        Width = size.Width;
+        Height = size.Height;
+        MinWidth = 740;
+        MinHeight = 500;
+        MaxWidth = Math.Max(MinWidth, SystemParameters.WorkArea.Width - 40);
+        MaxHeight = Math.Max(MinHeight, SystemParameters.WorkArea.Height - 60);
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
+        ResizeMode = ResizeMode.CanResizeWithGrip;
+        ThemeUiR1646.ApplyWindow(this, owner);
         Background = Bg;
         Foreground = Text;
-        FontFamily = new FontFamily("Segoe UI");
         FontSize = 12;
-        SourceInitialized += (_, _) => ApplyDarkTitleBar();
+        SourceInitialized += (_, _) => ApplyThemeTitleBar();
         Content = BuildUi();
     }
 
-    private void ApplyDarkTitleBar()
+    private void ApplyThemeTitleBar()
     {
         try
         {
             var hwnd = new WindowInteropHelper(this).Handle;
-            var enabled = 1;
+            var enabled = ThemeUiR1646.IsDark(Bg) ? 1 : 0;
             if (DwmSetWindowAttribute(hwnd, 20, ref enabled, sizeof(int)) != 0)
                 _ = DwmSetWindowAttribute(hwnd, 19, ref enabled, sizeof(int));
         }
@@ -87,7 +102,7 @@ public sealed class TorrentPreferencesDialogR199 : Window
         header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         var headerText = new StackPanel();
         headerText.Children.Add(new TextBlock { Text = "Torrent Preferences", Foreground = Text, FontSize = 21, FontWeight = FontWeights.SemiBold });
-        headerText.Children.Add(new TextBlock { Text = "Persistent queue, fast peer discovery, connection, bandwidth and BitTorrent behavior", Foreground = Muted, Margin = new Thickness(0, 3, 0, 0) });
+        headerText.Children.Add(new TextBlock { Text = "Persistent queue, fast peer discovery, connection, bandwidth and BitTorrent behavior", Foreground = Muted, Margin = new Thickness(0, 3, 0, 0), TextWrapping = TextWrapping.Wrap });
         header.Children.Add(headerText);
         var fastBadge = new Border { Background = Selected, BorderBrush = Accent, BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(6), Padding = new Thickness(10, 5, 10, 5), VerticalAlignment = VerticalAlignment.Center };
         fastBadge.Child = new TextBlock { Text = "FAST peer discovery", Foreground = Text, FontWeight = FontWeights.SemiBold };
@@ -96,7 +111,7 @@ public sealed class TorrentPreferencesDialogR199 : Window
         root.Children.Add(header);
 
         var body = new Grid();
-        body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(185) });
+        body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(170) });
         body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(12) });
         body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         Grid.SetRow(body, 1);
@@ -120,7 +135,7 @@ public sealed class TorrentPreferencesDialogR199 : Window
         itemStyle.Setters.Add(new Setter(Control.HorizontalContentAlignmentProperty, HorizontalAlignment.Stretch));
         var selectedTrigger = new Trigger { Property = ListBoxItem.IsSelectedProperty, Value = true };
         selectedTrigger.Setters.Add(new Setter(Control.BackgroundProperty, Selected));
-        selectedTrigger.Setters.Add(new Setter(Control.ForegroundProperty, Brushes.White));
+        selectedTrigger.Setters.Add(new Setter(Control.ForegroundProperty, Text));
         selectedTrigger.Setters.Add(new Setter(Control.FontWeightProperty, FontWeights.SemiBold));
         itemStyle.Triggers.Add(selectedTrigger);
         _nav.ItemContainerStyle = itemStyle;
@@ -149,7 +164,7 @@ public sealed class TorrentPreferencesDialogR199 : Window
         buttons.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         var defaults = MakeButton("Fast defaults", (_, _) => LoadFastDefaults());
         buttons.Children.Add(defaults);
-        var right = new StackPanel { Orientation = Orientation.Horizontal };
+        var right = new WrapPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
         right.Children.Add(MakeButton("Cancel", (_, _) => { DialogResult = false; Close(); }));
         right.Children.Add(MakeButton("Apply", (_, _) => ApplyAndClose(), primary: true));
         Grid.SetColumn(right, 1);
@@ -201,11 +216,11 @@ public sealed class TorrentPreferencesDialogR199 : Window
     private UIElement BuildConnection()
     {
         var panel = Page("Connection", "Listening, DHT UDP and router mapping");
-        _incoming = AddCheck(panel, "Enable incoming peer connections", Settings.EnableIncomingConnections);
-        AddNumber(panel, "TCP listening port (0 = automatic)", "ListeningPort", Settings.ListeningPort);
+        _incoming = AddCheck(panel, "Allow router-mapped incoming peer connections", Settings.EnableIncomingConnections);
+        AddNumber(panel, "Peer listening port (0 = automatic)", "ListeningPort", Settings.ListeningPort);
         AddNumber(panel, "DHT UDP port (0 = automatic)", "DhtPort", Settings.DhtPort);
-        _portMapping = AddCheck(panel, "Enable UPnP / NAT-PMP port mapping", Settings.EnablePortMapping);
-        AddNote(panel, "MediaDock uses outbound peers even when incoming connections are disabled. Enabling incoming connections can improve swarm reachability, but Windows may show a one-time firewall permission prompt for the installed TorrentHost.");
+        _portMapping = AddCheck(panel, "Use UPnP / NAT-PMP when incoming is enabled", Settings.EnablePortMapping);
+        AddNote(panel, "R1.6.46 always binds an automatic local peer port so trackers receive a valid port and outbound connections work immediately. This toggle only enables router mapping/inbound reachability. Windows may show a one-time firewall permission prompt for TorrentHost.");
         return panel;
     }
 
@@ -231,7 +246,7 @@ public sealed class TorrentPreferencesDialogR199 : Window
         _fallback = AddCheck(panel, "Immediately add public fallback trackers to public torrents", Settings.UsePublicTrackerFallback);
         AddNumber(panel, "Peer recovery attempts", "RecoveryAttempts", Settings.PeerRecoveryAttempts);
         AddNumber(panel, "Seconds between later recovery attempts", "RecoverySeconds", Settings.PeerRecoveryIntervalSeconds);
-        AddNote(panel, "Fast peer discovery announces trackers, DHT and local discovery immediately, then performs short recovery retries. Private torrents never receive public fallback trackers.");
+        AddNote(panel, "Fast peer discovery sends one Started tracker announce, then uses normal tracker cadence while DHT/PEX/LPD continue in parallel. Trackerless magnets get immediate public tracker bootstrap while metadata is pending; known private torrents never receive public fallbacks.");
         return panel;
     }
 
@@ -279,18 +294,18 @@ public sealed class TorrentPreferencesDialogR199 : Window
         parent.Children.Add(grid);
     }
 
-    private static TextBox MakeText(string text) => new()
+    private TextBox MakeText(string text)
     {
-        Text = text,
-        MinHeight = 32,
-        Padding = new Thickness(9, 5, 9, 5),
-        Background = new SolidColorBrush(Color.FromRgb(11, 15, 19)),
-        Foreground = Text,
-        BorderBrush = Border,
-        CaretBrush = Text,
-        FontFamily = new FontFamily("Segoe UI"),
-        FontSize = 12
-    };
+        var box = new TextBox
+        {
+            Text = text,
+            MinHeight = 32,
+            Padding = new Thickness(9, 5, 9, 5),
+            FontSize = 12
+        };
+        ThemeUiR1646.ApplyTextBox(box, _themeOwner);
+        return box;
+    }
 
     private void AddNote(Panel panel, string text) => panel.Children.Add(new TextBlock
     {
@@ -303,20 +318,9 @@ public sealed class TorrentPreferencesDialogR199 : Window
 
     private Button MakeButton(string text, RoutedEventHandler click, bool primary = false)
     {
-        var button = new Button
-        {
-            Content = text,
-            MinWidth = 104,
-            MinHeight = 36,
-            Margin = new Thickness(6, 0, 0, 0),
-            Padding = new Thickness(14, 6, 14, 6),
-            Foreground = Brushes.White,
-            Background = primary ? Accent : Panel2,
-            BorderBrush = primary ? Accent : Border,
-            FontFamily = new FontFamily("Segoe UI"),
-            FontSize = 12,
-            FontWeight = FontWeights.SemiBold
-        };
+        var button = ThemeUiR1646.MakeButton(_themeOwner, text, primary, 104, 36);
+        button.FontSize = 12;
+        button.FontWeight = FontWeights.SemiBold;
         button.Click += click;
         return button;
     }
@@ -374,12 +378,12 @@ public sealed class TorrentPreferencesDialogR199 : Window
         _numbers["DhtPort"].Text = "0";
         _numbers["Download"].Text = "0";
         _numbers["Upload"].Text = "0";
-        _numbers["Connections"].Text = "600";
-        _numbers["HalfOpen"].Text = "64";
-        _numbers["Peers"].Text = "300";
-        _numbers["Slots"].Text = "16";
+        _numbers["Connections"].Text = "320";
+        _numbers["HalfOpen"].Text = "32";
+        _numbers["Peers"].Text = "160";
+        _numbers["Slots"].Text = "8";
         _numbers["ActiveDownloads"].Text = "3";
-        _numbers["RecoveryAttempts"].Text = "24";
-        _numbers["RecoverySeconds"].Text = "3";
+        _numbers["RecoveryAttempts"].Text = "30";
+        _numbers["RecoverySeconds"].Text = "4";
     }
 }

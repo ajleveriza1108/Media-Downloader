@@ -226,7 +226,7 @@ public partial class MainWindow
     private bool? ConfirmTorrentRemovalR199(string prompt)
     {
         if (!_viewModel.TorrentPreferencesR199.ConfirmRemove) return false;
-        var result = MessageBox.Show(
+        var result = ThemedMessageBoxR1646.Show(
             this,
             prompt + "\n\nYES = remove torrent AND downloaded data\nNO = remove torrent but KEEP downloaded data\nCANCEL = do nothing",
             "Remove Torrent",
@@ -248,7 +248,7 @@ public partial class MainWindow
         var count = _viewModel.TorrentsR1644.Count(item => item.IsChecked);
         if (count == 0)
         {
-            MessageBox.Show(this, "Check one or more torrents first.", "MediaDock Torrent", MessageBoxButton.OK, MessageBoxImage.Information);
+            ThemedMessageBoxR1646.Show(this, "Check one or more torrents first.", "MediaDock Torrent", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
         var deleteData = ConfirmTorrentRemovalR199($"Remove {count} checked torrent(s)?");
@@ -309,7 +309,7 @@ public partial class MainWindow
                 var choices = await _viewModel.GetTorrentFilesR1644Async(item);
                 if (choices.Count == 0)
                 {
-                    MessageBox.Show(
+                    ThemedMessageBoxR1646.Show(
                         this,
                         "Torrent metadata is not available yet.",
                         "MediaDock Torrent",
@@ -359,7 +359,7 @@ public partial class MainWindow
         catch (Exception ex)
         {
             App.WriteCrashLog("Torrent.OpenFolder.R190", ex);
-            MessageBox.Show(this, ex.Message, "MediaDock Torrent", MessageBoxButton.OK, MessageBoxImage.Warning);
+            ThemedMessageBoxR1646.Show(this, ex.Message, "MediaDock Torrent", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 
@@ -408,7 +408,7 @@ public partial class MainWindow
         {
             App.WriteCrashLog(stage, ex);
             item?.MarkOperationError(ex.Message);
-            MessageBox.Show(
+            ThemedMessageBoxR1646.Show(
                 this,
                 ex.Message + "\n\nThe torrent engine is isolated from MediaDock, so the main app remains open. A diagnostic was written to the Logs folder.",
                 title,

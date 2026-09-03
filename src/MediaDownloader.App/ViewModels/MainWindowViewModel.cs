@@ -2500,7 +2500,7 @@ var converted = new DownloadQueueItem(
             notice += $"\nUnavailable/invalid playlist entries skipped: {invalidCount}.";
         }
 
-        MessageBox.Show(
+        ThemedMessageBoxR1646.Show(
             notice,
             "MediaDock Trial Playlist Limit",
             MessageBoxButton.OK,

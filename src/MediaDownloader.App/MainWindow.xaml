@@ -1668,11 +1668,11 @@
           </Grid>
         </Border>
       </Grid>      <!-- MEDIADOCK_TORRENT_WORKSPACE_R1644 -->
-      <!-- MEDIADOCK_TORRENT_UTORRENT_STYLE_R190 -->
-      <!-- MEDIADOCK_TORRENT_DARK_UI_R194 -->
-      <!-- MEDIADOCK_TORRENT_AUTOSTART_FAST_THEME_R197 -->
+      <!-- MEDIADOCK_THEME_ADAPTIVE_UI_R1646 -->
       <!-- MEDIADOCK_TORRENT_PERSISTENT_QUEUE_SETTINGS_R199 -->
-      <Grid x:Name="TorrentWorkspaceR1644" Visibility="Collapsed">
+      <Grid x:Name="TorrentWorkspaceR1644"
+            Visibility="Collapsed"
+            Background="{DynamicResource ThemeWindowBackgroundBrush}">
         <Grid.RowDefinitions>
           <RowDefinition Height="Auto"/>
           <RowDefinition Height="8"/>
@@ -1681,58 +1681,166 @@
           <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <Border Background="#11161B" BorderBrush="#36404B" BorderThickness="1" CornerRadius="10" Padding="10">
+        <Border Background="{DynamicResource ThemePanelBackgroundBrush}"
+                BorderBrush="{DynamicResource ThemeBorderBrush}"
+                BorderThickness="1"
+                CornerRadius="10"
+                Padding="10">
           <Grid>
-            <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+            <Grid.RowDefinitions>
+              <RowDefinition Height="Auto"/>
+              <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
             <Grid>
-              <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-              <TextBox x:Name="TorrentSourceTextBoxR1644" Text="{Binding TorrentSourceR1644, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource UrlTextBox}" MinHeight="38" Padding="10,0" ToolTip="Paste a magnet link or https .torrent URL."/>
-              <Button Grid.Column="1" Margin="8,0,0,0" Style="{StaticResource DenseGhostButton}" Padding="12,6" Content="Add &amp; Download" Click="TorrentAddMagnetR1644_Click"/>
-              <Button Grid.Column="2" Margin="8,0,0,0" Style="{StaticResource NeonPrimaryButton}" Padding="12,6" Content="Open &amp; Download .torrent" Click="TorrentAddFileR1644_Click"/>
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+              </Grid.ColumnDefinitions>
+              <Border Background="{DynamicResource ThemeInputBackgroundBrush}"
+                      BorderBrush="{DynamicResource ThemeBorderBrush}"
+                      BorderThickness="1"
+                      CornerRadius="8">
+                <TextBox x:Name="TorrentSourceTextBoxR1644"
+                         Text="{Binding TorrentSourceR1644, UpdateSourceTrigger=PropertyChanged}"
+                         Style="{StaticResource UrlTextBox}"
+                         MinHeight="38"
+                         Padding="10,0"
+                         ToolTip="Paste a magnet link or HTTPS .torrent URL."/>
+              </Border>
+              <Button Grid.Column="1"
+                      Margin="8,0,0,0"
+                      Style="{StaticResource DenseGhostButton}"
+                      Padding="12,6"
+                      MinWidth="116"
+                      Content="Add &amp; Download"
+                      Click="TorrentAddMagnetR1644_Click"/>
+              <Button Grid.Column="2"
+                      Margin="8,0,0,0"
+                      Style="{StaticResource NeonPrimaryButton}"
+                      Padding="12,6"
+                      MinWidth="178"
+                      Content="Open &amp; Download .torrent"
+                      Click="TorrentAddFileR1644_Click"/>
             </Grid>
-            <TextBlock Grid.Row="1" Margin="2,7,0,0" Text="Open, paste, or drop a torrent. Loaded torrents remain in MediaDock after restart and use queue priority from top to bottom." Foreground="#8E9AA8" FontFamily="Segoe UI" FontSize="10"/>
+            <TextBlock Grid.Row="1"
+                       Margin="2,7,0,0"
+                       Text="Open, paste, or drop a torrent. Loaded torrents remain in MediaDock after restart and use queue priority from top to bottom."
+                       Foreground="{DynamicResource ThemeMutedTextBrush}"
+                       FontFamily="Segoe UI"
+                       FontSize="10"
+                       TextWrapping="Wrap"/>
           </Grid>
         </Border>
 
-        <Border Grid.Row="2" Background="#14191F" BorderBrush="#36404B" BorderThickness="1" CornerRadius="10" Padding="9">
+        <Border Grid.Row="2"
+                Background="{DynamicResource ThemePanelBackgroundBrush}"
+                BorderBrush="{DynamicResource ThemeBorderBrush}"
+                BorderThickness="1"
+                CornerRadius="10"
+                Padding="9">
           <Border.Resources>
-            <Style x:Key="TorrentActionButtonR194" TargetType="{x:Type Button}" BasedOn="{StaticResource DenseGhostButton}">
-              <Setter Property="Padding" Value="9,5"/><Setter Property="Margin" Value="0,0,5,0"/><Setter Property="Foreground" Value="#F4F7FB"/>
-              <Style.Triggers><DataTrigger Binding="{Binding SelectedTorrentR1644}" Value="{x:Null}"><Setter Property="IsEnabled" Value="False"/><Setter Property="Opacity" Value="0.45"/></DataTrigger></Style.Triggers>
+            <Style x:Key="TorrentActionButtonR194"
+                   TargetType="{x:Type Button}"
+                   BasedOn="{StaticResource DenseGhostButton}">
+              <Setter Property="Padding" Value="9,5"/>
+              <Setter Property="Margin" Value="0,0,5,5"/>
+              <Setter Property="Foreground" Value="{DynamicResource ThemePrimaryTextBrush}"/>
+              <Setter Property="MinHeight" Value="30"/>
+              <Style.Triggers>
+                <DataTrigger Binding="{Binding SelectedTorrentR1644}" Value="{x:Null}">
+                  <Setter Property="IsEnabled" Value="False"/>
+                  <Setter Property="Opacity" Value="0.45"/>
+                </DataTrigger>
+              </Style.Triggers>
             </Style>
           </Border.Resources>
           <Grid>
-            <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="7"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+            <Grid.RowDefinitions>
+              <RowDefinition Height="Auto"/>
+              <RowDefinition Height="5"/>
+              <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
 
             <Grid>
               <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
               </Grid.ColumnDefinitions>
-              <CheckBox Grid.Column="0" Margin="3,0,10,0" VerticalAlignment="Center" Foreground="#C2CBD5" Content="All" Checked="TorrentSelectAllR199_Checked" Unchecked="TorrentSelectAllR199_Unchecked" ToolTip="Check or uncheck all loaded torrents"/>
-              <Button Grid.Column="1" Style="{StaticResource TorrentActionButtonR194}" Content="Start" Tag="{Binding SelectedItem, ElementName=TorrentGridR1644}" Click="TorrentStartR1644_Click"/>
-              <Button Grid.Column="2" Style="{StaticResource TorrentActionButtonR194}" Content="Pause" Tag="{Binding SelectedItem, ElementName=TorrentGridR1644}" Click="TorrentPauseR1644_Click"/>
-              <Button Grid.Column="3" Style="{StaticResource TorrentActionButtonR194}" Content="Stop" Tag="{Binding SelectedItem, ElementName=TorrentGridR1644}" Click="TorrentStopR1644_Click"/>
-              <Button Grid.Column="4" Style="{StaticResource TorrentActionButtonR194}" Content="↑ Priority" Tag="{Binding SelectedItem, ElementName=TorrentGridR1644}" Click="TorrentMoveUpR199_Click" ToolTip="Move selected torrent up the download queue"/>
-              <Button Grid.Column="5" Style="{StaticResource TorrentActionButtonR194}" Content="↓ Priority" Tag="{Binding SelectedItem, ElementName=TorrentGridR1644}" Click="TorrentMoveDownR199_Click" ToolTip="Move selected torrent down the download queue"/>
-              <Button Grid.Column="6" Style="{StaticResource TorrentActionButtonR194}" Content="Update Peers" Tag="{Binding SelectedItem, ElementName=TorrentGridR1644}" Click="TorrentUpdateTrackersR199_Click" ToolTip="Immediately refresh trackers, DHT and local peer discovery"/>
-              <Button Grid.Column="7" Style="{StaticResource TorrentActionButtonR194}" Content="Files" Tag="{Binding SelectedItem, ElementName=TorrentGridR1644}" Click="TorrentFilesR1644_Click"/>
-              <Button Grid.Column="8" Style="{StaticResource TorrentActionButtonR194}" Content="Details" Tag="{Binding SelectedItem, ElementName=TorrentGridR1644}" Click="TorrentDetailsR190_Click"/>
-              <Button Grid.Column="9" Style="{StaticResource TorrentActionButtonR194}" Content="Remove ✓" Click="TorrentRemoveCheckedR199_Click" ToolTip="Remove checked torrents"/>
-              <Button Grid.Column="10" Style="{StaticResource TorrentActionButtonR194}" Content="Remove All" Click="TorrentRemoveAllR199_Click"/>
-              <Button Grid.Column="11" Style="{StaticResource DenseGhostButton}" Padding="9,5" Margin="0,0,7,0" Foreground="#F4F7FB" Content="Settings" Click="TorrentSettingsR199_Click"/>
-              <StackPanel Grid.Column="12" HorizontalAlignment="Right" VerticalAlignment="Center">
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right"><TextBlock Text="Loaded: " Foreground="#B7C0CA" FontSize="10"/><TextBlock Text="{Binding TorrentsR1644.Count, Mode=OneWay}" Foreground="#F4F7FB" FontWeight="SemiBold" FontSize="10"/></StackPanel>
-                <TextBlock HorizontalAlignment="Right" Text="Persistent queue • FAST discovery • DHT/PEX • tracker bootstrap" Foreground="#8793A3" FontSize="8.5"/>
+              <WrapPanel VerticalAlignment="Center">
+                <CheckBox Margin="3,0,10,5"
+                          VerticalAlignment="Center"
+                          Foreground="{DynamicResource ThemePrimaryTextBrush}"
+                          Content="All"
+                          Checked="TorrentSelectAllR199_Checked"
+                          Unchecked="TorrentSelectAllR199_Unchecked"
+                          ToolTip="Check or uncheck all loaded torrents"/>
+                <Button Style="{StaticResource TorrentActionButtonR194}" Content="Start" Tag="{Binding SelectedItem, ElementName=TorrentGridR1644}" Click="TorrentStartR1644_Click"/>
+                <Button Style="{StaticResource TorrentActionButtonR194}" Content="Pause" Tag="{Binding SelectedItem, ElementName=TorrentGridR1644}" Click="TorrentPauseR1644_Click"/>
+                <Button Style="{StaticResource TorrentActionButtonR194}" Content="Stop" Tag="{Binding SelectedItem, ElementName=TorrentGridR1644}" Click="TorrentStopR1644_Click"/>
+                <Button Style="{StaticResource TorrentActionButtonR194}" Content="↑ Priority" Tag="{Binding SelectedItem, ElementName=TorrentGridR1644}" Click="TorrentMoveUpR199_Click" ToolTip="Move selected torrent up the download queue"/>
+                <Button Style="{StaticResource TorrentActionButtonR194}" Content="↓ Priority" Tag="{Binding SelectedItem, ElementName=TorrentGridR1644}" Click="TorrentMoveDownR199_Click" ToolTip="Move selected torrent down the download queue"/>
+                <Button Style="{StaticResource TorrentActionButtonR194}" Content="Update Peers" Tag="{Binding SelectedItem, ElementName=TorrentGridR1644}" Click="TorrentUpdateTrackersR199_Click" ToolTip="Immediately refresh trackers, DHT and local peer discovery"/>
+                <Button Style="{StaticResource TorrentActionButtonR194}" Content="Files" Tag="{Binding SelectedItem, ElementName=TorrentGridR1644}" Click="TorrentFilesR1644_Click"/>
+                <Button Style="{StaticResource TorrentActionButtonR194}" Content="Details" Tag="{Binding SelectedItem, ElementName=TorrentGridR1644}" Click="TorrentDetailsR190_Click"/>
+                <Button Style="{StaticResource TorrentActionButtonR194}" Content="Remove ✓" Click="TorrentRemoveCheckedR199_Click" ToolTip="Remove checked torrents"/>
+                <Button Style="{StaticResource TorrentActionButtonR194}" Content="Remove All" Click="TorrentRemoveAllR199_Click"/>
+                <Button Margin="0,0,5,5"
+                        Style="{StaticResource DenseGhostButton}"
+                        Padding="9,5"
+                        MinHeight="30"
+                        Foreground="{DynamicResource ThemePrimaryTextBrush}"
+                        Content="Settings"
+                        Click="TorrentSettingsR199_Click"/>
+              </WrapPanel>
+              <StackPanel Grid.Column="1"
+                          Margin="12,0,0,5"
+                          HorizontalAlignment="Right"
+                          VerticalAlignment="Center"
+                          MinWidth="170">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                  <TextBlock Text="Loaded: " Foreground="{DynamicResource ThemeSecondaryTextBrush}" FontSize="10"/>
+                  <TextBlock Text="{Binding TorrentsR1644.Count, Mode=OneWay}" Foreground="{DynamicResource ThemePrimaryTextBrush}" FontWeight="SemiBold" FontSize="10"/>
+                </StackPanel>
+                <TextBlock HorizontalAlignment="Right"
+                           Text="Persistent queue • FAST discovery • DHT/PEX • tracker bootstrap"
+                           Foreground="{DynamicResource ThemeMutedTextBrush}"
+                           FontSize="8.5"
+                           TextWrapping="Wrap"
+                           TextAlignment="Right"
+                           MaxWidth="290"/>
               </StackPanel>
             </Grid>
 
             <Grid Grid.Row="2">
-              <DataGrid x:Name="TorrentGridR1644" AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False" IsReadOnly="True" HeadersVisibility="Column" GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="#303943" VerticalGridLinesBrush="#303943" Background="#14191F" Foreground="#F4F7FB" BorderThickness="0" RowHeaderWidth="0" RowHeight="44" ColumnHeaderHeight="40" AlternationCount="2" RowBackground="#14191F" AlternatingRowBackground="#181E25" SelectionMode="Single" SelectionUnit="FullRow" ItemsSource="{Binding TorrentsR1644}" SelectedItem="{Binding SelectedTorrentR1644, Mode=TwoWay}">
+              <DataGrid x:Name="TorrentGridR1644"
+                        AutoGenerateColumns="False"
+                        CanUserAddRows="False"
+                        CanUserDeleteRows="False"
+                        IsReadOnly="True"
+                        HeadersVisibility="Column"
+                        GridLinesVisibility="Horizontal"
+                        HorizontalGridLinesBrush="{DynamicResource ThemeBorderBrush}"
+                        VerticalGridLinesBrush="{DynamicResource ThemeBorderBrush}"
+                        Background="{DynamicResource ThemePanelBackgroundBrush}"
+                        Foreground="{DynamicResource ThemePrimaryTextBrush}"
+                        BorderThickness="0"
+                        RowHeaderWidth="0"
+                        RowHeight="44"
+                        ColumnHeaderHeight="40"
+                        AlternationCount="2"
+                        RowBackground="{DynamicResource ThemePanelBackgroundBrush}"
+                        AlternatingRowBackground="{DynamicResource ThemeSurfaceBrush}"
+                        SelectionMode="Single"
+                        SelectionUnit="FullRow"
+                        ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                        ScrollViewer.VerticalScrollBarVisibility="Auto"
+                        ItemsSource="{Binding TorrentsR1644}"
+                        SelectedItem="{Binding SelectedTorrentR1644, Mode=TwoWay}">
                 <DataGrid.ContextMenu>
-                  <ContextMenu Background="#1A2027" Foreground="#F4F7FB" BorderBrush="#44505D">
+                  <ContextMenu Background="{DynamicResource ThemePanelBackgroundBrush}"
+                               Foreground="{DynamicResource ThemePrimaryTextBrush}"
+                               BorderBrush="{DynamicResource ThemeBorderBrush}">
                     <MenuItem Header="Start / Resume" Click="TorrentStartR1644_Click" Tag="{Binding PlacementTarget.SelectedItem, RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}"/>
                     <MenuItem Header="Pause" Click="TorrentPauseR1644_Click" Tag="{Binding PlacementTarget.SelectedItem, RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}"/>
                     <MenuItem Header="Stop" Click="TorrentStopR1644_Click" Tag="{Binding PlacementTarget.SelectedItem, RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}"/>
@@ -1752,22 +1860,95 @@
                   </ContextMenu>
                 </DataGrid.ContextMenu>
                 <DataGrid.Resources>
-                  <Style TargetType="{x:Type DataGridColumnHeader}"><Setter Property="Background" Value="#1B222A"/><Setter Property="Foreground" Value="#D8E1EB"/><Setter Property="BorderBrush" Value="#36404B"/><Setter Property="BorderThickness" Value="0,0,1,1"/><Setter Property="Padding" Value="8,0"/><Setter Property="FontFamily" Value="Segoe UI"/><Setter Property="FontSize" Value="11.5"/><Setter Property="FontWeight" Value="SemiBold"/></Style>
-                  <Style TargetType="{x:Type DataGridRow}"><Setter Property="Foreground" Value="#F4F7FB"/><Setter Property="BorderThickness" Value="0"/><Style.Triggers><Trigger Property="IsSelected" Value="True"><Setter Property="Background" Value="#24364A"/><Setter Property="Foreground" Value="#FFFFFF"/></Trigger></Style.Triggers></Style>
-                  <Style x:Key="TorrentGridTextR198" TargetType="{x:Type TextBlock}"><Setter Property="Foreground" Value="#F4F7FB"/><Setter Property="FontFamily" Value="Segoe UI"/><Setter Property="FontSize" Value="11.5"/><Setter Property="VerticalAlignment" Value="Center"/><Setter Property="TextTrimming" Value="CharacterEllipsis"/></Style>
-                  <Style x:Key="TorrentGridSecondaryTextR198" TargetType="{x:Type TextBlock}" BasedOn="{StaticResource TorrentGridTextR198}"><Setter Property="Foreground" Value="#B7C0CA"/></Style>
-                  <Style x:Key="TorrentGridStatusTextR198" TargetType="{x:Type TextBlock}" BasedOn="{StaticResource TorrentGridTextR198}"><Setter Property="Foreground" Value="#DCE9F7"/><Setter Property="FontWeight" Value="SemiBold"/></Style>
-                  <Style x:Key="TorrentProgressBarR197" TargetType="{x:Type ProgressBar}"><Setter Property="Background" Value="#313A45"/><Setter Property="Foreground" Value="#3B96FF"/><Setter Property="BorderThickness" Value="0"/><Setter Property="Height" Value="12"/></Style>
-                  <Style TargetType="{x:Type DataGridCell}"><Setter Property="Foreground" Value="#F4F7FB"/><Setter Property="BorderThickness" Value="0,0,0,1"/><Setter Property="BorderBrush" Value="#303943"/><Setter Property="Padding" Value="7,0"/><Setter Property="VerticalContentAlignment" Value="Center"/><Setter Property="Background" Value="Transparent"/><Setter Property="FocusVisualStyle" Value="{x:Null}"/></Style>
-                  <Style TargetType="{x:Type CheckBox}"><Setter Property="Foreground" Value="#F4F7FB"/><Setter Property="VerticalAlignment" Value="Center"/><Setter Property="HorizontalAlignment" Value="Center"/></Style>
+                  <Style TargetType="{x:Type DataGridColumnHeader}">
+                    <Setter Property="Background" Value="{DynamicResource ThemeSurfaceBrush}"/>
+                    <Setter Property="Foreground" Value="{DynamicResource ThemeSecondaryTextBrush}"/>
+                    <Setter Property="BorderBrush" Value="{DynamicResource ThemeBorderBrush}"/>
+                    <Setter Property="BorderThickness" Value="0,0,1,1"/>
+                    <Setter Property="Padding" Value="8,0"/>
+                    <Setter Property="FontFamily" Value="Segoe UI"/>
+                    <Setter Property="FontSize" Value="11.5"/>
+                    <Setter Property="FontWeight" Value="SemiBold"/>
+                  </Style>
+                  <Style TargetType="{x:Type DataGridRow}">
+                    <Setter Property="Foreground" Value="{DynamicResource ThemePrimaryTextBrush}"/>
+                    <Setter Property="BorderThickness" Value="0"/>
+                    <Style.Triggers>
+                      <Trigger Property="IsSelected" Value="True">
+                        <Setter Property="Background" Value="{DynamicResource ThemeAccentPanelBrush}"/>
+                        <Setter Property="Foreground" Value="{DynamicResource ThemePrimaryTextBrush}"/>
+                      </Trigger>
+                    </Style.Triggers>
+                  </Style>
+                  <Style x:Key="TorrentGridTextR198" TargetType="{x:Type TextBlock}">
+                    <Setter Property="Foreground" Value="{DynamicResource ThemePrimaryTextBrush}"/>
+                    <Setter Property="FontFamily" Value="Segoe UI"/>
+                    <Setter Property="FontSize" Value="11.5"/>
+                    <Setter Property="VerticalAlignment" Value="Center"/>
+                    <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+                  </Style>
+                  <Style x:Key="TorrentGridSecondaryTextR198" TargetType="{x:Type TextBlock}" BasedOn="{StaticResource TorrentGridTextR198}">
+                    <Setter Property="Foreground" Value="{DynamicResource ThemeSecondaryTextBrush}"/>
+                  </Style>
+                  <Style x:Key="TorrentGridStatusTextR198" TargetType="{x:Type TextBlock}" BasedOn="{StaticResource TorrentGridTextR198}">
+                    <Setter Property="Foreground" Value="{DynamicResource ThemePrimaryTextBrush}"/>
+                    <Setter Property="FontWeight" Value="SemiBold"/>
+                  </Style>
+                  <Style x:Key="TorrentProgressBarR197" TargetType="{x:Type ProgressBar}">
+                    <Setter Property="Background" Value="{DynamicResource ThemeBorderBrush}"/>
+                    <Setter Property="Foreground" Value="{DynamicResource ThemeAccentBrush}"/>
+                    <Setter Property="BorderThickness" Value="0"/>
+                    <Setter Property="Height" Value="12"/>
+                  </Style>
+                  <Style TargetType="{x:Type DataGridCell}">
+                    <Setter Property="Foreground" Value="{DynamicResource ThemePrimaryTextBrush}"/>
+                    <Setter Property="BorderThickness" Value="0,0,0,1"/>
+                    <Setter Property="BorderBrush" Value="{DynamicResource ThemeBorderBrush}"/>
+                    <Setter Property="Padding" Value="7,0"/>
+                    <Setter Property="VerticalContentAlignment" Value="Center"/>
+                    <Setter Property="Background" Value="Transparent"/>
+                    <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                  </Style>
+                  <Style TargetType="{x:Type CheckBox}">
+                    <Setter Property="Foreground" Value="{DynamicResource ThemePrimaryTextBrush}"/>
+                    <Setter Property="VerticalAlignment" Value="Center"/>
+                    <Setter Property="HorizontalAlignment" Value="Center"/>
+                  </Style>
                 </DataGrid.Resources>
                 <DataGrid.Columns>
-                  <DataGridTemplateColumn Header="✓" Width="38"><DataGridTemplateColumn.CellTemplate><DataTemplate><CheckBox IsChecked="{Binding IsChecked, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
+                  <DataGridTemplateColumn Header="✓" Width="38">
+                    <DataGridTemplateColumn.CellTemplate>
+                      <DataTemplate><CheckBox IsChecked="{Binding IsChecked, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/></DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                  </DataGridTemplateColumn>
                   <DataGridTextColumn Header="#" Binding="{Binding QueuePosition}" Width="38" ElementStyle="{StaticResource TorrentGridSecondaryTextR198}"/>
-                  <DataGridTemplateColumn Header="Name" Width="2.1*"><DataGridTemplateColumn.CellTemplate><DataTemplate><TextBlock Text="{Binding Name}" ToolTip="{Binding Name}" Style="{StaticResource TorrentGridTextR198}" FontWeight="SemiBold"/></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
+                  <DataGridTemplateColumn Header="Name" Width="2.1*">
+                    <DataGridTemplateColumn.CellTemplate>
+                      <DataTemplate><TextBlock Text="{Binding Name}" ToolTip="{Binding Name}" Style="{StaticResource TorrentGridTextR198}" FontWeight="SemiBold"/></DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                  </DataGridTemplateColumn>
                   <DataGridTextColumn Header="Size" Binding="{Binding SizeText}" Width="90" ElementStyle="{StaticResource TorrentGridSecondaryTextR198}"/>
-                  <DataGridTemplateColumn Header="Status" Width="145"><DataGridTemplateColumn.CellTemplate><DataTemplate><TextBlock Text="{Binding Status}" ToolTip="{Binding StatusToolTip}" Style="{StaticResource TorrentGridStatusTextR198}"/></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
-                  <DataGridTemplateColumn Header="Progress" Width="160"><DataGridTemplateColumn.CellTemplate><DataTemplate><Grid Margin="2,8"><ProgressBar Maximum="100" Value="{Binding Progress}" Style="{StaticResource TorrentProgressBarR197}"/><TextBlock Text="{Binding Progress, StringFormat={}{0:0.0}%}" Foreground="#FFFFFF" FontFamily="Segoe UI" FontSize="9" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/></Grid></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
+                  <DataGridTemplateColumn Header="Status" Width="1.25*">
+                    <DataGridTemplateColumn.CellTemplate>
+                      <DataTemplate><TextBlock Text="{Binding Status}" ToolTip="{Binding StatusToolTip}" Style="{StaticResource TorrentGridStatusTextR198}"/></DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                  </DataGridTemplateColumn>
+                  <DataGridTemplateColumn Header="Progress" Width="1.25*">
+                    <DataGridTemplateColumn.CellTemplate>
+                      <DataTemplate>
+                        <Grid Margin="2,8">
+                          <ProgressBar Maximum="100" Value="{Binding Progress}" Style="{StaticResource TorrentProgressBarR197}"/>
+                          <TextBlock Text="{Binding Progress, StringFormat={}{0:0.0}%}"
+                                     Foreground="{DynamicResource ThemePrimaryTextBrush}"
+                                     FontFamily="Segoe UI"
+                                     FontSize="9"
+                                     FontWeight="Bold"
+                                     HorizontalAlignment="Center"
+                                     VerticalAlignment="Center"/>
+                        </Grid>
+                      </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                  </DataGridTemplateColumn>
                   <DataGridTextColumn Header="Down" Binding="{Binding DownloadRate}" Width="88" ElementStyle="{StaticResource TorrentGridTextR198}"/>
                   <DataGridTextColumn Header="Up" Binding="{Binding UploadRate}" Width="82" ElementStyle="{StaticResource TorrentGridSecondaryTextR198}"/>
                   <DataGridTextColumn Header="Peers" Binding="{Binding Peers}" Width="56" ElementStyle="{StaticResource TorrentGridTextR198}"/>
@@ -1777,12 +1958,62 @@
                 </DataGrid.Columns>
               </DataGrid>
 
-              <Border Margin="0,38,0,0" Background="#14191F" IsHitTestVisible="False"><Border.Style><Style TargetType="{x:Type Border}"><Setter Property="Visibility" Value="Collapsed"/><Style.Triggers><DataTrigger Binding="{Binding Items.Count, ElementName=TorrentGridR1644, Mode=OneWay}" Value="0"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers></Style></Border.Style><StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="560"><TextBlock Text="No torrents loaded" HorizontalAlignment="Center" Foreground="#F4F7FB" FontSize="18" FontWeight="SemiBold"/><TextBlock Margin="0,8,0,0" Text="Open a .torrent, paste a magnet, or drag a .torrent here. MediaDock keeps loaded torrents in the app until you remove them." TextAlignment="Center" TextWrapping="Wrap" Foreground="#8E9AA8" FontSize="10.5"/></StackPanel></Border>
+              <Border Margin="0,38,0,0"
+                      Background="{DynamicResource ThemePanelBackgroundBrush}"
+                      IsHitTestVisible="False">
+                <Border.Style>
+                  <Style TargetType="{x:Type Border}">
+                    <Setter Property="Visibility" Value="Collapsed"/>
+                    <Style.Triggers>
+                      <DataTrigger Binding="{Binding Items.Count, ElementName=TorrentGridR1644, Mode=OneWay}" Value="0">
+                        <Setter Property="Visibility" Value="Visible"/>
+                      </DataTrigger>
+                    </Style.Triggers>
+                  </Style>
+                </Border.Style>
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="560">
+                  <TextBlock Text="No torrents loaded"
+                             HorizontalAlignment="Center"
+                             Foreground="{DynamicResource ThemePrimaryTextBrush}"
+                             FontSize="18"
+                             FontWeight="SemiBold"/>
+                  <TextBlock Margin="0,8,0,0"
+                             Text="Open a .torrent, paste a magnet, or drag a .torrent here. MediaDock keeps loaded torrents in the app until you remove them."
+                             TextAlignment="Center"
+                             TextWrapping="Wrap"
+                             Foreground="{DynamicResource ThemeMutedTextBrush}"
+                             FontSize="10.5"/>
+                </StackPanel>
+              </Border>
             </Grid>
           </Grid>
         </Border>
 
-        <Border Grid.Row="4" Background="#11161B" BorderBrush="#36404B" BorderThickness="1" CornerRadius="8" Padding="8"><Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock Text="{Binding TorrentStatusR1644}" Foreground="#C7D0DB" FontFamily="Segoe UI" FontSize="10.5" TextTrimming="CharacterEllipsis"/><TextBlock Grid.Column="1" Margin="14,0,0,0" Text="Persistent • queued • auto-start • FAST discovery • isolated TorrentHost" Foreground="#8793A3" FontSize="8.5"/></Grid></Border>
+        <Border Grid.Row="4"
+                Background="{DynamicResource ThemePanelBackgroundBrush}"
+                BorderBrush="{DynamicResource ThemeBorderBrush}"
+                BorderThickness="1"
+                CornerRadius="8"
+                Padding="8">
+          <Grid>
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="*"/>
+              <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Text="{Binding TorrentStatusR1644}"
+                       Foreground="{DynamicResource ThemeSecondaryTextBrush}"
+                       FontFamily="Segoe UI"
+                       FontSize="10.5"
+                       TextTrimming="CharacterEllipsis"/>
+            <TextBlock Grid.Column="1"
+                       Margin="14,0,0,0"
+                       Text="Persistent • queued • auto-start • FAST discovery • isolated TorrentHost"
+                       Foreground="{DynamicResource ThemeMutedTextBrush}"
+                       FontSize="8.5"
+                       TextWrapping="Wrap"
+                       MaxWidth="390"/>
+          </Grid>
+        </Border>
       </Grid>      <!-- =======================================================
                  STREAM: resolve media inside a page/link, then play the
                  direct media URL without opening the source webpage.

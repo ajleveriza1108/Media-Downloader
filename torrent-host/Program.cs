@@ -155,12 +155,23 @@ internal sealed class ManagedTorrent
     public string LastTrackerStatus { get; set; } = "Waiting for tracker announce";
     public string LastPeerFailure { get; set; } = string.Empty;
     public long DiscoveredPeers;
+    // MEDIADOCK_TORRENT_SOURCE_TELEMETRY_R1646
+    public long TrackerPeersDiscovered;
+    public long DhtPeersDiscovered;
+    public long PexPeersDiscovered;
+    public long LocalPeersDiscovered;
+    public long OtherPeersDiscovered;
+    public long ConnectionFailures;
+    public int StartedAnnounceGate;
     public int RecoveryLoopGate;
     public int Removed;
 }
 
 internal sealed class TorrentHostSettingsR199
 {
+    // The peer listener is always enabled in normal runtime so tracker announces contain
+    // a valid port. Router mapping/inbound reachability remains an explicit preference.
+    public bool EnablePeerListener { get; set; } = true;
     public bool EnableIncomingConnections { get; set; } = false;
     public int ListeningPort { get; set; } = 0;
     public bool EnablePortMapping { get; set; } = true;
@@ -282,7 +293,12 @@ internal sealed class TorrentHostRuntime : IAsyncDisposable
             MaximumDownloadRate = Math.Max(0, _settingsR199.MaximumDownloadRateKbps) * 1024,
             MaximumUploadRate = Math.Max(0, _settingsR199.MaximumUploadRateKbps) * 1024,
             UsePartialFiles = true,
-            ListenEndPoints = !networkSelfTest && _settingsR199.EnableIncomingConnections
+            // MEDIADOCK_TORRENT_VALID_TRACKER_PORT_R1646
+            // A BitTorrent tracker announce needs a real peer port. R1.6.45 disabled the
+            // listener whenever router-mapped incoming connections were disabled, which
+            // left MonoTorrent with no actual port to report. Bind an automatic local peer
+            // port in every normal run; UPnP/NAT-PMP remains opt-in through AllowPortForwarding.
+            ListenEndPoints = !networkSelfTest && _settingsR199.EnablePeerListener
                 ? new Dictionary<string, IPEndPoint>
                 {
                     ["ipv4"] = new(IPAddress.Any, _settingsR199.ListeningPort),
@@ -308,7 +324,15 @@ internal sealed class TorrentHostRuntime : IAsyncDisposable
             ThrowIfDisposed();
             object? data = request.Command.Trim().ToLowerInvariant() switch
             {
-                "ping" => new { Version = "R1.6.45", ProcessId = Environment.ProcessId, Engine = "MonoTorrent 3.9 alpha", DhtState = _engine.Dht.State.ToString(), DhtNodes = _engine.Dht.NodeCount },
+                "ping" => new
+                {
+                    Version = "R1.6.46",
+                    ProcessId = Environment.ProcessId,
+                    Engine = "MonoTorrent 3.9 alpha",
+                    DhtState = _engine.Dht.State.ToString(),
+                    DhtNodes = _engine.Dht.NodeCount,
+                    PeerListenerConfigured = _engine.Settings.ListenEndPoints.Count > 0
+                },
                 "prepare" => await PrepareAsync(request.Payload),
                 "add" => await AddAsync(request.Payload),
                 "status" => await GetStatusAsync(),
@@ -479,10 +503,19 @@ internal sealed class TorrentHostRuntime : IAsyncDisposable
             throw new InvalidOperationException("Prepared torrent metadata was unavailable.");
         }
 
-        if (_settingsR199.FastPeerDiscovery && _settingsR199.UsePublicTrackerFallback &&
-            manager.HasMetadata && manager.Torrent is { IsPrivate: false })
+        // MEDIADOCK_TORRENT_TRACKERLESS_MAGNET_BOOTSTRAP_R1646
+        if (_settingsR199.FastPeerDiscovery && _settingsR199.UsePublicTrackerFallback)
         {
-            await AddPublicTrackerFallbacksR199(manager);
+            if (manager.HasMetadata && manager.Torrent is { IsPrivate: false })
+            {
+                await AddPublicTrackerFallbacksR199(manager);
+            }
+            else if (!manager.HasMetadata && manager.TrackerManager.Tiers.Count == 0)
+            {
+                // A trackerless magnet otherwise has to wait for a cold DHT bootstrap.
+                // Give it immediate HTTPS/UDP discovery paths while metadata is pending.
+                await AddPublicTrackerFallbacksR199(manager);
+            }
         }
 
         var managed = new ManagedTorrent
@@ -604,9 +637,15 @@ internal sealed class TorrentHostRuntime : IAsyncDisposable
     {
         var item = RequiredManaged(payload);
         item.DiscoveryStatus = "Updating trackers, DHT and peer discovery...";
-        if (_settingsR199.UsePublicTrackerFallback && item.Manager.HasMetadata && item.Manager.Torrent is { IsPrivate: false })
-            await AddPublicTrackerFallbacksR199(item.Manager);
-        await KickPeerDiscoveryR1910Async(item, sendStartedEvent: true);
+        if (_settingsR199.UsePublicTrackerFallback)
+        {
+            if (item.Manager.HasMetadata && item.Manager.Torrent is { IsPrivate: false })
+                await AddPublicTrackerFallbacksR199(item.Manager);
+            else if (!item.Manager.HasMetadata && item.Manager.TrackerManager.Tiers.Count == 0)
+                await AddPublicTrackerFallbacksR199(item.Manager);
+        }
+        // A manual refresh is a normal announce. The Started event is emitted once per run.
+        await KickPeerDiscoveryR1910Async(item, sendStartedEvent: false);
         StartPeerDiscoveryRecoveryR198(item);
         return await BuildSnapshotAsync(item);
     }
@@ -777,11 +816,28 @@ internal sealed class TorrentHostRuntime : IAsyncDisposable
     {
         item.Manager.PeersFound += (_, e) =>
         {
-            if (e.NewPeers > 0)
-            {
-                Interlocked.Add(ref item.DiscoveredPeers, e.NewPeers);
-                item.DiscoveryStatus = $"Discovered {Volatile.Read(ref item.DiscoveredPeers)} peer(s); connecting...";
-            }
+            if (e.NewPeers <= 0) return;
+
+            Interlocked.Add(ref item.DiscoveredPeers, e.NewPeers);
+
+            // MEDIADOCK_TORRENT_SOURCE_TELEMETRY_R1646
+            // MonoTorrent exposes distinct derived PeersAddedEventArgs types. Use the
+            // runtime type name here to keep this host resilient across 3.9 alpha API
+            // revisions while still showing exactly which discovery path is productive.
+            var source = e.GetType().Name;
+            if (source.Contains("Tracker", StringComparison.OrdinalIgnoreCase))
+                Interlocked.Add(ref item.TrackerPeersDiscovered, e.NewPeers);
+            else if (source.Contains("Dht", StringComparison.OrdinalIgnoreCase))
+                Interlocked.Add(ref item.DhtPeersDiscovered, e.NewPeers);
+            else if (source.Contains("Exchange", StringComparison.OrdinalIgnoreCase) ||
+                     source.Contains("Pex", StringComparison.OrdinalIgnoreCase))
+                Interlocked.Add(ref item.PexPeersDiscovered, e.NewPeers);
+            else if (source.Contains("Local", StringComparison.OrdinalIgnoreCase))
+                Interlocked.Add(ref item.LocalPeersDiscovered, e.NewPeers);
+            else
+                Interlocked.Add(ref item.OtherPeersDiscovered, e.NewPeers);
+
+            item.DiscoveryStatus = $"Discovered {Volatile.Read(ref item.DiscoveredPeers)} peer(s); connecting...";
         };
 
         item.Manager.PeerConnected += (_, e) =>
@@ -791,6 +847,7 @@ internal sealed class TorrentHostRuntime : IAsyncDisposable
 
         item.Manager.ConnectionAttemptFailed += (_, e) =>
         {
+            Interlocked.Increment(ref item.ConnectionFailures);
             item.LastPeerFailure = $"{e.Peer.ConnectionUri}: {e.Reason}";
         };
 
@@ -825,8 +882,8 @@ internal sealed class TorrentHostRuntime : IAsyncDisposable
             {
                 var delay = attempt switch
                 {
-                    0 => TimeSpan.FromMilliseconds(250),
-                    1 => TimeSpan.FromMilliseconds(1250),
+                    0 => TimeSpan.FromMilliseconds(200),
+                    1 => TimeSpan.FromMilliseconds(900),
                     2 => TimeSpan.FromSeconds(2),
                     _ => laterDelay
                 };
@@ -852,10 +909,18 @@ internal sealed class TorrentHostRuntime : IAsyncDisposable
                     ? "Fast peer discovery: trackers + DHT + local discovery..."
                     : $"Finding peers — recovery attempt {attempt + 1}/{attempts}...";
 
-                if (_settingsR199.UsePublicTrackerFallback && manager.HasMetadata && manager.Torrent is { IsPrivate: false })
-                    await AddPublicTrackerFallbacksR199(manager);
+                if (_settingsR199.UsePublicTrackerFallback)
+                {
+                    if (manager.HasMetadata && manager.Torrent is { IsPrivate: false })
+                        await AddPublicTrackerFallbacksR199(manager);
+                    else if (!manager.HasMetadata && manager.TrackerManager.Tiers.Count == 0)
+                        await AddPublicTrackerFallbacksR199(manager);
+                }
 
-                await KickPeerDiscoveryR1910Async(item, sendStartedEvent: attempt < 3);
+                // MEDIADOCK_TORRENT_ONE_SHOT_STARTED_ANNOUNCE_R1646
+                // Recovery uses normal announces. Re-sending TorrentEvent.Started every few
+                // seconds is both unnecessary and can trigger tracker throttling.
+                await KickPeerDiscoveryR1910Async(item, sendStartedEvent: false);
             }
 
             if (item.Manager.OpenConnections == 0 && item.Manager.Monitor.DownloadRate == 0)
@@ -879,7 +944,11 @@ internal sealed class TorrentHostRuntime : IAsyncDisposable
             try
             {
                 if (item.Manager.TrackerManager.Tiers.Count == 0) return;
-                if (sendStartedEvent)
+
+                // MEDIADOCK_TORRENT_ONE_SHOT_STARTED_ANNOUNCE_R1646
+                var emitStarted = sendStartedEvent &&
+                    Interlocked.CompareExchange(ref item.StartedAnnounceGate, 1, 0) == 0;
+                if (emitStarted)
                     await item.Manager.TrackerManager.AnnounceAsync(TorrentEvent.Started, CancellationToken.None);
                 else
                     await item.Manager.TrackerManager.AnnounceAsync(CancellationToken.None);
@@ -895,7 +964,11 @@ internal sealed class TorrentHostRuntime : IAsyncDisposable
             if (!_settingsR199.EnableDht) return;
             try
             {
-                var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(8);
+                // Do not let a cold UDP/DHT network hold up otherwise useful tracker
+                // recovery. Initial startup gets a short bootstrap window; later retries
+                // yield quickly because MonoTorrent continues DHT bootstrap in the engine.
+                var dhtWaitSeconds = sendStartedEvent ? 4 : 1;
+                var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(dhtWaitSeconds);
                 while (_engine.Dht.State != DhtState.Ready && DateTime.UtcNow < deadline)
                 {
                     item.DiscoveryStatus = $"Bootstrapping DHT ({_engine.Dht.NodeCount} nodes)...";
@@ -926,10 +999,12 @@ internal sealed class TorrentHostRuntime : IAsyncDisposable
 
     private static readonly string[] PublicTrackerFallbacksR199 =
     {
-        "udp://tracker.opentrackr.org:1337/announce",
+        // HTTPS first gives restricted/corporate/mobile networks a discovery path
+        // without waiting for UDP tracker timeouts. UDP tiers remain for normal networks.
         "https://tracker.opentrackr.org:443/announce",
         "https://tracker.tamersunion.org:443/announce",
         "https://tracker.gbitt.info:443/announce",
+        "udp://tracker.opentrackr.org:1337/announce",
         "udp://tracker.openbittorrent.com:80/announce",
         "udp://open.stealth.si:80/announce",
         "udp://tracker.torrent.eu.org:451/announce",
@@ -1061,7 +1136,7 @@ internal sealed class TorrentHostRuntime : IAsyncDisposable
             Status = !string.IsNullOrWhiteSpace(item.LastError)
                 ? "Error"
                 : manager.State == TorrentState.Downloading && downloadRate == 0 && peers == 0 && progress < 100
-                    ? "Finding peers"
+                    ? Volatile.Read(ref item.DiscoveredPeers) > 0 ? "Connecting peers" : "Finding peers"
                     : manager.State.ToString(),
             Progress = progress,
             TotalSize = totalSize,
@@ -1078,6 +1153,13 @@ internal sealed class TorrentHostRuntime : IAsyncDisposable
             LastTrackerStatus = item.LastTrackerStatus,
             LastPeerFailure = item.LastPeerFailure,
             DiscoveredPeers = Volatile.Read(ref item.DiscoveredPeers),
+            TrackerPeersDiscovered = Volatile.Read(ref item.TrackerPeersDiscovered),
+            DhtPeersDiscovered = Volatile.Read(ref item.DhtPeersDiscovered),
+            PexPeersDiscovered = Volatile.Read(ref item.PexPeersDiscovered),
+            LocalPeersDiscovered = Volatile.Read(ref item.LocalPeersDiscovered),
+            OtherPeersDiscovered = Volatile.Read(ref item.OtherPeersDiscovered),
+            ConnectionFailures = Volatile.Read(ref item.ConnectionFailures),
+            PeerListenerConfigured = _engine.Settings.ListenEndPoints.Count > 0,
             DhtState = _engine.Dht.State.ToString(),
             DhtNodes = _engine.Dht.NodeCount,
             TrackerCount = manager.TrackerManager.Tiers.Count,

@@ -158,6 +158,13 @@ public sealed class TorrentStatusSnapshotR1644
     public string LastTrackerStatus { get; init; } = string.Empty;
     public string LastPeerFailure { get; init; } = string.Empty;
     public long DiscoveredPeers { get; init; }
+    public long TrackerPeersDiscovered { get; init; }
+    public long DhtPeersDiscovered { get; init; }
+    public long PexPeersDiscovered { get; init; }
+    public long LocalPeersDiscovered { get; init; }
+    public long OtherPeersDiscovered { get; init; }
+    public long ConnectionFailures { get; init; }
+    public bool PeerListenerConfigured { get; init; }
     public string DhtState { get; init; } = string.Empty;
     public int DhtNodes { get; init; }
     public int TrackerCount { get; init; }
@@ -272,7 +279,12 @@ public sealed class TorrentItemR1644 : INotifyPropertyChanged
         DiscoveryStatus = snapshot.DiscoveryStatus;
         TrackerStatus = snapshot.LastTrackerStatus;
         PeerFailure = snapshot.LastPeerFailure;
-        NetworkHealth = $"{snapshot.EngineVersion} • DHT {snapshot.DhtState} ({snapshot.DhtNodes} nodes) • {snapshot.TrackerCount} trackers";
+        var listener = snapshot.PeerListenerConfigured ? "listener ready" : "listener unavailable";
+        NetworkHealth =
+            $"{snapshot.EngineVersion} • {listener} • DHT {snapshot.DhtState} ({snapshot.DhtNodes} nodes) • " +
+            $"{snapshot.TrackerCount} trackers • found T:{snapshot.TrackerPeersDiscovered} D:{snapshot.DhtPeersDiscovered} " +
+            $"P:{snapshot.PexPeersDiscovered} L:{snapshot.LocalPeersDiscovered} O:{snapshot.OtherPeersDiscovered} • " +
+            $"connect failures {snapshot.ConnectionFailures}";
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(StatusToolTip)));
         HasMetadata = snapshot.HasMetadata;
         _streamingAvailable = snapshot.StreamingAvailable;
@@ -787,7 +799,7 @@ public sealed class TorrentClientR1644 : IAsyncDisposable
 
             if (response.Data.ValueKind != JsonValueKind.Object ||
                 !response.Data.TryGetProperty("Version", out var versionElement) ||
-                !string.Equals(versionElement.GetString(), "R1.6.45", StringComparison.Ordinal))
+                !string.Equals(versionElement.GetString(), "R1.6.46", StringComparison.Ordinal))
             {
                 throw new InvalidDataException("TorrentHost startup version handshake failed.");
             }

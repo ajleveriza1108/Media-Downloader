@@ -17,6 +17,7 @@ internal sealed record DownloadFileDialogResultR1643(
 
 internal sealed class DownloadFileDialogR1643 : Window
 {
+    private readonly Window _themeOwner;
     private readonly TextBox _fileNameBox;
     private readonly TextBox _folderBox;
     private readonly ComboBox _categoryBox;
@@ -30,18 +31,20 @@ internal sealed class DownloadFileDialogR1643 : Window
         BrowserHandlerRequestR1643 request,
         string defaultDirectory)
     {
+        _themeOwner = owner;
         _baseDownloadDirectory = Path.GetDirectoryName(defaultDirectory) ?? defaultDirectory;
         Owner = owner;
         Title = "Download File — MediaDock";
-        Width = 720;
-        Height = 430;
-        MinWidth = 660;
+        var size = ThemeUiR1646.ResponsiveSize(owner, 0.56, 0.62, 640, 420, 840, 620);
+        Width = size.Width;
+        Height = size.Height;
+        MinWidth = 620;
         MinHeight = 400;
+        MaxWidth = Math.Max(MinWidth, SystemParameters.WorkArea.Width - 40);
+        MaxHeight = Math.Max(MinHeight, SystemParameters.WorkArea.Height - 60);
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
         ResizeMode = ResizeMode.CanResizeWithGrip;
-        Background = new SolidColorBrush(Color.FromRgb(22, 24, 30));
-        Foreground = Brushes.White;
-        FontFamily = new FontFamily("Segoe UI");
+        ThemeUiR1646.ApplyWindow(this, owner);
 
         var suggestedName = Core.Services.GeneralDownloadClassifierR1643.ResolveSuggestedFileNameR1643(request);
         var category = DetectCategory(suggestedName, request.MimeType);
@@ -50,7 +53,11 @@ internal sealed class DownloadFileDialogR1643 : Window
             ? remembered
             : Path.Combine(_baseDownloadDirectory, category);
 
-        var root = new Grid { Margin = new Thickness(22) };
+        var root = new Grid
+        {
+            Margin = new Thickness(22),
+            Background = ThemeUiR1646.ResolveBrush(owner, "ThemeWindowBackgroundBrush")
+        };
         root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
@@ -65,6 +72,7 @@ internal sealed class DownloadFileDialogR1643 : Window
             Text = "Download File",
             FontSize = 22,
             FontWeight = FontWeights.SemiBold,
+            Foreground = ThemeUiR1646.ResolveBrush(owner, "ThemePrimaryTextBrush"),
             Margin = new Thickness(0, 0, 0, 4)
         });
         header.Children.Add(new TextBlock
@@ -72,8 +80,9 @@ internal sealed class DownloadFileDialogR1643 : Window
             Text = string.IsNullOrWhiteSpace(request.Source)
                 ? "MediaDock will manage this download."
                 : $"Captured from {request.Source}",
-            Foreground = new SolidColorBrush(Color.FromRgb(166, 174, 190)),
-            FontSize = 11
+            Foreground = ThemeUiR1646.ResolveBrush(owner, "ThemeSecondaryTextBrush"),
+            FontSize = 11,
+            TextWrapping = TextWrapping.Wrap
         });
         Grid.SetRow(header, 0);
         root.Children.Add(header);
@@ -88,6 +97,7 @@ internal sealed class DownloadFileDialogR1643 : Window
             ItemsSource = new[] { "General", "Compressed", "Documents", "Programs", "Video", "Music", "Images", "Books", "AI Models" },
             SelectedItem = category
         };
+        ThemeUiR1646.ApplyComboBox(_categoryBox, owner);
         _categoryBox.SelectionChanged += (_, _) => ApplyRememberedFolder();
         AddLabeledRow(root, 2, "Category", _categoryBox);
 
@@ -97,7 +107,7 @@ internal sealed class DownloadFileDialogR1643 : Window
         _fileNameBox = MakeEditableValue(suggestedName);
         Grid.SetColumn(_fileNameBox, 0);
         fileGrid.Children.Add(_fileNameBox);
-        var browseButton = MakeButton("Browse…", false);
+        var browseButton = MakeButton("Browse…", false, 92);
         browseButton.Margin = new Thickness(8, 0, 0, 0);
         browseButton.Click += BrowseSavePath;
         Grid.SetColumn(browseButton, 1);
@@ -107,37 +117,36 @@ internal sealed class DownloadFileDialogR1643 : Window
         _folderBox = MakeEditableValue(initialFolder);
         AddLabeledRow(root, 4, "Save to", _folderBox);
 
-        var details = new StackPanel { Margin = new Thickness(118, 8, 0, 0) };
+        var details = new StackPanel { Margin = new Thickness(112, 8, 0, 0) };
         _rememberBox = new CheckBox
         {
             Content = "Remember this folder for this category",
             IsChecked = true,
-            Foreground = new SolidColorBrush(Color.FromRgb(210, 215, 226)),
+            Foreground = ThemeUiR1646.ResolveBrush(owner, "ThemePrimaryTextBrush"),
             Margin = new Thickness(0, 0, 0, 8)
         };
         details.Children.Add(_rememberBox);
         details.Children.Add(new TextBlock
         {
             Text = BuildDetailText(request),
-            Foreground = new SolidColorBrush(Color.FromRgb(148, 158, 178)),
-            FontSize = 10.5
+            Foreground = ThemeUiR1646.ResolveBrush(owner, "ThemeMutedTextBrush"),
+            FontSize = 10.5,
+            TextWrapping = TextWrapping.Wrap
         });
         Grid.SetRow(details, 5);
         root.Children.Add(details);
 
-        var buttons = new StackPanel
+        var buttons = new WrapPanel
         {
             Orientation = Orientation.Horizontal,
             HorizontalAlignment = HorizontalAlignment.Right,
             Margin = new Thickness(0, 20, 0, 0)
         };
-        var later = MakeButton("Download Later", false);
+        var later = MakeButton("Download Later", false, 112);
         later.Click += (_, _) => Complete(false);
-        var start = MakeButton("Start Download", true);
-        start.Margin = new Thickness(10, 0, 0, 0);
+        var start = MakeButton("Start Download", true, 112);
         start.Click += (_, _) => Complete(true);
-        var cancel = MakeButton("Cancel", false);
-        cancel.Margin = new Thickness(10, 0, 0, 0);
+        var cancel = MakeButton("Cancel", false, 88);
         cancel.Click += (_, _) => { DialogResult = false; Close(); };
         buttons.Children.Add(later);
         buttons.Children.Add(start);
@@ -157,55 +166,45 @@ internal sealed class DownloadFileDialogR1643 : Window
         return dialog.ShowDialog() == true ? dialog._result : null;
     }
 
-    private static TextBox MakeReadOnlyValue(string value) => new()
+    private TextBox MakeReadOnlyValue(string value)
     {
-        Text = value,
-        IsReadOnly = true,
-        MinHeight = 34,
-        VerticalContentAlignment = VerticalAlignment.Center,
-        Padding = new Thickness(9, 4, 9, 4),
-        Background = new SolidColorBrush(Color.FromRgb(31, 35, 44)),
-        Foreground = new SolidColorBrush(Color.FromRgb(205, 211, 223)),
-        BorderBrush = new SolidColorBrush(Color.FromRgb(63, 70, 86))
-    };
-
-    private static TextBox MakeEditableValue(string value) => new()
-    {
-        Text = value,
-        MinHeight = 34,
-        VerticalContentAlignment = VerticalAlignment.Center,
-        Padding = new Thickness(9, 4, 9, 4),
-        Background = new SolidColorBrush(Color.FromRgb(31, 35, 44)),
-        Foreground = Brushes.White,
-        BorderBrush = new SolidColorBrush(Color.FromRgb(63, 70, 86))
-    };
-
-    private static Button MakeButton(string text, bool primary)
-    {
-        return new Button
+        var box = new TextBox
         {
-            Content = text,
-            MinWidth = 118,
-            MinHeight = 36,
-            Padding = new Thickness(14, 7, 14, 7),
-            Background = new SolidColorBrush(primary ? Color.FromRgb(53, 111, 247) : Color.FromRgb(39, 44, 55)),
-            Foreground = Brushes.White,
-            BorderBrush = new SolidColorBrush(primary ? Color.FromRgb(88, 137, 255) : Color.FromRgb(70, 78, 96)),
-            BorderThickness = new Thickness(1),
-            FontWeight = primary ? FontWeights.SemiBold : FontWeights.Normal
+            Text = value,
+            MinHeight = 34,
+            VerticalContentAlignment = VerticalAlignment.Center,
+            Padding = new Thickness(9, 4, 9, 4)
         };
+        ThemeUiR1646.ApplyTextBox(box, _themeOwner, readOnly: true);
+        return box;
     }
 
-    private static void AddLabeledRow(Grid root, int row, string label, UIElement value)
+    private TextBox MakeEditableValue(string value)
+    {
+        var box = new TextBox
+        {
+            Text = value,
+            MinHeight = 34,
+            VerticalContentAlignment = VerticalAlignment.Center,
+            Padding = new Thickness(9, 4, 9, 4)
+        };
+        ThemeUiR1646.ApplyTextBox(box, _themeOwner);
+        return box;
+    }
+
+    private Button MakeButton(string text, bool primary, double minWidth = 100)
+        => ThemeUiR1646.MakeButton(_themeOwner, text, primary, minWidth, 36);
+
+    private void AddLabeledRow(Grid root, int row, string label, UIElement value)
     {
         var grid = new Grid { Margin = new Thickness(0, 0, 0, 12) };
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(105) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(100) });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         var text = new TextBlock
         {
             Text = label,
             VerticalAlignment = VerticalAlignment.Center,
-            Foreground = new SolidColorBrush(Color.FromRgb(174, 182, 198)),
+            Foreground = ThemeUiR1646.ResolveBrush(_themeOwner, "ThemeSecondaryTextBrush"),
             FontSize = 11
         };
         grid.Children.Add(text);
@@ -245,14 +244,14 @@ internal sealed class DownloadFileDialogR1643 : Window
         var fileName = Core.Services.GeneralDownloadClassifierR1643.SanitizeFileNameR1643(_fileNameBox.Text);
         if (string.IsNullOrWhiteSpace(fileName))
         {
-            MessageBox.Show(this, "Enter a valid file name.", "MediaDock", MessageBoxButton.OK, MessageBoxImage.Information);
+            ThemedMessageBoxR1646.Show(this, "Enter a valid file name.", "MediaDock", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
         var folder = _folderBox.Text.Trim();
         if (string.IsNullOrWhiteSpace(folder))
         {
-            MessageBox.Show(this, "Choose a save folder.", "MediaDock", MessageBoxButton.OK, MessageBoxImage.Information);
+            ThemedMessageBoxR1646.Show(this, "Choose a save folder.", "MediaDock", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
@@ -262,7 +261,7 @@ internal sealed class DownloadFileDialogR1643 : Window
         }
         catch (Exception ex)
         {
-            MessageBox.Show(this, ex.Message, "MediaDock — Save folder", MessageBoxButton.OK, MessageBoxImage.Warning);
+            ThemedMessageBoxR1646.Show(this, ex.Message, "MediaDock — Save folder", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 

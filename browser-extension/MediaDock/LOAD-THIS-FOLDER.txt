@@ -1,9 +1,9 @@
 Load this folder from Chrome/Edge/Brave Extensions > Developer mode > Load unpacked.
-MediaDock R1.6.45 Browser Handler extension 2.4.1.
+MediaDock R1.6.46 Browser Handler extension 2.4.1.
 Performance-safe event-driven persistent floating whole-media grabber + queue fix.
-R1.9.10 keeps extension runtime code unchanged; torrent IPC framing and the dark torrent-client GUI are repaired in the desktop app/isolated TorrentHost.
+R1.6.46 keeps extension runtime code unchanged; the desktop app now makes update/torrent dialogs theme-adaptive and responsive.
 Expected unpacked extension ID: mgknjickielihcigpanjhhpbaldcpolf
 
-All R1.9.10 build outputs are kept under one Desktop folder: MediaDock R1.6.45 R1.0.
+All R1.9.10 build outputs are kept under one Desktop folder: MediaDock R1.6.46 R1.2.
 
-R1.9.10 changes only the desktop torrent client/host behavior and theme. Extension 2.4.1 runtime remains unchanged.
+R1.6.46 adds the desktop peer-connectivity fix plus theme-adaptive/responsive UI. Extension 2.4.1 runtime remains unchanged.
