@@ -1,10 +1,10 @@
 Load this folder from Chrome / Edge / Brave > Extensions > Developer mode > Load unpacked.
 
-MediaDock R1.6.56 Browser Handler
-Extension version: 2.5.0
+MediaDock R1.6.59 Browser Handler
+Extension version: 2.5.1
 Expected unpacked extension ID: mgknjickielihcigpanjhhpbaldcpolf
 
-R1.6.56 browser-grabber changes:
+R1.6.59 browser-grabber changes:
 - The floating "Download this video" control appears only when media is detected.
 - Drag the floating control to reposition it. Its position is remembered.
 - Open the panel and resize it from the lower-right edge. Its size is remembered.
@@ -18,4 +18,4 @@ R1.6.56 browser-grabber changes:
 - No browser-wide webRequest permission is used.
 
 All build outputs are kept under one Desktop folder:
-  MediaDock R1.6.56 R1.5
+  MediaDock R1.6.59 R1.5

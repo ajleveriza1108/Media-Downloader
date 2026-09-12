@@ -142,6 +142,9 @@ internal sealed class PreparedTorrent
     public MagnetLink? Magnet { get; init; }
 }
 
+// MEDIADOCK_TORRENT_AUTONOMOUS_RATE_SAMPLER_R1657
+internal readonly record struct LiveRatePointR1657(long Tick, long Downloaded, long Uploaded);
+
 internal sealed class ManagedTorrent
 {
     public required string Id { get; init; }
@@ -173,6 +176,17 @@ internal sealed class ManagedTorrent
     public long LastUploadActivityTick;
     public long MeasuredDownloadRate;
     public long MeasuredUploadRate;
+
+    // MEDIADOCK_TORRENT_AUTONOMOUS_RATE_SAMPLER_R1657
+    // Throughput is sampled independently of status IPC. The UI never has to infer
+    // speed from the interval at which it happened to ask for a snapshot.
+    public object LiveRateSyncR1657 { get; } = new();
+    public Queue<LiveRatePointR1657> LiveRateWindowR1657 { get; } = new();
+    public long LiveDownloadRateR1657;
+    public long LiveUploadRateR1657;
+    public long LiveRateSampleTickR1657;
+    public long LiveRateSampleSequenceR1657;
+
     // MEDIADOCK_TORRENT_SOURCE_TELEMETRY_R1646
     public long TrackerPeersDiscovered;
     public long DhtPeersDiscovered;
@@ -243,8 +257,12 @@ internal sealed class TorrentHostRuntime : IAsyncDisposable
     private readonly HttpClient _http;
     private readonly string _metadataDirectory;
     private readonly Dictionary<string, PreparedTorrent> _prepared = new(StringComparer.Ordinal);
-    private readonly Dictionary<string, ManagedTorrent> _managed = new(StringComparer.Ordinal);
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, ManagedTorrent> _managed = new(StringComparer.Ordinal);
     private readonly SemaphoreSlim _commandGate = new(1, 1);
+
+    // MEDIADOCK_TORRENT_AUTONOMOUS_RATE_SAMPLER_R1657
+    private readonly CancellationTokenSource _liveRateSamplerStopR1657 = new();
+    private readonly Task _liveRateSamplerTaskR1657;
     private int _disposeGate;
 
     public bool ShutdownRequested { get; private set; }
@@ -344,6 +362,11 @@ internal sealed class TorrentHostRuntime : IAsyncDisposable
             HttpStreamingPrefix = "http://127.0.0.1:55126/"
         };
         _engine = new ClientEngine(settings.ToSettings());
+
+        // MEDIADOCK_TORRENT_AUTONOMOUS_RATE_SAMPLER_R1657
+        // Sample transfer counters every 100 ms regardless of WPF/status polling.
+        _liveRateSamplerTaskR1657 = Task.Run(
+            () => RunLiveRateSamplerR1657Async(_liveRateSamplerStopR1657.Token));
     }
 
     public async Task<TorrentHostResponse> HandleAsync(TorrentHostRequest request)
@@ -361,7 +384,7 @@ internal sealed class TorrentHostRuntime : IAsyncDisposable
             {
                 "ping" => new
                 {
-                    Version = "R1.6.56",
+                    Version = "R1.6.59",
                     ProcessId = Environment.ProcessId,
                     Engine = "MonoTorrent 3.9 alpha",
                     DhtState = _engine.Dht.State.ToString(),
@@ -741,7 +764,7 @@ internal sealed class TorrentHostRuntime : IAsyncDisposable
             }
             await _engine.RemoveAsync(item.Manager);
         }
-        _managed.Remove(item.Id);
+        _managed.TryRemove(item.Id, out _);
         if (deleteData)
         {
             DeleteTorrentDataR199(item);
@@ -1278,6 +1301,119 @@ internal sealed class TorrentHostRuntime : IAsyncDisposable
         });
     }
 
+    // MEDIADOCK_TORRENT_AUTONOMOUS_RATE_SAMPLER_R1657
+    // A short rolling window is intentionally used here. It is long enough to avoid
+    // displaying single-block spikes, but short enough to visibly follow real throughput.
+    private async Task RunLiveRateSamplerR1657Async(CancellationToken token)
+    {
+        using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(100));
+        try
+        {
+            while (await timer.WaitForNextTickAsync(token))
+            {
+                foreach (var item in _managed.Values)
+                {
+                    if (Volatile.Read(ref item.Removed) != 0)
+                    {
+                        continue;
+                    }
+
+                    try
+                    {
+                        SampleLiveRateR1657(item);
+                    }
+                    catch
+                    {
+                        // Live-rate sampling is telemetry only. It must never interrupt
+                        // torrent transfer, peer discovery, persistence, or status IPC.
+                    }
+                }
+            }
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        {
+        }
+    }
+
+    private static void SampleLiveRateR1657(ManagedTorrent item)
+    {
+        const long rollingWindowMilliseconds = 650;
+        const long minimumWindowMilliseconds = 120;
+
+        var nowTick = Environment.TickCount64;
+        var downloaded = Math.Max(0L, item.Manager.Monitor.DataBytesReceived);
+        var uploaded = Math.Max(0L, item.Manager.Monitor.DataBytesSent);
+
+        lock (item.LiveRateSyncR1657)
+        {
+            item.LiveRateWindowR1657.Enqueue(new LiveRatePointR1657(nowTick, downloaded, uploaded));
+
+            while (item.LiveRateWindowR1657.Count > 2 &&
+                   nowTick - item.LiveRateWindowR1657.Peek().Tick > rollingWindowMilliseconds)
+            {
+                item.LiveRateWindowR1657.Dequeue();
+            }
+
+            if (item.LiveRateWindowR1657.Count < 2)
+            {
+                item.LiveRateSampleTickR1657 = nowTick;
+                Interlocked.Increment(ref item.LiveRateSampleSequenceR1657);
+                return;
+            }
+
+            var oldest = item.LiveRateWindowR1657.Peek();
+            var elapsedMilliseconds = Math.Max(1L, nowTick - oldest.Tick);
+            if (elapsedMilliseconds < minimumWindowMilliseconds)
+            {
+                return;
+            }
+
+            item.LiveDownloadRateR1657 = CalculateByteDeltaRateR1647(
+                downloaded,
+                oldest.Downloaded,
+                elapsedMilliseconds);
+            item.LiveUploadRateR1657 = CalculateByteDeltaRateR1647(
+                uploaded,
+                oldest.Uploaded,
+                elapsedMilliseconds);
+            item.LiveRateSampleTickR1657 = nowTick;
+            Interlocked.Increment(ref item.LiveRateSampleSequenceR1657);
+        }
+    }
+
+    private static (long DownloadRate, long UploadRate, long Sequence, long AgeMilliseconds) ReadLiveRatesR1657(
+        ManagedTorrent item,
+        long monitorDownloadRate,
+        long monitorUploadRate)
+    {
+        const long staleSampleMilliseconds = 1200;
+        lock (item.LiveRateSyncR1657)
+        {
+            var nowTick = Environment.TickCount64;
+            var sequence = Volatile.Read(ref item.LiveRateSampleSequenceR1657);
+            var age = item.LiveRateSampleTickR1657 <= 0
+                ? long.MaxValue
+                : Math.Max(0L, nowTick - item.LiveRateSampleTickR1657);
+
+            if (sequence > 1 && age <= staleSampleMilliseconds)
+            {
+                return (
+                    Math.Max(0L, item.LiveDownloadRateR1657),
+                    Math.Max(0L, item.LiveUploadRateR1657),
+                    sequence,
+                    age);
+            }
+
+            // Only before the autonomous sampler has a real rolling window, use the
+            // engine monitor as a first-frame hint. It is never allowed to pin later values.
+            return (
+                Math.Max(0L, monitorDownloadRate),
+                Math.Max(0L, monitorUploadRate),
+                sequence,
+                age == long.MaxValue ? -1L : age);
+        }
+    }
+
     private static long CalculateByteDeltaRateR1647(long currentBytes, long previousBytes, long elapsedMilliseconds)
     {
         if (elapsedMilliseconds <= 0) return 0;
@@ -1403,14 +1539,15 @@ internal sealed class TorrentHostRuntime : IAsyncDisposable
         SchedulePeerDetailRefreshR1646(item);
         ScheduleTrackerScrapeR1646(item);
         var peers = Math.Max(manager.OpenConnections, Volatile.Read(ref item.CachedConnectedPeers));
-        var measuredRates = MeasureTransferRatesR1647(
+        // MEDIADOCK_TORRENT_AUTONOMOUS_RATE_SAMPLER_R1657
+        // Read the latest independently sampled rolling throughput. Status polling no
+        // longer drives the rate calculation, so Down/Up can repaint at a true live cadence.
+        var sampledRatesR1657 = ReadLiveRatesR1657(
             item,
-            downloaded,
-            uploaded,
             monitorDownloadRate,
             monitorUploadRate);
-        var downloadRate = measuredRates.DownloadRate;
-        var uploadRate = measuredRates.UploadRate;
+        var downloadRate = sampledRatesR1657.DownloadRate;
+        var uploadRate = sampledRatesR1657.UploadRate;
 
         // MEDIADOCK_TORRENT_LIVE_PROGRESS_R1646
         // Verified piece progress can advance only when a full piece hashes successfully.
@@ -1481,6 +1618,8 @@ internal sealed class TorrentHostRuntime : IAsyncDisposable
             TotalSize = totalSize,
             DownloadRate = downloadRate,
             UploadRate = uploadRate,
+            RateSampleSequence = sampledRatesR1657.Sequence,
+            RateSampleAgeMilliseconds = sampledRatesR1657.AgeMilliseconds,
             Peers = peers,
             Seeds = seeds,
             EtaSeconds = eta,
@@ -1727,6 +1866,11 @@ internal sealed class TorrentHostRuntime : IAsyncDisposable
         {
             return;
         }
+
+        _liveRateSamplerStopR1657.Cancel();
+        try { await _liveRateSamplerTaskR1657; }
+        catch (OperationCanceledException) { }
+        _liveRateSamplerStopR1657.Dispose();
 
         foreach (var item in _managed.Values.ToArray())
         {

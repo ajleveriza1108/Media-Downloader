@@ -1,6 +1,6 @@
-# MediaDock R1.6.56 development snapshot
+# MediaDock R1.6.59 development snapshot
 
-R1.6.56 upgrades the browser media grabber to an adjustable IDM-style detector: it captures direct media plus HLS/DASH manifests from embedded players and page fetch/XHR traffic, expands HLS master playlists into quality/bitrate variants, remembers the grabber position/size, and keeps candidates per tab across Manifest V3 service-worker suspension. Torrent persistence, true live telemetry, first-load discovery, the larger Add New Torrent selector, the persistent visible launcher, and no-force publication safeguards remain intact.
+R1.6.59 makes torrent Down/Up/ETA react like the normal Downloader by measuring consecutive cumulative byte snapshots in the WPF row at a 150 ms refresh cadence. It also accepts .magnet files, adds direct torrent/magnet streaming from the Stream workspace, and preserves the adjustable media grabber, durable torrent persistence, first-load discovery, and no-force publication safeguards.
 
 UI/theme changes:
 - The update confirmation is a MediaDock-owned WPF dialog instead of a native Windows MessageBox.
@@ -15,8 +15,8 @@ Torrent peer connectivity changes:
 - TorrentEvent.Started is emitted once per run; recovery uses normal announces and shorter non-blocking DHT waits.
 - Peer discovery telemetry identifies tracker/DHT/PEX/local sources, listener readiness and connection failures.
 - Torrent queue/session persistence is crash-resistant, restores from session backup, primes saved entries before UI restore, ignores noninteractive release smoke tests, and commits Add Torrent immediately with write-through session durability.
-- Torrent progress, speed, peers, seeds, ETA and ratio refresh on a 350 ms UI cadence; expensive peer enumeration and tracker scrape run off the hot status path.
-- Download/upload speed is sampled from fresh DataBytesReceived/DataBytesSent deltas every live status interval; engine/per-peer rates are first-frame hints only so stale monitor values cannot pin the UI.
+- Torrent progress, Down/Up, peers, seeds, ETA and ratio refresh on a 150 ms UI cadence; visible speed is calculated from consecutive cumulative byte snapshots like the normal Downloader, while expensive peer enumeration and tracker scrape stay off the hot status path.
+- TorrentHost still samples DataBytesReceived/DataBytesSent independently, while WPF computes the visible rate from consecutive Downloaded/Uploaded snapshot deltas; engine/host rates are first-snapshot warm-up hints only.
 - Peer totals use the greater of current open connections and the cached background peer enumeration, preventing a valid connection from being hidden by one lagging counter.
 - ETA is calculated from the measured effective download rate, and the footer mirrors down/up, peers, seeds, ETA, ratio and received bytes from the same snapshot.
 - Isolated TorrentHost, MonoTorrent 3.9 alpha, persistent queue/settings, selective files and torrent streaming remain intact.

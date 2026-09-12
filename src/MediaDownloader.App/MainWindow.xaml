@@ -1706,7 +1706,7 @@
                          Style="{StaticResource UrlTextBox}"
                          MinHeight="38"
                          Padding="10,0"
-                         ToolTip="Paste a magnet link or HTTPS .torrent URL."/>
+                         ToolTip="Paste a magnet link or HTTPS .torrent URL. You can also open a local .torrent or .magnet file."/>
               </Border>
               <Button Grid.Column="1"
                       Margin="8,0,0,0"
@@ -1720,12 +1720,12 @@
                       Style="{StaticResource NeonPrimaryButton}"
                       Padding="12,6"
                       MinWidth="178"
-                      Content="Open &amp; Download .torrent"
+                      Content="Open .torrent / .magnet"
                       Click="TorrentAddFileR1644_Click"/>
             </Grid>
             <TextBlock Grid.Row="1"
                        Margin="2,7,0,0"
-                       Text="Open, paste, or drop a torrent. Loaded torrents remain in MediaDock after restart and use queue priority from top to bottom."
+                       Text="Open, paste, or drop a .torrent/.magnet file or magnet link. Loaded torrents remain in MediaDock after restart and use queue priority from top to bottom."
                        Foreground="{DynamicResource ThemeMutedTextBrush}"
                        FontFamily="Segoe UI"
                        FontSize="10"
@@ -1938,7 +1938,7 @@
                       <DataTemplate>
                         <Grid Margin="2,8">
                           <ProgressBar Maximum="100" Value="{Binding Progress, Mode=OneWay}" Style="{StaticResource TorrentProgressBarR197}"/>
-                          <TextBlock Text="{Binding Progress, Mode=OneWay, StringFormat={}{0:0.0}%}"
+                          <TextBlock Text="{Binding Progress, Mode=OneWay, StringFormat={}{0:0.00}%}"
                                      Foreground="{DynamicResource ThemePrimaryTextBrush}"
                                      FontFamily="Segoe UI"
                                      FontSize="9"

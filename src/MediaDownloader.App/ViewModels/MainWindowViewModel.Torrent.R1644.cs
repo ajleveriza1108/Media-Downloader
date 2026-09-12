@@ -50,10 +50,11 @@ public sealed partial class MainWindowViewModel
     };
 
     private TorrentClientR1644? _torrentClientR1644;
-    private readonly DispatcherTimer _torrentRefreshTimerR1644 = new() { Interval = TimeSpan.FromMilliseconds(350) };
+    // MEDIADOCK_TORRENT_REALTIME_UI_REFRESH_R1657
+    private readonly DispatcherTimer _torrentRefreshTimerR1644 = new() { Interval = TimeSpan.FromMilliseconds(150) };
     private readonly SemaphoreSlim _torrentStateGateR199 = new(1, 1);
     private string _torrentSourceR1644 = string.Empty;
-    private string _torrentStatusR1644 = "Open a .torrent or paste a magnet link. Downloads start automatically in Fast mode.";
+    private string _torrentStatusR1644 = "Open a .torrent/.magnet file or paste a magnet link. Downloads start automatically in Fast mode.";
     private TorrentItemR1644? _selectedTorrentR1644;
     private int _torrentDisposeGateR1644;
     private int _torrentRefreshGateR1644;
@@ -108,7 +109,7 @@ public sealed partial class MainWindowViewModel
 
         var merged = new Dictionary<string, TorrentSessionEntryR199>(StringComparer.OrdinalIgnoreCase);
 
-        // R1.6.56 durable job files are authoritative because each torrent is committed
+        // R1.6.59 durable job files are authoritative because each torrent is committed
         // independently at Add Torrent time and cannot be erased by one empty session write.
         foreach (var entry in ReadDurableTorrentJobsR1656())
         {
@@ -297,7 +298,7 @@ public sealed partial class MainWindowViewModel
         {
             // MEDIADOCK_TORRENT_STATUS_SUMMARY_R1647
             TorrentStatusR1644 =
-                $"{item.Name}: {item.Progress:0.0}% • ↓ {item.DownloadRate} • ↑ {item.UploadRate} • " +
+                $"{item.Name}: {item.Progress:0.00}% • ↓ {item.DownloadRate} • ↑ {item.UploadRate} • " +
                 $"P:{item.Peers} • S:{item.Seeds} • ETA {item.Eta} • ratio {item.Ratio} • {item.Downloaded} received";
             return;
         }
@@ -325,14 +326,14 @@ public sealed partial class MainWindowViewModel
             return;
         }
 
-        TorrentStatusR1644 = $"{item.Name}: {item.Status} • {item.Progress:0.0}%";
+        TorrentStatusR1644 = $"{item.Name}: {item.Status} • {item.Progress:0.00}%";
     }
 
     public async Task<TorrentPreviewR1644> PrepareTorrentR1644Async(string source)
     {
         if (!TorrentClientR1644.IsTorrentSourceR1644(source))
         {
-            throw new InvalidOperationException("Enter a magnet link or choose a .torrent file.");
+            throw new InvalidOperationException("Enter a magnet link or choose a .torrent / .magnet file.");
         }
 
         TorrentStatusR1644 = "Reading torrent metadata in the isolated torrent engine...";

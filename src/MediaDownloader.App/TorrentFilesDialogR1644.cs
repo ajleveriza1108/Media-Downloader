@@ -596,3 +596,154 @@ public sealed class TorrentDetailsDialogR1644 : Window
         Content = tabs;
     }
 }
+
+// MEDIADOCK_STREAM_TORRENT_SOURCE_DIALOG_R1658
+// Theme-matched source chooser for the Stream workspace. It accepts a magnet URI,
+// a local .torrent file, or a local .magnet text file containing a magnet URI.
+public sealed class TorrentStreamSourceDialogR1658 : Window
+{
+    private readonly TextBox _source;
+
+    public string Source => _source.Text.Trim();
+
+    public TorrentStreamSourceDialogR1658(Window owner)
+    {
+        Owner = owner;
+        Title = "Stream Torrent / Magnet";
+        Width = Math.Min(760, Math.Max(560, owner.ActualWidth * 0.62));
+        Height = 300;
+        MinWidth = 540;
+        MinHeight = 280;
+        ResizeMode = ResizeMode.CanResize;
+        WindowStartupLocation = WindowStartupLocation.CenterOwner;
+        TorrentDialogThemeR194.Apply(this, owner);
+
+        var primary = ThemeUiR1646.ResolveBrush(owner, "ThemePrimaryTextBrush");
+        var secondary = ThemeUiR1646.ResolveBrush(owner, "ThemeSecondaryTextBrush");
+        var border = ThemeUiR1646.ResolveBrush(owner, "ThemeBorderBrush");
+        var panel = ThemeUiR1646.ResolveBrush(owner, "ThemePanelBackgroundBrush");
+
+        var root = new Grid { Margin = new Thickness(18) };
+        root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+        root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+
+        var title = new TextBlock
+        {
+            Text = "Stream Torrent / Magnet",
+            Foreground = primary,
+            FontSize = 21,
+            FontWeight = FontWeights.SemiBold
+        };
+        root.Children.Add(title);
+
+        var hint = new TextBlock
+        {
+            Text = "Paste a magnet link or choose a .torrent / .magnet file. MediaDock will start the torrent with streaming enabled and open the selected media in Stream.",
+            Foreground = secondary,
+            Margin = new Thickness(0, 5, 0, 12),
+            TextWrapping = TextWrapping.Wrap
+        };
+        Grid.SetRow(hint, 1);
+        root.Children.Add(hint);
+
+        var sourceBorder = new Border
+        {
+            Background = panel,
+            BorderBrush = border,
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(8),
+            Padding = new Thickness(10)
+        };
+        var sourceGrid = new Grid();
+        sourceGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        sourceGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        sourceGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+        _source = new TextBox
+        {
+            MinHeight = 38,
+            VerticalContentAlignment = VerticalAlignment.Center,
+            ToolTip = "magnet:?xt=... or a .torrent/.magnet file path"
+        };
+        ThemeUiR1646.ApplyTextBox(_source, owner);
+        sourceGrid.Children.Add(_source);
+
+        var paste = ThemeUiR1646.MakeButton(owner, "Paste", false, 78, 38);
+        paste.Margin = new Thickness(8, 0, 0, 0);
+        paste.Click += (_, _) =>
+        {
+            try
+            {
+                if (Clipboard.ContainsText()) _source.Text = Clipboard.GetText().Trim();
+            }
+            catch { }
+        };
+        Grid.SetColumn(paste, 1);
+        sourceGrid.Children.Add(paste);
+
+        var browse = ThemeUiR1646.MakeButton(owner, "Browse…", false, 92, 38);
+        browse.Margin = new Thickness(8, 0, 0, 0);
+        browse.Click += (_, _) =>
+        {
+            var dialog = new OpenFileDialog
+            {
+                Title = "Choose a torrent or magnet file to stream",
+                Filter = "Torrent / Magnet files (*.torrent;*.magnet)|*.torrent;*.magnet|Torrent files (*.torrent)|*.torrent|Magnet files (*.magnet)|*.magnet",
+                CheckFileExists = true,
+                Multiselect = false
+            };
+            if (dialog.ShowDialog(this) == true) _source.Text = dialog.FileName;
+        };
+        Grid.SetColumn(browse, 2);
+        sourceGrid.Children.Add(browse);
+
+        sourceBorder.Child = sourceGrid;
+        Grid.SetRow(sourceBorder, 2);
+        root.Children.Add(sourceBorder);
+
+        var validation = new TextBlock
+        {
+            Text = "Supported: magnet URI • .torrent • .magnet",
+            Foreground = secondary,
+            Margin = new Thickness(2, 8, 0, 0)
+        };
+        Grid.SetRow(validation, 3);
+        root.Children.Add(validation);
+
+        var buttons = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            Margin = new Thickness(0, 16, 0, 0)
+        };
+        var cancel = ThemeUiR1646.MakeButton(owner, "Cancel", false, 96, 38);
+        cancel.Margin = new Thickness(0, 0, 8, 0);
+        cancel.Click += (_, _) => { DialogResult = false; Close(); };
+        var stream = ThemeUiR1646.MakeButton(owner, "Continue", true, 120, 38);
+        stream.Click += (_, _) =>
+        {
+            if (!TorrentClientR1644.IsTorrentSourceR1644(Source))
+            {
+                ThemedMessageBoxR1646.Show(
+                    this,
+                    "Paste a valid magnet link or choose a valid .torrent / .magnet file.",
+                    "Stream Torrent / Magnet",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+                return;
+            }
+            DialogResult = true;
+            Close();
+        };
+        buttons.Children.Add(cancel);
+        buttons.Children.Add(stream);
+        Grid.SetRow(buttons, 4);
+        root.Children.Add(buttons);
+
+        Content = root;
+        Loaded += (_, _) => _source.Focus();
+    }
+}

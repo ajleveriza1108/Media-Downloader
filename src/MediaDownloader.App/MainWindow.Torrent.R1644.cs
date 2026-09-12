@@ -15,7 +15,7 @@ public partial class MainWindow
     {
         // MEDIADOCK_RUNTIME_IDENTITY_R1656
         // Make it impossible to mistake an older installed build for the package under test.
-        Title = "MediaDock R1.6.56";
+        Title = "MediaDock R1.6.59";
         DownloadViewButton.Click += ExistingWorkspaceNavigationR1644_Click;
         DownloaderViewButton.Click += ExistingWorkspaceNavigationR1644_Click;
         StreamViewButton.Click += ExistingWorkspaceNavigationR1644_Click;
@@ -100,18 +100,97 @@ public partial class MainWindow
         await PrepareAndAddTorrentR190Async(request.Url);
     }
 
-    // Entry point used by the Stream workspace's "Torrent / Magnet" button.
-    // It navigates to the full torrent client instead of instantiating MonoTorrent in WPF.
-    private void StreamTorrentR1644_Click(object sender, RoutedEventArgs e)
+    // MEDIADOCK_DIRECT_TORRENT_MAGNET_STREAM_R1658
+    // Stream workspace entry point. The user can paste a magnet URI or choose a
+    // .torrent/.magnet file. MediaDock prepares the torrent, lets the user choose
+    // files/save location, starts it with streaming enabled, then opens the local stream.
+    private async void StreamTorrentR1644_Click(object sender, RoutedEventArgs e)
     {
-        ShowTorrentWorkspaceR1644();
+        var sourceDialog = new TorrentStreamSourceDialogR1658(this);
+        if (sourceDialog.ShowDialog() != true || string.IsNullOrWhiteSpace(sourceDialog.Source))
+        {
+            return;
+        }
+
+        await PrepareAddAndStreamTorrentR1658Async(sourceDialog.Source);
+    }
+
+    private async Task PrepareAddAndStreamTorrentR1658Async(string source)
+    {
+        var resolvedSourceR1658 = TorrentClientR1644.ResolveTorrentSourceR1658(source);
+        var existingR1658 = _viewModel.TorrentsR1644.FirstOrDefault(item =>
+            string.Equals(TorrentClientR1644.ResolveTorrentSourceR1658(item.Source), resolvedSourceR1658, StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(TorrentClientR1644.ResolveTorrentSourceR1658(item.PersistentSource), resolvedSourceR1658, StringComparison.OrdinalIgnoreCase));
+        if (existingR1658 is not null)
+        {
+            await OpenTorrentStreamInPlayerR1658Async(existingR1658);
+            return;
+        }
+
+        TorrentPreviewR1644? preview = null;
+        var prepared = await TryTorrentUiActionR1644Async(
+            "Torrent.Stream.Prepare.R1658",
+            async () => preview = await _viewModel.PrepareTorrentR1644Async(source),
+            title: "Stream Torrent / Magnet");
+        if (!prepared || preview is null) return;
+
+        var addDialog = new TorrentAddDialogR1651(
+            this,
+            preview,
+            _viewModel.TorrentOutputDirectoryR1644,
+            defaultStartImmediately: true);
+        if (addDialog.ShowDialog() != true)
+        {
+            await _viewModel.DiscardPreparedTorrentR1651Async(preview);
+            return;
+        }
+
+        TorrentItemR1644? item = null;
+        var added = await TryTorrentUiActionR1644Async(
+            "Torrent.Stream.Add.R1658",
+            async () => item = await _viewModel.AddPreparedTorrentR1644Async(
+                preview,
+                addDialog.SavePath,
+                streaming: true,
+                startImmediately: true,
+                createSubfolder: addDialog.CreateSubfolder),
+            title: "Stream Torrent / Magnet");
+        if (!added || item is null) return;
+
+        await OpenTorrentStreamInPlayerR1658Async(item);
+    }
+
+    private async Task OpenTorrentStreamInPlayerR1658Async(TorrentItemR1644 item)
+    {
+        await TryTorrentUiActionR1644Async(
+            "Torrent.Stream.Open.R1658",
+            async () =>
+            {
+                var url = await _viewModel.CreateTorrentStreamUrlR1644Async(item);
+                if (string.IsNullOrWhiteSpace(url))
+                {
+                    throw new InvalidOperationException("No streamable media file was found in this torrent or magnet.");
+                }
+
+                TorrentWorkspaceR1644.Visibility = Visibility.Collapsed;
+                DownloadWorkspace.Visibility = Visibility.Collapsed;
+                GeneralDownloaderWorkspace.Visibility = Visibility.Collapsed;
+                ConvertWorkspace.Visibility = Visibility.Collapsed;
+                StreamWorkspace.Visibility = Visibility.Visible;
+                TorrentViewButtonR1644.BorderBrush = System.Windows.Media.Brushes.Transparent;
+                StreamViewButton.BorderBrush = WorkspaceAccentBrush;
+                StreamPlayerOverlay.Visibility = Visibility.Collapsed;
+                StreamWebView.Source = new Uri(url, UriKind.Absolute);
+            },
+            item,
+            title: "Stream Torrent / Magnet");
     }
 
     private async void TorrentAddFileR1644_Click(object sender, RoutedEventArgs e)
     {
         var dialog = new OpenFileDialog
         {
-            Filter = "Torrent files (*.torrent)|*.torrent",
+            Filter = "Torrent / Magnet files (*.torrent;*.magnet)|*.torrent;*.magnet|Torrent files (*.torrent)|*.torrent|Magnet files (*.magnet)|*.magnet",
             CheckFileExists = true,
             Multiselect = true
         };
@@ -201,7 +280,12 @@ public partial class MainWindow
 
         return files
             .Where(File.Exists)
-            .Where(path => Path.GetExtension(path).Equals(".torrent", StringComparison.OrdinalIgnoreCase))
+            .Where(path =>
+            {
+                var extension = Path.GetExtension(path);
+                return extension.Equals(".torrent", StringComparison.OrdinalIgnoreCase) ||
+                       extension.Equals(".magnet", StringComparison.OrdinalIgnoreCase);
+            })
             .ToArray();
     }
 
@@ -405,21 +489,7 @@ public partial class MainWindow
             return;
         }
 
-        await TryTorrentUiActionR1644Async(
-            "Torrent.Stream.R190",
-            async () =>
-            {
-                var url = await _viewModel.CreateTorrentStreamUrlR1644Async(item);
-                if (string.IsNullOrWhiteSpace(url))
-                {
-                    throw new InvalidOperationException("No streamable file was found in this torrent.");
-                }
-
-                StreamPlayerOverlay.Visibility = Visibility.Collapsed;
-                StreamWebView.Source = new Uri(url, UriKind.Absolute);
-            },
-            item,
-            title: "MediaDock Torrent Streaming");
+        await OpenTorrentStreamInPlayerR1658Async(item);
     }
 
     private async Task<bool> TryTorrentUiActionR1644Async(

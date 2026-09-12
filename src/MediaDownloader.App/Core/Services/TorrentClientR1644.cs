@@ -149,6 +149,8 @@ public sealed class TorrentStatusSnapshotR1644
     public long TotalSize { get; init; }
     public long DownloadRate { get; init; }
     public long UploadRate { get; init; }
+    public long RateSampleSequence { get; init; }
+    public long RateSampleAgeMilliseconds { get; init; } = -1;
     public int Peers { get; init; }
     public int Seeds { get; init; }
     public double EtaSeconds { get; init; } = -1;
@@ -225,18 +227,16 @@ public sealed class TorrentItemR1644 : INotifyPropertyChanged
     private bool _isChecked;
     private int _queuePosition;
     private string _desiredStateR199 = "Running";
-    // MEDIADOCK_TORRENT_UI_BYTE_DELTA_RATE_R1656
-    // The WPF row computes a second independent live rate from cumulative transfer
-    // counters. This makes the visible Down/Up values move even if a MonoTorrent
-    // monitor-rate snapshot is stale or repeats the same value.
-    private long _uiRateSampleDownloadedR1656;
-    private long _uiRateSampleUploadedR1656;
-    private long _uiRateSampleTickR1656;
-    private double _uiRateSampleProgressR1656;
-    private long _uiLiveDownloadRateR1656;
-    private long _uiLiveUploadRateR1656;
-    private long _uiLastDownloadActivityTickR1656;
-    private long _uiLastUploadActivityTickR1656;
+    // MEDIADOCK_TORRENT_UI_BYTE_DELTA_RATE_R1658
+    // Match the normal Downloader behavior: measure the visible Down/Up values from
+    // consecutive cumulative byte counters delivered by TorrentHost. No smoothing or
+    // synthetic jitter is applied; every fresh snapshot can produce a new real rate.
+    private long _uiRateTickR1658;
+    private long _uiRateDownloadedR1658;
+    private long _uiRateUploadedR1658;
+    private long _uiDownloadRateR1658;
+    private long _uiUploadRateR1658;
+    private bool _uiRatePrimedR1658;
 
     public string Id { get; init; } = string.Empty;
     public string Source { get; init; } = string.Empty;
@@ -289,12 +289,23 @@ public sealed class TorrentItemR1644 : INotifyPropertyChanged
             : engineStatus;
         Progress = snapshot.Progress;
         SizeText = snapshot.TotalSize > 0 ? TorrentClientR1644.FormatSizeR1644(snapshot.TotalSize) : "Metadata pending";
-        var uiRatesR1656 = MeasureUiTransferRatesR1656(snapshot);
-        DownloadRate = TorrentClientR1644.FormatRateR1644(uiRatesR1656.DownloadRate);
-        UploadRate = TorrentClientR1644.FormatRateR1644(uiRatesR1656.UploadRate);
+        // MEDIADOCK_TORRENT_UI_BYTE_DELTA_RATE_R1658
+        // The normal Downloader updates its speed from bytes received over elapsed time.
+        // Do exactly the same for torrents using cumulative Downloaded/Uploaded counters.
+        // This makes the table react to each real transfer snapshot instead of displaying
+        // a host-side rolling value which may repeat for several paints.
+        var uiRatesR1658 = MeasureUiRatesR1658(snapshot);
+        DownloadRate = TorrentClientR1644.FormatRateR1644(uiRatesR1658.DownloadRate);
+        UploadRate = TorrentClientR1644.FormatRateR1644(uiRatesR1658.UploadRate);
         Peers = snapshot.Peers.ToString();
         Seeds = snapshot.Seeds.ToString();
-        Eta = snapshot.Progress >= 100 ? "Done" : TorrentClientR1644.FormatEtaR1644(snapshot.EtaSeconds);
+        var liveEtaR1658 = snapshot.EtaSeconds;
+        if (snapshot.Progress < 100d && snapshot.TotalSize > 0 && uiRatesR1658.DownloadRate > 0)
+        {
+            var remainingR1658 = Math.Max(0d, snapshot.TotalSize * (1d - Math.Clamp(snapshot.Progress, 0d, 100d) / 100d));
+            liveEtaR1658 = remainingR1658 / uiRatesR1658.DownloadRate;
+        }
+        Eta = snapshot.Progress >= 100 ? "Done" : TorrentClientR1644.FormatEtaR1644(liveEtaR1658);
         Ratio = snapshot.Ratio.ToString("0.00");
         Downloaded = TorrentClientR1644.FormatSizeR1644(snapshot.Downloaded);
         Uploaded = TorrentClientR1644.FormatSizeR1644(snapshot.Uploaded);
@@ -304,8 +315,11 @@ public sealed class TorrentItemR1644 : INotifyPropertyChanged
         PeerFailure = snapshot.LastPeerFailure;
         var listener = snapshot.PeerListenerConfigured ? "listener ready" : "listener unavailable";
         var transferState = snapshot.LiveTransferActive ? "live transfer" : "idle transfer";
+        var rateAgeR1657 = snapshot.RateSampleAgeMilliseconds < 0
+            ? "rate sampler warming"
+            : $"rate sample #{snapshot.RateSampleSequence} age {snapshot.RateSampleAgeMilliseconds} ms";
         NetworkHealth =
-            $"{snapshot.EngineVersion} • {listener} • {transferState} • verified {snapshot.VerifiedProgress:0.0}% • " +
+            $"{snapshot.EngineVersion} • {listener} • {transferState} • {rateAgeR1657} • verified {snapshot.VerifiedProgress:0.0}% • " +
             $"DHT {snapshot.DhtState} ({snapshot.DhtNodes} nodes) • {snapshot.TrackerCount} trackers • " +
             $"found T:{snapshot.TrackerPeersDiscovered} D:{snapshot.DhtPeersDiscovered} " +
             $"P:{snapshot.PexPeersDiscovered} L:{snapshot.LocalPeersDiscovered} O:{snapshot.OtherPeersDiscovered} • " +
@@ -316,77 +330,36 @@ public sealed class TorrentItemR1644 : INotifyPropertyChanged
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CanStream)));
     }
 
-    private (long DownloadRate, long UploadRate) MeasureUiTransferRatesR1656(TorrentStatusSnapshotR1644 snapshot)
+
+    private (long DownloadRate, long UploadRate) MeasureUiRatesR1658(TorrentStatusSnapshotR1644 snapshot)
     {
-        const long minimumSampleMilliseconds = 250;
-        const long holdMilliseconds = 900;
-        var now = Environment.TickCount64;
-
-        if (_uiRateSampleTickR1656 == 0)
+        var now = Stopwatch.GetTimestamp();
+        if (!_uiRatePrimedR1658 ||
+            snapshot.Downloaded < _uiRateDownloadedR1658 ||
+            snapshot.Uploaded < _uiRateUploadedR1658)
         {
-            _uiRateSampleDownloadedR1656 = snapshot.Downloaded;
-            _uiRateSampleUploadedR1656 = snapshot.Uploaded;
-            _uiRateSampleProgressR1656 = snapshot.Progress;
-            _uiRateSampleTickR1656 = now;
-            _uiLiveDownloadRateR1656 = Math.Max(0L, snapshot.DownloadRate);
-            _uiLiveUploadRateR1656 = Math.Max(0L, snapshot.UploadRate);
-            return (_uiLiveDownloadRateR1656, _uiLiveUploadRateR1656);
+            _uiRatePrimedR1658 = true;
+            _uiRateTickR1658 = now;
+            _uiRateDownloadedR1658 = Math.Max(0L, snapshot.Downloaded);
+            _uiRateUploadedR1658 = Math.Max(0L, snapshot.Uploaded);
+            _uiDownloadRateR1658 = Math.Max(0L, snapshot.DownloadRate);
+            _uiUploadRateR1658 = Math.Max(0L, snapshot.UploadRate);
+            return (_uiDownloadRateR1658, _uiUploadRateR1658);
         }
 
-        var elapsed = Math.Max(0L, now - _uiRateSampleTickR1656);
-        if (elapsed >= minimumSampleMilliseconds)
+        var elapsed = Stopwatch.GetElapsedTime(_uiRateTickR1658, now).TotalSeconds;
+        if (elapsed >= 0.12d)
         {
-            var downloadDelta = snapshot.Downloaded >= _uiRateSampleDownloadedR1656
-                ? snapshot.Downloaded - _uiRateSampleDownloadedR1656
-                : snapshot.Downloaded;
-            var uploadDelta = snapshot.Uploaded >= _uiRateSampleUploadedR1656
-                ? snapshot.Uploaded - _uiRateSampleUploadedR1656
-                : snapshot.Uploaded;
-
-            // Verified/live progress is an independent fallback when the engine's byte
-            // counter updates in larger batches. Never use it to reduce a real byte delta.
-            if (snapshot.TotalSize > 0 && snapshot.Progress > _uiRateSampleProgressR1656)
-            {
-                var progressBytes = (long)Math.Round(
-                    snapshot.TotalSize * (snapshot.Progress - _uiRateSampleProgressR1656) / 100d);
-                downloadDelta = Math.Max(downloadDelta, Math.Max(0L, progressBytes));
-            }
-
-            if (downloadDelta > 0)
-            {
-                _uiLiveDownloadRateR1656 = Math.Max(0L, (long)Math.Round(downloadDelta * 1000d / elapsed));
-                _uiLastDownloadActivityTickR1656 = now;
-            }
-            else if (_uiLastDownloadActivityTickR1656 == 0 || now - _uiLastDownloadActivityTickR1656 > holdMilliseconds)
-            {
-                _uiLiveDownloadRateR1656 = 0;
-            }
-
-            if (uploadDelta > 0)
-            {
-                _uiLiveUploadRateR1656 = Math.Max(0L, (long)Math.Round(uploadDelta * 1000d / elapsed));
-                _uiLastUploadActivityTickR1656 = now;
-            }
-            else if (_uiLastUploadActivityTickR1656 == 0 || now - _uiLastUploadActivityTickR1656 > holdMilliseconds)
-            {
-                _uiLiveUploadRateR1656 = 0;
-            }
-
-            _uiRateSampleDownloadedR1656 = snapshot.Downloaded;
-            _uiRateSampleUploadedR1656 = snapshot.Uploaded;
-            _uiRateSampleProgressR1656 = snapshot.Progress;
-            _uiRateSampleTickR1656 = now;
+            var downloadedDelta = Math.Max(0L, snapshot.Downloaded - _uiRateDownloadedR1658);
+            var uploadedDelta = Math.Max(0L, snapshot.Uploaded - _uiRateUploadedR1658);
+            _uiDownloadRateR1658 = (long)Math.Round(downloadedDelta / elapsed);
+            _uiUploadRateR1658 = (long)Math.Round(uploadedDelta / elapsed);
+            _uiRateTickR1658 = now;
+            _uiRateDownloadedR1658 = Math.Max(0L, snapshot.Downloaded);
+            _uiRateUploadedR1658 = Math.Max(0L, snapshot.Uploaded);
         }
 
-        // Before a real local delta is available, the host value is still a useful hint.
-        // Once bytes move, the local delta remains authoritative.
-        var downloadRate = _uiLastDownloadActivityTickR1656 == 0
-            ? Math.Max(_uiLiveDownloadRateR1656, Math.Max(0L, snapshot.DownloadRate))
-            : _uiLiveDownloadRateR1656;
-        var uploadRate = _uiLastUploadActivityTickR1656 == 0
-            ? Math.Max(_uiLiveUploadRateR1656, Math.Max(0L, snapshot.UploadRate))
-            : _uiLiveUploadRateR1656;
-        return (downloadRate, uploadRate);
+        return (Math.Max(0L, _uiDownloadRateR1658), Math.Max(0L, _uiUploadRateR1658));
     }
 
     internal void MarkOperationError(string message)
@@ -539,14 +512,43 @@ public sealed class TorrentClientR1644 : IAsyncDisposable
     // MEDIADOCK_TORRENT_ISOLATED_HOST_R190
     public static string TorrentHostRelativePathR190 => Path.Combine("TorrentHost", "MediaDock.TorrentHost.exe");
 
-    public static bool IsTorrentSourceR1644(string? source)
+    // MEDIADOCK_MAGNET_FILE_SUPPORT_R1658
+    // A .magnet file is a small text file whose first non-empty line is a magnet URI.
+    // Resolve it before validation/host IPC so the isolated TorrentHost only sees the
+    // same canonical magnet URI it already knows how to process.
+    public static string ResolveTorrentSourceR1658(string? source)
     {
-        if (string.IsNullOrWhiteSpace(source))
+        var value = (source ?? string.Empty).Trim();
+        if (value.Length == 0) return string.Empty;
+
+        if (File.Exists(value) && Path.GetExtension(value).Equals(".magnet", StringComparison.OrdinalIgnoreCase))
         {
-            return false;
+            try
+            {
+                foreach (var line in File.ReadLines(value).Take(32))
+                {
+                    var candidate = line.Trim().TrimStart('\uFEFF');
+                    if (candidate.StartsWith("magnet:?", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return candidate;
+                    }
+                }
+            }
+            catch
+            {
+                return string.Empty;
+            }
+            return string.Empty;
         }
 
-        var value = source.Trim();
+        return value;
+    }
+
+    public static bool IsTorrentSourceR1644(string? source)
+    {
+        var value = ResolveTorrentSourceR1658(source);
+        if (string.IsNullOrWhiteSpace(value)) return false;
+
         if (value.StartsWith("magnet:?", StringComparison.OrdinalIgnoreCase))
         {
             return value.Contains("xt=urn:", StringComparison.OrdinalIgnoreCase);
@@ -564,13 +566,19 @@ public sealed class TorrentClientR1644 : IAsyncDisposable
 
     public async Task<TorrentPreviewR1644> PrepareAsync(string source, CancellationToken token)
     {
+        var resolvedSourceR1658 = ResolveTorrentSourceR1658(source);
+        if (!IsTorrentSourceR1644(resolvedSourceR1658))
+        {
+            throw new InvalidOperationException("Choose a .torrent/.magnet file, paste a magnet link, or enter an HTTPS .torrent URL.");
+        }
+
         HostPreview preview;
         try
         {
             preview = await SendAsync<HostPreview>(
                 "prepare",
-                new { Source = source },
-                TimeSpan.FromSeconds(40),
+                new { Source = resolvedSourceR1658 },
+                TimeSpan.FromSeconds(60),
                 token);
         }
         catch (Exception ex) when (IsHostCommunicationFailureR196(ex) && !token.IsCancellationRequested)
@@ -581,8 +589,8 @@ public sealed class TorrentClientR1644 : IAsyncDisposable
             await Task.Delay(300, token);
             preview = await SendAsync<HostPreview>(
                 "prepare",
-                new { Source = source },
-                TimeSpan.FromSeconds(40),
+                new { Source = resolvedSourceR1658 },
+                TimeSpan.FromSeconds(60),
                 token);
         }
 
@@ -837,35 +845,9 @@ public sealed class TorrentClientR1644 : IAsyncDisposable
             RestartHostAfterFaultR190();
         }
 
-        // MEDIADOCK_TORRENT_UI_RATE_SELFTEST_R1656
-        var uiRateItemR1656 = new TorrentItemR1644 { Id = "rate-self-test" };
-        uiRateItemR1656.ApplySnapshot(new TorrentStatusSnapshotR1644
-        {
-            Id = "rate-self-test",
-            Name = "rate-self-test",
-            Status = "Downloading",
-            TotalSize = 10_000_000,
-            Downloaded = 1_000_000,
-            Uploaded = 100_000,
-            Progress = 10
-        });
-        Thread.Sleep(280);
-        uiRateItemR1656.ApplySnapshot(new TorrentStatusSnapshotR1644
-        {
-            Id = "rate-self-test",
-            Name = "rate-self-test",
-            Status = "Downloading",
-            TotalSize = 10_000_000,
-            Downloaded = 1_280_000,
-            Uploaded = 128_000,
-            Progress = 12.8
-        });
-        if (string.Equals(uiRateItemR1656.DownloadRate, "0 B/s", StringComparison.Ordinal) ||
-            string.Equals(uiRateItemR1656.UploadRate, "0 B/s", StringComparison.Ordinal))
-        {
-            throw new InvalidOperationException("R1.6.56 WPF live-rate byte-delta self-test failed.");
-        }
-
+        // MEDIADOCK_TORRENT_HOST_DRIVEN_LIVE_RATE_R1657
+        // Live throughput is sampled inside TorrentHost; startup no longer sleeps or
+        // fabricates WPF snapshots merely to test a UI-side rate calculator.
         var hostPath = Path.Combine(AppContext.BaseDirectory, TorrentHostRelativePathR190);
         if (!File.Exists(hostPath))
         {
@@ -935,7 +917,7 @@ public sealed class TorrentClientR1644 : IAsyncDisposable
 
             if (response.Data.ValueKind != JsonValueKind.Object ||
                 !response.Data.TryGetProperty("Version", out var versionElement) ||
-                !string.Equals(versionElement.GetString(), "R1.6.56", StringComparison.Ordinal))
+                !string.Equals(versionElement.GetString(), "R1.6.59", StringComparison.Ordinal))
             {
                 throw new InvalidDataException("TorrentHost startup version handshake failed.");
             }
@@ -1142,7 +1124,7 @@ public sealed class TorrentClientR1644 : IAsyncDisposable
         }
         if (bytesPerSecond >= 1024L)
         {
-            return $"{bytesPerSecond / 1024d:0.0} KB/s";
+            return $"{bytesPerSecond / 1024d:0.00} KB/s";
         }
         return $"{Math.Max(0, bytesPerSecond)} B/s";
     }
@@ -1213,11 +1195,19 @@ public sealed class TorrentClientR1644 : IAsyncDisposable
             $"MediaDock-TorrentClientSelfTest-{Guid.NewGuid():N}");
         var download = Path.Combine(root, "download");
         var torrentPath = Path.Combine(root, "saved-valid.torrent");
+        var magnetFilePathR1658 = Path.Combine(root, "saved-valid.magnet");
+        const string magnetUriR1658 = "magnet:?xt=urn:btih:0123456789abcdef0123456789abcdef01234567&dn=MediaDock";
 
         Directory.CreateDirectory(download);
         try
         {
             File.WriteAllBytes(torrentPath, BuildSavedTorrentSelfTestBytesR196());
+            File.WriteAllText(magnetFilePathR1658, magnetUriR1658 + Environment.NewLine);
+            if (!IsTorrentSourceR1644(magnetFilePathR1658) ||
+                !string.Equals(ResolveTorrentSourceR1658(magnetFilePathR1658), magnetUriR1658, StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("R1.6.59 .magnet file resolution contract failed.");
+            }
 
             var client = new TorrentClientR1644();
             try
